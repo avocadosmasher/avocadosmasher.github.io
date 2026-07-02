@@ -17,6 +17,5 @@ import { defineConfig } from 'astro/config';
 
 export default defineConfig({
   site: 'https://avocadosmasher.github.io',
-  base: '/devlog/',
   trailingSlash: 'always',
 });
