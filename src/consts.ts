@@ -48,8 +48,8 @@ export const SKILLS = [
 
 // 자기소개 본문. 배열의 각 항목이 한 문단이 됩니다. 자유롭게 바꾸세요.
 export const ABOUT_INTRO = [
-  '안정적인 배포와 좋은 개발자 경험을 고민하는 플랫폼 엔지니어입니다. 눈에 잘 띄진 않지만 팀 전체의 속도를 바꾸는 일 — CI/CD 파이프라인, 무중단 배포, 내부 도구 — 을 주로 만들어 왔습니다.',
-  '요즘은 AX(AI Transformation)에 관심이 생겨, 지금까지 쌓은 인프라 감각 위에 AI를 얹는 방향으로 커리어를 넓혀가고 있습니다. 이 블로그는 그 과정에서 배운 것들을 잊지 않으려고 남기는 기록입니다.',
+  'Atlassian 엔지니어로써 협업툴 설계 및 시스템 구축에 초점을 맞춰 다양한 회사들과 프로젝트를 진행해왔습니다.',
+  '요즘은 AX(AI Transformation)에 관심이 생겨, 지금까지 쌓은 인프라 지식을 바탕에 AI를 얹는 방향으로 커리어를 넓혀가고자 합니다. 이 블로그는 저의 시행착오와 그 도중에 배운 것들을 잊지 않으려고 남기는 기록입니다.',
 ];
 
 // 경력 한 항목의 형태 (아래 CAREER 에서 사용)
@@ -65,25 +65,15 @@ export interface CareerItem {
 // 경력 — 최신 항목을 맨 위에 두세요. 필요 없는 필드는 지워도 됩니다.
 export const CAREER: CareerItem[] = [
   {
-    company: '회사명',            // ← 본인 정보로 교체
-    role: 'Platform Engineer',
-    period: '2023.03 – 현재',
-    summary: '개발 플랫폼과 배포 파이프라인을 만들고 운영합니다.',
+    company: '플래티어',            // ← 본인 정보로 교체
+    role: 'Atlassian Engineer',
+    period: '2023.01 – 현재',
+    summary: '협업 툴을 설계하과 세팅해주고 최적화 하여 회사의 도메인에 맞는 협업 시스템 구축을 돕습니다.',
     points: [
-      'Harness 기반 CI/CD 파이프라인을 표준화해 배포 리드타임 단축',
-      'Kubernetes 무중단 배포 전략을 정립하고 사내 가이드로 문서화',
+      '대규모 엔터프라이즈급 환경에서 프로젝트 진행(Samsung DS/DX, 제일기획, 세원물산, 에스원 등.)',
+      '여러 기술을 배워 프로젝트에 적용하고자 노력합니다.',
     ],
-    stack: ['Go', 'Kubernetes', 'Harness', 'Groovy'],
-  },
-  {
-    company: '이전 회사명',        // ← 본인 정보로 교체 (없으면 이 블록 삭제)
-    role: 'Backend Engineer',
-    period: '2021.01 – 2023.02',
-    summary: '결제·주문 도메인의 백엔드 API를 개발했습니다.',
-    points: [
-      'PostgreSQL 인덱스 재설계로 핵심 쿼리 응답속도 개선',
-    ],
-    stack: ['Java', 'PostgreSQL', 'Docker'],
+    stack: ['Atlassian', 'Groovy', 'Tomcat', 'Python', 'Kubernetes', 'Docker'],
   },
 ];
 
