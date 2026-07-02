@@ -1,0 +1,100 @@
+---
+import { href } from '../utils';
+const searchUrl = href('search.json');
+---
+
+<div class="search-overlay" id="searchOverlay">
+  <div class="search-box">
+    <div class="search-input-row">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="searchInput" placeholder="제목, 태그, 카테고리로 검색…" autocomplete="off" />
+      <kbd>ESC</kbd>
+    </div>
+    <div class="search-results" id="searchResults"></div>
+    <div class="search-foot">
+      <span><b>↑↓</b> 이동</span><span><b>Enter</b> 열기</span><span><b>⌘K</b> / <b>ESC</b></span>
+    </div>
+  </div>
+</div>
+
+<script define:vars={{ searchUrl }}>
+  const overlay = document.getElementById('searchOverlay');
+  const input = document.getElementById('searchInput');
+  const box = document.getElementById('searchResults');
+  let posts = [];
+  let srIndex = 0;
+  let loaded = false;
+
+  async function ensureData() {
+    if (loaded) return;
+    try {
+      const res = await fetch(searchUrl);
+      posts = await res.json();
+      loaded = true;
+    } catch (e) {
+      posts = [];
+    }
+  }
+
+  function render(q) {
+    q = q.trim().toLowerCase();
+    const list = q
+      ? posts.filter((p) => (p.title + ' ' + p.category + ' ' + p.tags.join(' ')).toLowerCase().includes(q))
+      : posts;
+    srIndex = 0;
+    if (!list.length) {
+      box.innerHTML = `<div class="sr-empty">'${q}'에 대한 결과가 없습니다</div>`;
+      return;
+    }
+    box.innerHTML = list
+      .map(
+        (p, k) => `
+      <a class="sr-item ${k === 0 ? 'is-active' : ''}" href="${p.url}">
+        <span class="sr-item__cat">${p.category}</span>
+        <span class="sr-item__title">${p.title}</span>
+        <span class="sr-item__tags">${p.tags.map((t) => '#' + t).join('  ')} · ${p.date}</span>
+      </a>`
+      )
+      .join('');
+  }
+
+  function open() {
+    ensureData().then(() => {
+      overlay.classList.add('is-open');
+      input.value = '';
+      render('');
+      setTimeout(() => input.focus(), 40);
+    });
+  }
+  function close() {
+    overlay.classList.remove('is-open');
+  }
+  function move(d) {
+    const items = box.querySelectorAll('.sr-item');
+    if (!items.length) return;
+    srIndex = (srIndex + d + items.length) % items.length;
+    items.forEach((el, k) => el.classList.toggle('is-active', k === srIndex));
+    items[srIndex].scrollIntoView({ block: 'nearest' });
+  }
+
+  document.getElementById('searchBtn')?.addEventListener('click', open);
+  input?.addEventListener('input', (e) => render(e.target.value));
+  overlay?.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      open();
+      return;
+    }
+    if (!overlay.classList.contains('is-open')) return;
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+    if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+    if (e.key === 'Enter') {
+      const el = box.querySelectorAll('.sr-item')[srIndex];
+      if (el) window.location.href = el.getAttribute('href');
+    }
+  });
+</script>

@@ -1,0 +1,49 @@
+---
+import { CATEGORIES } from '../consts';
+import { href, catColor } from '../utils';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  posts: CollectionEntry<'blog'>[];
+  active?: string; // 활성 카테고리 ('전체' 또는 카테고리명)
+  showTags?: boolean;
+  id?: string; // 모바일 드로어 토글용 고유 id
+}
+const { posts, active = '전체', showTags = true, id = 'sidebar' } = Astro.props;
+
+const cats = ['전체', ...Object.keys(CATEGORIES)];
+const countFor = (c: string) => (c === '전체' ? posts.length : posts.filter((p) => p.data.category === c).length);
+
+const allTags = [...new Set(posts.flatMap((p) => p.data.tags))];
+---
+
+<aside class="sidebar" id={id}>
+  <div class="side-block">
+    <p class="side-title">카테고리</p>
+    <ul class="cat-list">
+      {cats.map((c) => {
+        const color = c === '전체' ? 'var(--muted)' : catColor(c);
+        const link = c === '전체' ? href('blog/') : href('blog/') + '?category=' + encodeURIComponent(c);
+        return (
+          <li>
+            <a class:list={['cat-item', { 'is-active': c === active }]} href={link} data-cat={c}>
+              <span class="label"><span class="dot" style={`background:${color}`}></span>{c}</span>
+              <span class="count">{countFor(c)}</span>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+
+  {showTags && allTags.length > 0 && (
+    <div class="side-block">
+      <p class="side-title">인기 태그</p>
+      <div class="tag-cloud">
+        {allTags.map((t) => (
+          <a class="tag" href={href('blog/') + '?tag=' + encodeURIComponent(t)} data-tag={t}>{t}</a>
+        ))}
+      </div>
+    </div>
+  )}
+</aside>

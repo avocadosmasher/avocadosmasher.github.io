@@ -1,0 +1,128 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sidebar from '../../components/Sidebar.astro';
+import PostCard from '../../components/PostCard.astro';
+
+const posts = (await getCollection('blog'))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout title="블로그" active="블로그">
+  <div class="shell is-list">
+    <Sidebar posts={posts} id="sidebar" />
+
+    <main>
+      <button class="sidebar-toggle" data-target="sidebar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h13"/></svg>
+        카테고리
+      </button>
+
+      <div class="list-head">
+        <div>
+          <h1 id="listTitle">전체 글</h1>
+          <p class="sub"><b id="listCount">{posts.length}</b>편의 글 · <span id="listFilter">모든 카테고리</span></p>
+        </div>
+        <div class="mini-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="inlineSearch" placeholder="이 목록에서 검색…" />
+        </div>
+      </div>
+
+      <div class="card-grid" id="cardGrid">
+        {posts.map((post) => <PostCard post={post} />)}
+        <div class="empty" id="emptyState" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><br>
+          조건에 맞는 글이 없습니다.
+        </div>
+      </div>
+    </main>
+  </div>
+</BaseLayout>
+
+<script>
+  const grid = document.getElementById('cardGrid');
+  const cards = Array.from(grid.querySelectorAll('.card'));
+  const empty = document.getElementById('emptyState');
+  const listTitle = document.getElementById('listTitle');
+  const listCount = document.getElementById('listCount');
+  const listFilter = document.getElementById('listFilter');
+  const inlineSearch = document.getElementById('inlineSearch');
+
+  let activeCat = '전체';
+  let activeTag = null;
+  let query = '';
+
+  // URL 쿼리(?category=, ?tag=)로 초기 필터 설정
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('category')) activeCat = params.get('category');
+  if (params.get('tag')) activeTag = params.get('tag');
+
+  function apply() {
+    let shown = 0;
+    cards.forEach((card) => {
+      const cat = card.getAttribute('data-category');
+      const tags = (card.getAttribute('data-tags') || '').split(',');
+      const title = (card.getAttribute('data-title') || '').toLowerCase();
+      let ok = true;
+      if (activeCat !== '전체' && cat !== activeCat) ok = false;
+      if (activeTag && !tags.includes(activeTag)) ok = false;
+      if (query) {
+        const hay = (title + ' ' + cat + ' ' + tags.join(' ')).toLowerCase();
+        if (!hay.includes(query)) ok = false;
+      }
+      card.style.display = ok ? '' : 'none';
+      if (ok) shown++;
+    });
+
+    empty.style.display = shown ? 'none' : '';
+    listCount.textContent = String(shown);
+    listTitle.textContent = activeCat === '전체' ? '전체 글' : activeCat;
+    let f = activeCat === '전체' ? '모든 카테고리' : activeCat;
+    if (activeTag) f += ` · #${activeTag}`;
+    if (query) f += ` · "${query}"`;
+    listFilter.textContent = f;
+
+    // 사이드바 활성 표시 갱신
+    document.querySelectorAll('.cat-item').forEach((el) =>
+      el.classList.toggle('is-active', el.getAttribute('data-cat') === activeCat)
+    );
+    document.querySelectorAll('.tag-cloud .tag').forEach((el) =>
+      el.classList.toggle('is-active', el.getAttribute('data-tag') === activeTag)
+    );
+  }
+
+  // 사이드바 카테고리 클릭 → 새로고침 없이 필터
+  document.querySelectorAll('.cat-item').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      activeCat = el.getAttribute('data-cat');
+      activeTag = null;
+      query = '';
+      inlineSearch.value = '';
+      apply();
+      closeDrawer();
+    });
+  });
+  // 태그 클릭 → 토글 필터
+  document.querySelectorAll('.tag-cloud .tag').forEach((el) => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const t = el.getAttribute('data-tag');
+      activeTag = activeTag === t ? null : t;
+      apply();
+    });
+  });
+  inlineSearch.addEventListener('input', (e) => {
+    query = e.target.value.trim().toLowerCase();
+    apply();
+  });
+
+  function closeDrawer() {
+    document.querySelectorAll('.sidebar').forEach((s) => s.classList.remove('is-open'));
+    document.getElementById('backdrop')?.classList.remove('is-open');
+  }
+
+  apply();
+</script>

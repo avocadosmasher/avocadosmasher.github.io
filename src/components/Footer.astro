@@ -1,0 +1,11 @@
+---
+import { SITE, PROFILE } from '../consts';
+const year = new Date().getFullYear();
+---
+
+<footer class="foot">
+  <div class="foot__inner">
+    <span>© {year} <b>{SITE.title}</b> — built with Astro + GitHub Pages</span>
+    <span>Made by {PROFILE.name}</span>
+  </div>
+</footer>

@@ -1,0 +1,279 @@
+/*
+  Astro blog preview for Obsidian.
+
+  Enable in Obsidian:
+  Settings > Appearance > CSS snippets > astro-preview
+*/
+
+body {
+  --astro-paper: #FAFAF6;
+  --astro-surface: #FFFFFF;
+  --astro-ink: #17171F;
+  --astro-ink-soft: #41414C;
+  --astro-muted: #76767F;
+  --astro-line: #E9E7DF;
+  --astro-line-strong: #DAD8CE;
+  --astro-accent: #5849E0;
+  --astro-accent-ink: #4234C2;
+  --astro-accent-soft: #ECEAFB;
+  --astro-code-bg: #191921;
+  --astro-code-text: #E6E6EE;
+  --astro-code-line: #2C2C38;
+  --astro-font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --astro-font-body: "Inter", system-ui, -apple-system, sans-serif;
+  --astro-font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --background-primary: var(--astro-paper);
+  --background-secondary: var(--astro-surface);
+  --text-normal: var(--astro-ink-soft);
+  --text-muted: var(--astro-muted);
+  --text-accent: var(--astro-accent);
+  --interactive-accent: var(--astro-accent);
+  --font-text: var(--astro-font-body);
+  --font-monospace: var(--astro-font-mono);
+}
+
+body.theme-dark {
+  --astro-paper: #0E0E13;
+  --astro-surface: #16161D;
+  --astro-ink: #F2F2F6;
+  --astro-ink-soft: #CBCBD4;
+  --astro-muted: #8A8A95;
+  --astro-line: #272730;
+  --astro-line-strong: #33333E;
+  --astro-accent: #8C7DFF;
+  --astro-accent-ink: #A99DFF;
+  --astro-accent-soft: #1D1A33;
+  --astro-code-bg: #0A0A0F;
+  --astro-code-text: #E6E6EE;
+  --astro-code-line: #23232E;
+}
+
+.markdown-preview-view,
+.markdown-source-view.mod-cm6 .cm-scroller {
+  background: var(--astro-paper);
+  color: var(--astro-ink-soft);
+  font-family: var(--astro-font-body);
+  font-size: 16.5px;
+  line-height: 1.78;
+}
+
+.markdown-preview-view .markdown-preview-sizer,
+.markdown-source-view.mod-cm6 .cm-content {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 34px 24px 80px;
+}
+
+.markdown-preview-view h1,
+.markdown-preview-view h2,
+.markdown-preview-view h3,
+.markdown-source-view.mod-cm6 .HyperMD-header-1,
+.markdown-source-view.mod-cm6 .HyperMD-header-2,
+.markdown-source-view.mod-cm6 .HyperMD-header-3 {
+  color: var(--astro-ink);
+  font-family: var(--astro-font-display);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.markdown-preview-view h1,
+.markdown-source-view.mod-cm6 .HyperMD-header-1 {
+  font-size: 40px;
+  line-height: 1.12;
+  margin: 14px 0 18px;
+}
+
+.markdown-preview-view h2,
+.markdown-source-view.mod-cm6 .HyperMD-header-2 {
+  font-size: 25px;
+  margin: 48px 0 16px;
+}
+
+.markdown-preview-view h3,
+.markdown-source-view.mod-cm6 .HyperMD-header-3 {
+  font-size: 19px;
+  margin: 34px 0 12px;
+}
+
+.markdown-preview-view p,
+.markdown-source-view.mod-cm6 .cm-line {
+  margin-bottom: 18px;
+}
+
+.markdown-preview-view strong,
+.markdown-source-view.mod-cm6 .cm-strong {
+  color: var(--astro-ink);
+  font-weight: 600;
+}
+
+.markdown-preview-view a,
+.markdown-source-view.mod-cm6 .cm-link,
+.markdown-source-view.mod-cm6 .cm-url {
+  color: var(--astro-accent);
+  font-weight: 500;
+  text-decoration-color: color-mix(in srgb, var(--astro-accent) 35%, transparent);
+}
+
+.markdown-preview-view ul,
+.markdown-preview-view ol {
+  margin: 0 0 18px;
+  padding-left: 22px;
+}
+
+.markdown-preview-view li {
+  margin-bottom: 8px;
+}
+
+.markdown-preview-view code,
+.markdown-source-view.mod-cm6 :not(pre) > code,
+.markdown-source-view.mod-cm6 .cm-inline-code {
+  background: var(--astro-accent-soft);
+  color: var(--astro-accent-ink);
+  border-radius: 6px;
+  font-family: var(--astro-font-mono);
+  font-size: 0.86em;
+  padding: 2px 6px;
+}
+
+.markdown-preview-view pre,
+.markdown-source-view.mod-cm6 .HyperMD-codeblock,
+.markdown-source-view.mod-cm6 .cm-line.HyperMD-codeblock {
+  background: var(--astro-code-bg);
+  color: var(--astro-code-text);
+  border: 1px solid var(--astro-code-line);
+  font-family: var(--astro-font-mono);
+}
+
+.markdown-preview-view pre {
+  border-radius: 14px;
+  margin: 0 0 22px;
+  overflow-x: auto;
+  padding: 18px 20px;
+}
+
+.markdown-preview-view pre code {
+  background: none;
+  color: var(--astro-code-text);
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.7;
+  padding: 0;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-codeblock-begin {
+  border-radius: 14px 14px 0 0;
+  border-bottom: 0;
+  padding-top: 12px;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-codeblock-end {
+  border-radius: 0 0 14px 14px;
+  border-top: 0;
+  margin-bottom: 22px;
+  padding-bottom: 12px;
+}
+
+.markdown-preview-view blockquote,
+.markdown-source-view.mod-cm6 .HyperMD-quote {
+  background: var(--astro-accent-soft);
+  border-left: 3px solid var(--astro-accent);
+  color: var(--astro-ink-soft);
+}
+
+.markdown-preview-view blockquote {
+  border-radius: 0 10px 10px 0;
+  margin: 0 0 22px;
+  padding: 4px 20px;
+}
+
+.markdown-preview-view blockquote p {
+  margin: 8px 0;
+}
+
+.markdown-source-view.mod-cm6 .HyperMD-quote {
+  padding-left: 16px;
+}
+
+.markdown-preview-view img {
+  border-radius: 12px;
+  max-width: 100%;
+}
+
+.markdown-preview-view table {
+  border-collapse: collapse;
+  display: block;
+  font-size: 14.5px;
+  margin: 0 0 22px;
+  overflow-x: auto;
+  width: 100%;
+}
+
+.markdown-preview-view th,
+.markdown-preview-view td {
+  border: 1px solid var(--astro-line-strong);
+  padding: 9px 13px;
+  text-align: left;
+}
+
+.markdown-preview-view th {
+  background: var(--astro-accent-soft);
+  color: var(--astro-ink);
+  font-weight: 600;
+}
+
+.markdown-preview-view tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--astro-ink) 3%, transparent);
+}
+
+.markdown-preview-view hr {
+  border: none;
+  border-top: 1px solid var(--astro-line-strong);
+  margin: 36px 0;
+}
+
+.markdown-preview-view .contains-task-list {
+  list-style: none;
+  padding-left: 4px;
+}
+
+.markdown-preview-view .task-list-item {
+  align-items: flex-start;
+  display: flex;
+  gap: 9px;
+}
+
+.markdown-preview-view .task-list-item input,
+.markdown-source-view.mod-cm6 input[type="checkbox"] {
+  accent-color: var(--astro-accent);
+}
+
+.metadata-container {
+  background: var(--astro-surface);
+  border: 1px solid var(--astro-line);
+  border-radius: 12px;
+  margin-bottom: 28px;
+  padding: 12px 14px;
+}
+
+.metadata-property-key {
+  color: var(--astro-muted);
+  font-family: var(--astro-font-mono);
+}
+
+.metadata-property-value {
+  color: var(--astro-ink-soft);
+}
+
+@media (max-width: 560px) {
+  .markdown-preview-view .markdown-preview-sizer,
+  .markdown-source-view.mod-cm6 .cm-content {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .markdown-preview-view h1,
+  .markdown-source-view.mod-cm6 .HyperMD-header-1 {
+    font-size: 32px;
+  }
+}

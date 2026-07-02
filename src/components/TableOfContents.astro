@@ -1,0 +1,74 @@
+---
+import type { MarkdownHeading } from 'astro';
+
+interface Props {
+  headings: MarkdownHeading[];
+}
+const { headings } = Astro.props;
+// h2, h3 만 목차에 표시
+const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{items.length > 0 && (
+  <nav class="toc" id="toc">
+    <p class="toc__label">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      목차
+    </p>
+    <div class="toc__spine">
+      <div class="toc__rail"></div>
+      <div class="toc__fill" id="tocFill"></div>
+      <ul class="toc__list">
+        {items.map((h) => (
+          <li class:list={['toc__item', { sub: h.depth === 3 }]} data-target={h.slug}>{h.text}</li>
+        ))}
+      </ul>
+    </div>
+  </nav>
+)}
+
+<!-- 모바일: 우하단 floating 목차 버튼 -->
+{items.length > 0 && (
+  <button class="toc-fab" id="tocFab" aria-label="목차로 이동">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+  </button>
+)}
+
+<script>
+  const tocItems = Array.from(document.querySelectorAll('.toc__item'));
+  const headingEls = tocItems
+    .map((it) => document.getElementById(it.getAttribute('data-target')))
+    .filter((el) => el);
+  const fill = document.getElementById('tocFill');
+
+  // 클릭 시 부드럽게 이동
+  tocItems.forEach((it) => {
+    it.addEventListener('click', () => {
+      const el = document.getElementById(it.getAttribute('data-target'));
+      el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // 현재 보고 있는 섹션 강조 + 진행률 채우기
+  if (headingEls.length) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            const id = e.target.id;
+            tocItems.forEach((it) => it.classList.toggle('is-active', it.getAttribute('data-target') === id));
+            const idx = headingEls.indexOf(e.target);
+            if (fill) fill.style.height = (((idx + 1) / headingEls.length) * 100) + '%';
+          }
+        });
+      },
+      { rootMargin: '-80px 0px -65% 0px', threshold: 0 }
+    );
+    headingEls.forEach((h) => observer.observe(h));
+  }
+
+  // 모바일 목차 버튼 → 목차 위치로 스크롤
+  document.getElementById('tocFab')?.addEventListener('click', () => {
+    document.getElementById('toc')?.scrollIntoView({ behavior: 'smooth' });
+  });
+</script>

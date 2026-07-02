@@ -1,0 +1,124 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { PROFILE, ABOUT_INTRO, CAREER, PROJECTS, SKILLS } from '../../consts';
+import { href } from '../../utils';
+
+// PROFILE.socials 에 실제로 값이 있는 것만 노출 (빈 링크 방지)
+const socialEntries = Object.entries(PROFILE.socials).filter(([, url]) => !!url);
+---
+
+<BaseLayout title="소개" description={`${PROFILE.name} — ${PROFILE.role}`} active="소개">
+  <div class="home about">
+    <!-- ── 헤더 + 자기소개 ─────────────────────────── -->
+    <section class="about-head">
+      <div class="about-intro">
+        <p class="hero__eyebrow">{PROFILE.role} · {PROFILE.location}</p>
+        <h1>소개</h1>
+        {ABOUT_INTRO.map((para) => <p class="lead">{para}</p>)}
+        <div class="about-actions">
+          <a class="btn btn--primary" href={`mailto:${PROFILE.email}`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
+            이메일 보내기
+          </a>
+          <a class="btn btn--ghost" href={PROFILE.github} target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </div>
+
+      <aside class="about-card">
+        <div class="avatar">{PROFILE.initials}</div>
+        <h3>{PROFILE.name}</h3>
+        <p class="role">{PROFILE.handle}</p>
+        <div class="profile-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9 6 9-6"/><rect x="3" y="5" width="18" height="14" rx="2"/></svg>
+          {PROFILE.email}
+        </div>
+        <div class="profile-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+          {PROFILE.website}
+        </div>
+        {socialEntries.length > 0 && (
+          <div class="socials">
+            {socialEntries.map(([name, url]) => (
+              <a href={url} target="_blank" rel="noopener" aria-label={name}>
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12c0 4.4 2.9 8.2 6.8 9.5.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.6.3-1.1.6-1.4-2.2-.2-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.6 0 0 .8-.3 2.7 1a9.4 9.4 0 0 1 5 0c1.9-1.3 2.7-1 2.7-1 .5 1.3.2 2.3.1 2.6.6.7 1 1.6 1 2.7 0 3.9-2.3 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 22 12c0-5.5-4.5-10-10-10z"/></svg>
+              </a>
+            ))}
+          </div>
+        )}
+      </aside>
+    </section>
+
+    <!-- ── 경력 ─────────────────────────────────────── -->
+    {CAREER.length > 0 && (
+      <section class="home-section">
+        <div class="section-head"><h2>경력</h2></div>
+        <div class="timeline">
+          {CAREER.map((job) => (
+            <div class="tl-item">
+              <span class="tl-period">{job.period}</span>
+              <div class="tl-body">
+                <h3 class="tl-role">
+                  {job.role} <span class="tl-at">@ {job.company}</span>
+                </h3>
+                {job.summary && <p class="tl-summary">{job.summary}</p>}
+                {job.points && job.points.length > 0 && (
+                  <ul class="tl-points">
+                    {job.points.map((pt) => <li>{pt}</li>)}
+                  </ul>
+                )}
+                {job.stack && job.stack.length > 0 && (
+                  <div class="chip-row">
+                    {job.stack.map((s) => <span class="chip">{s}</span>)}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ── 프로젝트 ─────────────────────────────────── -->
+    {PROJECTS.length > 0 && (
+      <section class="home-section">
+        <div class="section-head"><h2>프로젝트</h2></div>
+        <div class="proj-grid">
+          {PROJECTS.map((proj) => (
+            <div class="proj-card">
+              <div class="proj-top">
+                <h3 class="proj-name">{proj.name}</h3>
+                {proj.link && (
+                  <a class="proj-link" href={proj.link} target="_blank" rel="noopener" aria-label={`${proj.name} 링크`}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17 17 7M9 7h8v8"/></svg>
+                  </a>
+                )}
+              </div>
+              {(proj.role || proj.period) && (
+                <p class="proj-meta">{[proj.role, proj.period].filter(Boolean).join(' · ')}</p>
+              )}
+              <p class="proj-desc">{proj.description}</p>
+              {proj.highlights && proj.highlights.length > 0 && (
+                <ul class="proj-highlights">
+                  {proj.highlights.map((h) => <li>{h}</li>)}
+                </ul>
+              )}
+              {proj.stack && proj.stack.length > 0 && (
+                <div class="chip-row">
+                  {proj.stack.map((s) => <span class="chip">{s}</span>)}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+    )}
+
+    <!-- ── 기술 스택 ────────────────────────────────── -->
+    <section class="home-section">
+      <div class="section-head"><h2>기술 스택</h2></div>
+      <div class="skill-strip">
+        {SKILLS.map((s, i) => <span class="skill" set:html={i % 4 === 0 ? `<em>${s}</em>` : s}></span>)}
+      </div>
+    </section>
+  </div>
+</BaseLayout>

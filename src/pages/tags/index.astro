@@ -1,0 +1,55 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { href } from '../../utils';
+
+const posts = (await getCollection('blog')).filter((p) => !p.data.draft);
+
+// 태그별 글 개수 집계
+const counts = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+}
+
+// 많이 쓴 순 → 같으면 이름순
+const tags = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ko'));
+
+// 가장 많은 개수 (글씨 크기 강조 기준)
+const max = tags.length ? tags[0][1] : 1;
+---
+
+<BaseLayout title="태그" description="글에 사용된 모든 태그" active="태그">
+  <div class="home">
+    <section class="tags-head">
+      <p class="hero__eyebrow">TAGS</p>
+      <h1>태그</h1>
+      <p class="lead">
+        총 <b>{tags.length}</b>개의 태그 · 태그를 누르면 해당 글만 모아 볼 수 있습니다.
+      </p>
+    </section>
+
+    <section class="home-section tags-section">
+      {tags.length > 0 ? (
+        <div class="tag-index">
+          {tags.map(([tag, count]) => (
+            <a
+              class="tag-chip"
+              href={href('blog/') + '?tag=' + encodeURIComponent(tag)}
+              style={`--w:${0.9 + (count / max) * 0.5}`}
+            >
+              <span class="tag-chip__name">{tag}</span>
+              <span class="tag-chip__count">{count}</span>
+            </a>
+          ))}
+        </div>
+      ) : (
+        <div class="empty">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.6 13.4 12 22l-9-9V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg><br>
+          아직 태그가 없습니다.
+        </div>
+      )}
+    </section>
+  </div>
+</BaseLayout>

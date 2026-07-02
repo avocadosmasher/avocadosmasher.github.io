@@ -1,0 +1,68 @@
+---
+import { SITE, NAV } from '../consts';
+import { href } from '../utils';
+
+interface Props {
+  active?: string; // 현재 활성 메뉴 라벨
+}
+const { active = '홈' } = Astro.props;
+---
+
+<header class="nav" id="nav">
+  <div class="nav__inner">
+    <a class="brand" href={href('')}>
+      <span class="brand__mark"><span>&lt;/&gt;</span></span>
+      dev<b>log</b>
+    </a>
+    <nav class="nav__menu" id="navMenu">
+      {NAV.map((item) => (
+        <a class:list={['nav__link', { 'is-active': item.label === active }]} href={href(item.path)}>
+          {item.label}
+        </a>
+      ))}
+    </nav>
+    <div class="nav__spacer"></div>
+    <div class="nav__tools">
+      <button class="icon-btn" id="searchBtn" aria-label="검색">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+      <button class="icon-btn" id="themeBtn" aria-label="테마 전환">
+        <svg id="iconMoon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <button class="icon-btn nav__burger" id="burger" aria-label="메뉴">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<script>
+  // 햄버거 토글
+  const burger = document.getElementById('burger');
+  const menu = document.getElementById('navMenu');
+  burger?.addEventListener('click', () => menu?.classList.toggle('is-open'));
+
+  // 테마 토글 (+ localStorage 저장)
+  const sun = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4 12H2M22 12h-2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19"/>';
+  const moon = '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>';
+  const themeBtn = document.getElementById('themeBtn');
+  const icon = document.getElementById('iconMoon');
+  function syncIcon() {
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (icon) icon.innerHTML = dark ? sun : moon;
+  }
+  syncIcon();
+  themeBtn?.addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    syncIcon();
+  });
+
+  // 스크롤 시 navbar 축소
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav?.classList.toggle('nav--compact', window.scrollY > 40);
+  }, { passive: true });
+</script>

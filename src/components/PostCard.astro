@@ -1,0 +1,41 @@
+---
+import { catColor, postHref, fmtDate } from '../utils';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+const { post } = Astro.props;
+const { title, description, category, tags, pubDate, readingTime } = post.data;
+const color = catColor(category);
+---
+
+<a
+  class="card"
+  href={postHref(post.id)}
+  style={`--cat-color:${color}`}
+  data-category={category}
+  data-tags={tags.join(',')}
+  data-title={title}
+>
+  <span class="card__cat" style={`--cat-color:${color}`}>
+    <span class="dot"></span>{category}
+  </span>
+  <h3>{title}</h3>
+  <p class="card__excerpt">{description}</p>
+  <div class="card__tags">
+    {tags.map((t) => <span class="card__tag">{t}</span>)}
+  </div>
+  <div class="card__foot">
+    <span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg>
+      {fmtDate(pubDate)}
+    </span>
+    {readingTime && (
+      <span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        {readingTime}
+      </span>
+    )}
+  </div>
+</a>
