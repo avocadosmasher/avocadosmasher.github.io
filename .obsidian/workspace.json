@@ -183,9 +183,20 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "a483558e7f44467c",
+  "active": "7770073e77978183",
   "lastOpenFiles": [
-    "astro.config.mjs.tmp.32276.b1045afc7890",
+    "dist/_astro/example.wrKIeb61_Z8SogO.webp",
+    "dist/tags/index.html",
+    "dist/tags",
+    "dist/search.json",
+    "dist/index.html",
+    "dist/blog/templates/index.html",
+    "dist/blog/templates",
+    "dist/blog/index.html",
+    "dist/blog",
+    "dist/about/index.html",
+    "dist/about",
+    "dist/_astro/example.wrKIeb61.png",
     "운영가이드.md"
   ]
 }

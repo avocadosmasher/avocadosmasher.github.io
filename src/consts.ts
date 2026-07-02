@@ -91,6 +91,65 @@ export interface ProjectItem {
 // 프로젝트 — 소개하고 싶은 것만 골라 담으세요.
 export const PROJECTS: ProjectItem[] = [
   {
+    name: '세원물산: Jira/Confluence Cloud PMS 구축',
+    period: '2025.07 – 2025.10',
+    role: 'Automation & Script',
+    description: 'Jira/Confluence Cloud 기반 PMS 구축을 위한 기술 자문과 Automation·Script 개발로 고객 요구사항에 맞춘 워크플로를 구성했습니다.',
+    highlights: [
+      'Jira 이슈 완료 처리 시 요약본과 첨부 파일을 Confluence 페이지에 자동 업로드하는 기능 구현 (페이지 트리 및 케이스별 예외 처리 포함)',
+    ],
+    stack: ['Jira', 'Confluence', 'Automation'],
+  },
+  {
+    name: '제일기획: Atlassian 2FA 중계 서버 개발',
+    period: '2025.04 – 2025.06',
+    role: '아키텍처 설계 · 개발',
+    description: 'Jira/Confluence 2FA 플러그인과 고객사 메신저 간 데이터 포맷 불일치 문제를 해결하기 위해 Node.js 기반 OTP 중계 서버를 직접 개발했습니다.',
+    highlights: [
+      'axios-retry로 네트워크 재시도 로직을, pm2로 프로세스 이중화를 구현해 안정성 확보',
+      'await/Promise 기반 토큰 재발급 로직을 구성해 임계 구역(Critical Section) 이슈 방지',
+    ],
+    stack: ['Node.js', 'Axios', 'PM2'],
+  },
+  {
+    name: '삼성전자 DS: Atlassian 시스템 이관 및 통합',
+    period: '2024.03 – 2025.03',
+    role: 'DB 파라미터 최적화',
+    description: 'Oracle → MySQL DB 마이그레이션을 포함해 삼성전자 DS 내 다양한 Jira/Confluence 서버를 이관·통합했습니다.',
+    highlights: [
+      '마이그레이션 6시간 경과 시 발생하는 DB Pool Connection 단절 현상을 wait_timeout·interactive_timeout 상관관계 분석으로 원인 규명',
+      '특정 접속 툴 사용 시 글로벌 변수가 덮어씌워지는 문제를 찾아 수정, 이관 작업 정상화',
+    ],
+    stack: ['Oracle', 'MySQL', 'Atlassian'],
+  },
+  {
+    name: '삼성전자 DX: Atlassian Migration & Upgrade',
+    period: '2023.09 – 2024.02',
+    role: '마이그레이션 전략 수립 · 실행',
+    description: '대규모 엔터프라이즈 환경에서 Atlassian 솔루션 마이그레이션 및 업그레이드를 수행했습니다.',
+    highlights: [
+      '운영 서버 부하로 백업이 거부된 상황에서 rsync --bwlimit 옵션을 제안, 대역폭을 제한해 운영 영향 없이 사전 백업 성공',
+      '작업 당일 소요 시간을 4시간 이상 단축해 마이그레이션 성공률 제고',
+    ],
+    stack: ['Atlassian', 'Linux', 'rsync'],
+  },
+  {
+    name: '제일기획: Atlassian Kubernetes 환경 구축',
+    period: '2023.03 – 2023.08',
+    role: 'K8s 기반 인프라 배포',
+    description: 'Jira/Confluence 제품군을 Kubernetes 환경에 온보딩하여 클라우드 네이티브 환경으로의 전환을 지원했습니다.',
+    stack: ['Kubernetes', 'Atlassian'],
+  },
+  {
+    name: '인프라 구축 자동화 (사내 프로젝트)',
+    role: '테스트 환경 자동화',
+    description: 'Vagrant와 Ansible을 결합한 하이브리드 IaC 구조로 테스트 환경 구축을 자동화했습니다.',
+    highlights: [
+      '기존 수동 구축 대비 작업 시간을 2시간(케이스별 상이)에서 15분 내외로 단축',
+    ],
+    stack: ['Vagrant', 'Ansible'],
+  },
+  {
     name: '기술 블로그 (devlog)',
     period: '2026',
     role: '개인 프로젝트',
@@ -101,14 +160,6 @@ export const PROJECTS: ProjectItem[] = [
     ],
     stack: ['Astro', 'TypeScript'],
     link: 'https://github.com/avocadosmasher',
-  },
-  {
-    name: '프로젝트명',            // ← 본인 프로젝트로 교체 (없으면 이 블록 삭제)
-    period: '2025',
-    role: '팀 프로젝트 · 백엔드',
-    description: '한 줄로 무엇을 만들었고 어떤 문제를 풀었는지 적으세요.',
-    highlights: ['핵심 성과나 배운 점을 적으세요'],
-    stack: ['Python', 'Docker'],
   },
 ];
 
