@@ -4,21 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "e64a0d6dbab5b57e",
+        "id": "cb9c9ac3cded85e8",
         "type": "tabs",
         "children": [
           {
-            "id": "7770073e77978183",
+            "id": "a87595bc61f39a1c",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "운영가이드.md",
+                "file": "src/content/blog/AI Engineering 9주차 Day3 RAG 구현/index.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "운영가이드"
+              "title": "index"
             }
           }
         ]
@@ -183,20 +183,36 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "7770073e77978183",
+  "active": "a87595bc61f39a1c",
   "lastOpenFiles": [
+    "src/content/blog/AI Engineering 9주차 Day1/index.md",
+    "src/content/blog/AI Engineering 10주차 Day1 LangChain/index.md",
+    "src/content/blog/templates/index.md",
+    "src/content/blog/AI Engineering 9주차 Day4 프로젝트/index.md",
+    "src/content/blog/AI Engineering 9주차 Day3 RAG 구현/index.md",
+    "src/content/blog/AI Engineering 10주차 Day1 LangChain",
+    "src/content/blog/templates/example.png",
+    "src/content/blog/AI Engineering 9주차 Day3 RAG 구현/IDF공식.png",
+    "Pasted image 20260705225501.png",
+    "Pasted image 20260705225459.png",
+    "src/content/blog/AI Engineering 9주차 Day2",
+    "src/content/blog/AI Engineering 9주차 Day1",
+    "src/content/blog/AI Engineering 9주차 Day4 프로젝트/faiss_index_vs_vectordb.png",
+    "Pasted image 20260704174928.png",
+    "src/content/blog/AI Engineering 9주차/Week 9. Rag & Embedding.md",
+    "src/content/blog/템플릿.md",
+    "2026-07-01.md",
+    "src/content/blog/AI Engineering 9주차 Day4 프로젝트",
+    "무제.canvas",
+    "src/content/blog/index.md",
+    "운영가이드.md",
+    "src/content/blog/AI Engineering 9주차 Day3 RAG 구현",
     "dist/_astro/example.wrKIeb61_Z8SogO.webp",
     "dist/tags/index.html",
     "dist/tags",
     "dist/search.json",
     "dist/index.html",
     "dist/blog/templates/index.html",
-    "dist/blog/templates",
-    "dist/blog/index.html",
-    "dist/blog",
-    "dist/about/index.html",
-    "dist/about",
-    "dist/_astro/example.wrKIeb61.png",
-    "운영가이드.md"
+    "dist/_astro/example.wrKIeb61.png"
   ]
 }

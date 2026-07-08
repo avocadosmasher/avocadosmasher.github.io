@@ -1,14 +1,14 @@
 ---
-# ▼ 프론트매터: 맨 위 --- 와 --- 사이. 글의 메타데이터입니다.
-title: Templates                   # (필수) 글 제목
-description: 카드·검색·SEO 에 보이는 한 줄 요약  # (필수) 한 문장 요약
-category: Frontend                         # (필수) consts.ts 의 CATEGORIES 중 하나
-tags: [글 탬플릿, 마크다운]                  # (선택) 대괄호 안에 쉼표로 구분
-pubDate: 2026-07-01                        # (필수) 발행일 YYYY-MM-DD, 최신순 정렬 기준
-readingTime: 5분                           # (선택) 비워도 됨
-draft: false                               # true 면 사이트에 안 보임. 완성되면 false 로!
+title: Templates
+description: 카드·검색·SEO 에 보이는 한 줄 요약
+category: Frontend
+tags:
+  - 글-탬플릿
+  - 마크다운
+pubDate: 2026-07-01
+readingTime: 5분
+draft: false
 ---
-
 첫 문단은 도입부입니다. 여기에는 제목(##)을 쓰지 말고, 글이 무엇을 다루는지
 2~3문장으로 편하게 풀어 쓰면 카드 요약과 잘 어울립니다.
 

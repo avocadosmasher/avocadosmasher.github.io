@@ -29,6 +29,7 @@ export const PROFILE = {
 
 // 카테고리 → 색상 (사이드바 점, 카드 강조선, 글 제목 위 라벨에 쓰임)
 export const CATEGORIES: Record<string, string> = {
+  AI: '#007FFF',
   Frontend: '#5849E0',
   Backend: '#0EA5A4',
   DevOps: '#F0883E',
