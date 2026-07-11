@@ -2,10 +2,14 @@
 title: "9주차 Day4 프로젝트: 라이브러리를 활용한 RAG 구현 without LangChain"
 description: 9주차 프로젝트, 실무에서 사용할법한 라이브러리를 활용한 RAG 구현(No LangChain)
 category: AI
-tags: [RAG,Embedding,FAISS,SentenceTransformer]
+tags:
+  - RAG
+  - Embedding
+  - FAISS
+  - SentenceTransformer
 pubDate: 2026-07-04
 readingTime: 5분
-draft: false
+draft: true
 ---
 # RAG 파이프라인 흐름
 RAG를 구현하기에 앞서서 이전에 배웠던 내용들을 바탕으로 RAG 파이프 라인의 흐름을 짚고 넘어가고자 합니다.
