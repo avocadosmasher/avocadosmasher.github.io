@@ -52,7 +52,7 @@ FAISS(Facebook AI Similarity Search)는 Meta(구 Facebook)에서 만든 **벡터
 여기서 저는 또 한 가지 의문이 생겼는데, "벡터 저장 및 유사도 검색에 특화 된 도구"라는 설명을 보고 그럼 VectorDB 같은건가?? 싶었는데 VectorDB와는 또 다르다고 하더군요
 
 그럼 그 차이점이 뭐지? 라는 의문에 조금 더 찾아 본 결과 아래와 같은 구조라고 합니다.
-![[faiss_index_vs_vectordb.png]]
+![faiss index vs vectordb](./faiss_index_vs_vectordb.png)
 말 그대로 FAISS는 Vector DB에서 검색 엔진정도의 역할인듯 하네요.
 
 실제로 FAISS는 vector 값과 그 id만을 저장하고 원본 텍스트는 저장하지 않기 때문에 FAISS 를 사용해서 직접 유사도 검사를 하게 되면 원본 텍스트와 매핑하는 작업은 VectorStore 같은 dataclass를 만들거나 하는 식으로 따로 해줘야 합니다.(또 영속성도 없다보니 프로그램 종료되면 데이터가 저장이 안되니 사실 이 부분만 봐도 DB라고 하기에는 애매하죠)

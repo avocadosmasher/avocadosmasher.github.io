@@ -24,14 +24,16 @@ Claude에서는 다양한 MCP 서버를 제공하며 — 각 벤더들이 열심
 우선 제 목표는 Claude 웹 및 Claude 모바일 앱에서 사용하는 것이기에 MCP 기능을 사용하기 위한 몇 가지 기능을 켜야합니다 — Claude Code에서는 Approve만 하면 되는데 Claude Web 및 모바일 앱에서는 직접 기능을 켜줘야합니다.
 
 우선 Claude 웹 혹은 모바일에서 "프로필(설정) -> 기능" 설정창에 들어갑니다.
-<p align="center">
-	<img src="claude_settings.png" width="40%"/>
-</p>
+<div style="max-width: 40%; margin: 0 auto;">
+
+![claude settings](./claude_settings.png)
+
+</div>
 
 그 후 기능 -> 코드 실행 및 파일 생성에 들어가서 이를 활성화 하면
 Claude에서 Sandbox 환경이 활성화 되며 간단한 프로그램 실행 — MCP 서버의 기동, 임시 파일로 작업 등... — 이 가능하게 됩니다.
 ***p.s 모바일보다 PC WEB 환경에서 설정이 좀 더 상세하게 가능함으로 Desktop web에서 설정 하는 것을 권장합니다.***
-![[Claude_Feature.png]]
+![Claude Feature](./Claude_Feature.png)
 
 ## MCP 연결
 
@@ -41,7 +43,7 @@ MCP 연결은 사실 비교적 간단합니다.  [Atlassian 공식 페이지](ht
 
 이 정도의 프롬프트만으로도 연결이 됩니다. 이렇게 연결을 시도하게 되면 Atlassian 공식 MCP 서버를 아래와 같이 친절하게 찾아서 연결을 하겠냐고 물어봅니다.
 
-![[atlassian rovo mcp 연결화면.png]]
+![atlassian rovo mcp 연결화면](<./atlassian rovo mcp 연결화면.png>)
 
 여기서 사용을 누르고 나면 연결이 되며 몇 가지 인증 과정을 한 후 연결할 Site — Confluence Cloud에서는 하나의 계정에서 다양한 site를 구성하여 site 별로 별도의 Atlassian 제품들을 운영할 수 있습니다. —를 선택하고 나면 이제 연결되어서 사용이 가능합니다.
 
@@ -178,7 +180,7 @@ Atlassian / Jira / Confluence 작업을 요청받으면, 아래 값을 **기본 
 ```
 
 이 정도로 설정하고 나서 간단하게 테스트를 해보면?? 아래와 같이 작업 중에 스킬을 자동으로 찾아서 사용한 흔적이 발견되었네요.
-![[스킬 사용 흔적.png]]
+![스킬 사용 흔적](<./스킬 사용 흔적.png>)
 
 ## MCP 연결하고 끝? — connector 설정 필수
 사실 위처럼 설정하고 끝! 일 것 같지만 현실은 그렇지 않습니다.
@@ -186,11 +188,11 @@ Atlassian / Jira / Confluence 작업을 요청받으면, 아래 값을 **기본 
 
 그럼 어떻게 해결할 수 있나?? 사실 Connector 설정을 따로 해주셔야합니다.
 아까 처럼 설정에 들어오면 사용자 지정 -> 커넥터 로 들어간 후 Atlassian Rovo 커넥터를 선택합니다.
-![[connector 설정.png]]
+![connector 설정](<./connector 설정.png>)
 
 그러고 나면 아래와 같이 다양한 권한이 나열된 설정을 마주할 수 있습니다.
 그중에서 전 Confluence에 글 작성하는 작업을 항상 허용해주고 싶으니 Create Confluence Page를 항상 허용하도록 설정했습니다.
-![[connector confluence page 생성 허용.png]]
+![connector confluence page 생성 허용](<./connector confluence page 생성 허용.png>)
 
 이렇게 하고나면 이제 대화 세션이 바뀌거나 하더라도 더 이상 저에게 귀찮게 물어보지 않습니다!!
 

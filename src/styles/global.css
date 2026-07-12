@@ -296,7 +296,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none;color:inhe
   color:var(--ink-soft);background:var(--accent-soft);border-radius:0 10px 10px 0;
 }
 .prose blockquote p{margin:8px 0;}
-.prose img{max-width:100%;border-radius:12px;}
+.prose img{max-width:100%;height:auto;border-radius:12px;}
 
 /* ---- floating TOC (reading spine) ---- */
 .toc{position:sticky;top:calc(var(--nav-h) + 24px);align-self:start;}

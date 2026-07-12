@@ -11,4 +11,4 @@ draft: true
 ---
 
 LLM의 흐름
-![[src/content/blog/현대 LLM의 동작 방식 이해/llm_full_inference_pipeline.png]]
+![llm full inference pipeline](./llm_full_inference_pipeline.png)
