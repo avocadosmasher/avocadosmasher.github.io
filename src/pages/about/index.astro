@@ -5,6 +5,18 @@ import { href } from '../../utils';
 
 // PROFILE.socials 에 실제로 값이 있는 것만 노출 (빈 링크 방지)
 const socialEntries = Object.entries(PROFILE.socials).filter(([, url]) => !!url);
+
+// period 문자열('2023.03 – 2023.08', '2026', undefined)에서 시작 시점을 숫자로 변환
+function parsePeriodStart(period?: string): number {
+  if (!period) return 0;
+  const m = period.match(/^(\d{4})(?:\.(\d{2}))?/);
+  if (!m) return 0;
+  return parseInt(m[1]) * 100 + (m[2] ? parseInt(m[2]) : 0);
+}
+
+const sortedProjects = [...PROJECTS].sort(
+  (a, b) => parsePeriodStart(a.period) - parsePeriodStart(b.period)
+);
 ---
 
 <BaseLayout title="소개" description={`${PROFILE.name} — ${PROFILE.role}`} active="소개">
@@ -83,7 +95,7 @@ const socialEntries = Object.entries(PROFILE.socials).filter(([, url]) => !!url)
       <section class="home-section">
         <div class="section-head"><h2>프로젝트</h2></div>
         <div class="proj-grid">
-          {PROJECTS.map((proj) => (
+          {sortedProjects.map((proj) => (
             <div class="proj-card">
               <div class="proj-top">
                 <h3 class="proj-name">{proj.name}</h3>

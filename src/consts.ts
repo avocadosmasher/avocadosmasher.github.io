@@ -141,27 +141,6 @@ export const PROJECTS: ProjectItem[] = [
     description: 'Jira/Confluence 제품군을 Kubernetes 환경에 온보딩하여 클라우드 네이티브 환경으로의 전환을 지원했습니다.',
     stack: ['Kubernetes', 'Atlassian'],
   },
-  {
-    name: '인프라 구축 자동화 (사내 프로젝트)',
-    role: '테스트 환경 자동화',
-    description: 'Vagrant와 Ansible을 결합한 하이브리드 IaC 구조로 테스트 환경 구축을 자동화했습니다.',
-    highlights: [
-      '기존 수동 구축 대비 작업 시간을 2시간(케이스별 상이)에서 15분 내외로 단축',
-    ],
-    stack: ['Vagrant', 'Ansible'],
-  },
-  {
-    name: '기술 블로그 (devlog)',
-    period: '2026',
-    role: '개인 프로젝트',
-    description: 'Astro 정적 사이트로 직접 만든 개발 블로그. GitHub Actions 로 빌드해 GitHub Pages 에 자동 배포합니다.',
-    highlights: [
-      '카테고리·태그 필터, 목차 자동 생성, 다크모드 지원',
-      '글은 마크다운 파일만 추가하면 되는 무설정 워크플로',
-    ],
-    stack: ['Astro', 'TypeScript'],
-    link: 'https://github.com/avocadosmasher',
-  },
 ];
 
 // 상단 내비게이션
