@@ -13,7 +13,7 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "src/content/blog/grill me 분석 및 업그레이드 하기/index.md",
+                "file": "src/content/blog/현대 LLM의 동작 방식 이해/index.md",
                 "mode": "source",
                 "source": false
               },
@@ -185,14 +185,23 @@
   },
   "active": "a87595bc61f39a1c",
   "lastOpenFiles": [
+    "src/content/blog/현대 LLM의 동작 방식 이해/llm_full_inference_pipeline.png",
+    "llm_full_inference_pipeline.png",
+    "Pasted image 20260705225501.png",
+    "Pasted image 20260705225459.png",
+    "Pasted image 20260704174928.png",
+    "src/content/blog/grill me 분석 및 업그레이드 하기/index.md",
     "src/content/blog/grill me 분석 및 업그레이드 하기/lost_in_the_middle_u_curve.png",
+    "src/content/blog/AI Engineering 9주차 Day4 프로젝트/index.md",
+    "src/content/blog/현대 LLM의 동작 방식 이해/index.md",
+    "2026-07-01.md",
     "src/content/blog/templates/index.md",
     "src/content/blog/AI Agent/index.md",
+    "src/content/blog/현대 LLM의 동작 방식 이해",
+    "README.md",
     "src/content/blog/AI Engineering 9주차 Day1/index.md",
     "src/content/blog/AI Engineering 9주차 Day3 RAG 구현/index.md",
-    "src/content/blog/AI Engineering 9주차 Day4 프로젝트/index.md",
     "src/content/blog/AI Engineering 10주차 Day1 LangChain/index.md",
-    "src/content/blog/grill me 분석 및 업그레이드 하기/index.md",
     "src/content/blog/templates/example.png",
     "lost_in_the_middle_u_curve.png",
     "src/content/blog/AI Engineering 10주차 Day3/무제",
@@ -201,22 +210,15 @@
     "src/content/blog/grill me 분석 및 업그레이드 하기",
     "src/content/blog/AI Engineering 10주차 Day1 LangChain",
     "src/content/blog/AI Engineering 9주차 Day3 RAG 구현/IDF공식.png",
-    "Pasted image 20260705225501.png",
-    "Pasted image 20260705225459.png",
     "src/content/blog/AI Engineering 9주차 Day2",
     "src/content/blog/AI Engineering 9주차 Day1",
-    "Pasted image 20260704174928.png",
     "src/content/blog/AI Engineering 9주차/Week 9. Rag & Embedding.md",
     "src/content/blog/템플릿.md",
-    "2026-07-01.md",
     "src/content/blog/AI Engineering 9주차 Day4 프로젝트",
     "무제.canvas",
     "src/content/blog/index.md",
     "운영가이드.md",
     "src/content/blog/AI Engineering 9주차 Day3 RAG 구현",
-    "dist/_astro/example.wrKIeb61_Z8SogO.webp",
-    "dist/tags/index.html",
-    "dist/tags",
-    "dist/_astro/example.wrKIeb61.png"
+    "dist/tags/index.html"
   ]
 }
