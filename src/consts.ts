@@ -141,6 +141,13 @@ export const PROJECTS: ProjectItem[] = [
     description: 'Jira/Confluence 제품군을 Kubernetes 환경에 온보딩하여 클라우드 네이티브 환경으로의 전환을 지원했습니다.',
     stack: ['Kubernetes', 'Atlassian'],
   },
+  {
+    name: '삼성전자 DS: 운영 지원 프로젝트',
+    period: '2025.11 – 2026.07(현재 진행)',
+    role: '현장 관리 및 작업 담당',
+    description: '삼성전자 DS 일부 부서의 Jira 시스템 운영 및 업그레이드 지원. 트러블 슈팅, 개발 서버 인프라 변경, 업그레이드 작업 등 고객사의 다양한 요구사항을 처리함.',
+    stack: ['Groovy', 'Jira','Linux','Infra Architecture'],
+  },
 ];
 
 // 상단 내비게이션
