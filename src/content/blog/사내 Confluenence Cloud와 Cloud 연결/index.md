@@ -81,7 +81,7 @@ Atlassian / Jira / Confluence 작업을 요청받으면, 아래 값을 **기본 
  
 - 이름: Youngwoo Kim (김영우)
 - 이메일: rdd0426@plateer.com
-- accountId: `비밀 ㅎㅎ`
+- accountId: `비밀`
 - 타임존: Asia/Seoul
 "내 이슈", "내가 담당한", "나에게 할당된" 처럼 사용자 본인을 가리키는 작업에서는
 위 accountId를 사용한다(Jira에서는 보통 이메일보다 accountId가 더 정확하다).
@@ -90,7 +90,7 @@ Atlassian / Jira / Confluence 작업을 요청받으면, 아래 값을 **기본 
  
 - 사이트 이름: sweplateer
 - URL: https://sweplateer.atlassian.net
-- cloudId: `비밀 ㅎㅎ`
+- cloudId: `비밀`
 - 권한: Jira(읽기/쓰기), Confluence(페이지·댓글 읽기/쓰기, 스페이스·검색 읽기)
 현재 접근 가능한 사이트는 이곳 하나뿐이다. 따라서 cloudId가 필요한 모든 호출에는
 위 cloudId를 그대로 사용하고, `getAccessibleAtlassianResources`나 `atlassianUserInfo`로
@@ -126,7 +126,7 @@ Atlassian / Jira / Confluence 작업을 요청받으면, 아래 값을 **기본 
 ```markdown
 # 자주 쓰는 Confluence 스페이스
  
-이 파일은 sweplateer 사이트(cloudId: `비밀 ㅎㅎ`)에서
+이 파일은 sweplateer 사이트(cloudId: `비밀`)에서
 사용자가 자주 보는 Confluence 스페이스 목록과, "어떤 내용이 어디에 있는지" 메모다.
  
 사용 규칙:
@@ -155,7 +155,7 @@ Atlassian / Jira / Confluence 작업을 요청받으면, 아래 값을 **기본 
 ```markdown
 # 자주 쓰는 Jira 프로젝트
  
-이 파일은 sweplateer 사이트(cloudId: `비밀 ㅎㅎ`)에서
+이 파일은 sweplateer 사이트(cloudId: `비밀`)에서
 사용자가 자주 다루는 Jira 프로젝트 목록이다.
  
 사용 규칙:
@@ -167,7 +167,7 @@ Atlassian / Jira / Confluence 작업을 요청받으면, 아래 값을 **기본 
  
 - 프로젝트 키: [예: SWE] | 이름: [예: SWE Platform]
   - 용도: [이 프로젝트에서 주로 무슨 작업을 하는지. 예: 백엔드 기능 개발 이슈]
-  - 기본값: [반복되는 설정. 예: 이슈 생성 시 기본 담당자는 나(accountId 63b6358bf3e7004f77fef58a)]
+  - 기본값: [반복되는 설정. 예: 이슈 생성 시 기본 담당자는 나(accountId 비밀)]
 - 프로젝트 키: [...] | 이름: [...]
   - 용도: [...]
   - 기본값: [...]
