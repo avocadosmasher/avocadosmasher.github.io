@@ -155,7 +155,7 @@ Atlassian / Jira / Confluence 작업을 요청받으면, 아래 값을 **기본 
 ```markdown
 # 자주 쓰는 Jira 프로젝트
  
-이 파일은 sweplateer 사이트(cloudId: `586fada2-5732-4f8e-9076-4fd25d65dc9d`)에서
+이 파일은 sweplateer 사이트(cloudId: `비밀 ㅎㅎ`)에서
 사용자가 자주 다루는 Jira 프로젝트 목록이다.
  
 사용 규칙:
