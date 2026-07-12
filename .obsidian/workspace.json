@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "cb9c9ac3cded85e8",
+        "id": "b1e644e3448cba3f",
         "type": "tabs",
         "children": [
           {
-            "id": "a87595bc61f39a1c",
+            "id": "5c2e3734d7a85d2a",
             "type": "leaf",
             "state": {
               "type": "markdown",
@@ -183,10 +183,10 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "a87595bc61f39a1c",
+  "active": "5c2e3734d7a85d2a",
   "lastOpenFiles": [
-    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/스킬 사용 흔적.png",
     "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/index.md",
+    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/스킬 사용 흔적.png",
     "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/connector confluence page 생성 허용.png",
     "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/connector 설정.png",
     "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/atlassian rovo mcp 연결화면.png",
