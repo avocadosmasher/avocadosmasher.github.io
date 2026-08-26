@@ -4,16 +4,54 @@
     "type": "split",
     "children": [
       {
-        "id": "b1e644e3448cba3f",
+        "id": "da538185bfdbae0e",
         "type": "tabs",
         "children": [
           {
-            "id": "5c2e3734d7a85d2a",
+            "id": "752b72efa0569d52",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "src/content/blog/grill me 분석 및 업그레이드 하기/index.md",
+                "file": "src/content/blog/가상화 파헤치기-인트로/index.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "index"
+            }
+          },
+          {
+            "id": "53f314167d8a7c45",
+            "type": "leaf",
+            "state": {
+              "type": "image",
+              "state": {
+                "file": "src/content/blog/가상화 파헤치기-1장/1세대_가상화_기술_반_가상화.png"
+              },
+              "icon": "lucide-image",
+              "title": "1세대_가상화_기술_반_가상화"
+            }
+          },
+          {
+            "id": "19055d221f0886eb",
+            "type": "leaf",
+            "state": {
+              "type": "image",
+              "state": {
+                "file": "src/content/blog/가상화 파헤치기-1장/1세대_가상화_기술_전_가상화.png"
+              },
+              "icon": "lucide-image",
+              "title": "1세대_가상화_기술_전_가상화"
+            }
+          },
+          {
+            "id": "57fbc58e7e4b0df4",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "src/content/blog/가상화 파헤치기-인트로/index.md",
                 "mode": "source",
                 "source": false
               },
@@ -21,7 +59,8 @@
               "title": "index"
             }
           }
-        ]
+        ],
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -41,7 +80,9 @@
               "type": "file-explorer",
               "state": {
                 "sortOrder": "alphabetical",
-                "autoReveal": false
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
               },
               "icon": "lucide-folder-closed",
               "title": "파일 탐색기"
@@ -183,43 +224,46 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "5c2e3734d7a85d2a",
+  "active": "57fbc58e7e4b0df4",
   "lastOpenFiles": [
-    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/index.md",
+    "src/content/blog/가상화 파헤치기-1장/VT-X_기술(2세대_가상화_하드웨어_가상화).png",
+    "src/content/blog/가상화 파헤치기-1장/VM_Exit_사이클.png",
+    "src/content/blog/가상화 파헤치기-1장/2세대_가상화 기술_하드웨어_가상화.png",
+    "src/content/blog/가상화 파헤치기-1장/1세대_가상화_기술_전_가상화.png",
+    "src/content/blog/가상화 파헤치기-1장/1세대_가상화_기술_반_가상화.png",
+    "src/content/blog/가상화 파헤치기-인트로/index.md",
+    "src/content/blog/가상화 파헤치기-인트로/PCIe_예시.png",
+    "src/content/blog/가상화 파헤치기-인트로/PCIe_단자그림.png",
+    "src/content/blog/가상화 파헤치기-1장",
+    "src/content/blog/가상화 파헤치기/무제",
     "src/content/blog/grill me 분석 및 업그레이드 하기/index.md",
+    "src/content/blog/grill me 분석 및 업그레이드 하기/lost_in_the_middle_u_curve.png",
+    "src/content/blog/가상화 파헤치기/PCIe예시.png",
+    "src/content/blog/templates/index.md",
+    "src/content/blog/templates/example.png",
+    "src/content/blog/가상화 파헤치기-인트로",
+    "src/content/blog/AI Engineering 10주차 Day1 LangChain/index.md",
+    "src/content/blog/AI Engineering 9주차 Day4 프로젝트/index.md",
+    "src/content/blog/AI Engineering 9주차 Day1/index.md",
+    "src/content/blog/AI Agent/index.md",
+    "src/content/blog/현대 LLM의 동작 방식 이해/index.md",
+    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/index.md",
+    "개선계획.md",
+    "무제.canvas",
+    "README.md",
+    "CLAUDE.md",
+    "운영가이드.md",
     "운영가이드.md.tmp.61820.f837f777da05",
-    "dist/_astro/connector 설정.OyKcFH6o_Zj6KEF.webp",
-    "dist/_astro/connector confluence page 생성 허용.R09QgWXM_1FxnSL.webp",
-    "dist/_astro/스킬 사용 흔적.BSYJNvLu_ZpAzmA.webp",
-    "dist/_astro/atlassian rovo mcp 연결화면.Dl_UVd1V_LXnDg.webp",
-    "dist/_astro/example.wrKIeb61_Z8SogO.webp",
-    "dist/_astro/Claude_Feature.x1X0wD37_Z1ABLTA.webp",
-    "dist/_astro/claude_settings.BPVID-Up_1n7C4P.webp",
-    "dist/_astro/lost_in_the_middle_u_curve.DCnBx51b_1up2Y2.webp",
     "dist/manifest_Bweo4gbS.mjs",
     "dist/chunks/astro/server_BCUodQ0I.mjs",
     "dist/chunks/_astro_assets_Bsv4QSaN.mjs",
     "dist/chunks/_astro_content_DF8QZ4qG.mjs",
     "dist/chunks/_astro_data-layer-content_QbHjNiXT.mjs",
     "dist/chunks/utils_Pi8nY4qQ.mjs",
-    "dist/chunks/Sidebar_DiJLxuF6.mjs",
-    "dist/chunks/sharp_ZUIbZLpi.mjs",
-    "dist/chunks/PostCard_-gOG7yAy.mjs",
-    "dist/_astro/스킬 사용 흔적.BSYJNvLu.png",
-    "dist/_astro/lost_in_the_middle_u_curve.DCnBx51b.png",
-    "src/content/blog/AI Engineering 10주차 Day1 LangChain/index.md",
-    "src/content/blog/현대 LLM의 동작 방식 이해/index.md",
-    "src/content/blog/AI Engineering 9주차 Day4 프로젝트/index.md",
     "2026-07-01.md",
-    "src/content/blog/templates/index.md",
-    "src/content/blog/AI Agent/index.md",
-    "README.md",
-    "src/content/blog/AI Engineering 9주차 Day1/index.md",
     "src/content/blog/AI Engineering 9주차 Day3 RAG 구현/index.md",
     "src/content/blog/AI Engineering 9주차/Week 9. Rag & Embedding.md",
     "src/content/blog/템플릿.md",
-    "무제.canvas",
-    "src/content/blog/index.md",
-    "운영가이드.md"
+    "src/content/blog/index.md"
   ]
 }
