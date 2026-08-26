@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "7b1da79c3f378f18",
+        "id": "b3fd4acff01e5303",
         "type": "tabs",
         "children": [
           {
-            "id": "851b625482d60c5c",
+            "id": "1dfb83477004d8a2",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "가상화 파헤치기-1장/index.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "새 탭"
+              "title": "index"
             }
           }
         ]
@@ -178,6 +182,15 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "ba5159275283414b",
-  "lastOpenFiles": []
+  "active": "1dfb83477004d8a2",
+  "lastOpenFiles": [
+    "가상화 파헤치기-1장/2세대_가상화_기술_하드웨어_가상화.png",
+    "가상화 파헤치기-1장/index.md",
+    "가상화 파헤치기-1장/1세대_가상화_기술_전_가상화.png",
+    "가상화 파헤치기-1장/1세대_가상화_기술_반_가상화.png",
+    "가상화 파헤치기 인트로/index.md",
+    "grill me 분석 및 업그레이드 하기/index.md",
+    "가상화.md",
+    "templates/index.md"
+  ]
 }
