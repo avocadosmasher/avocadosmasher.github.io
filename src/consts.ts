@@ -20,7 +20,7 @@ export const PROFILE = {
     '최근에 AX쪽에 관심이 생긴 현 Atlassian Engineer의 AI Engineer가 되기 위한 여정.',
   career: '4y',
   email: 'rdd0426@gmail.com',
-  website: 'avocadosmasher.github.io/dev-log/',
+  website: 'avocadosmasher.github.io',
   github: 'https://github.com/avocadosmasher',
   socials: {
     github: 'https://github.com/avocadosmasher'

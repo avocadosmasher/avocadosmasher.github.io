@@ -4,11 +4,11 @@
     "type": "split",
     "children": [
       {
-        "id": "5959b8f115bea83a",
+        "id": "7b1da79c3f378f18",
         "type": "tabs",
         "children": [
           {
-            "id": "6b1a696053ded0ac",
+            "id": "851b625482d60c5c",
             "type": "leaf",
             "state": {
               "type": "empty",
@@ -37,7 +37,9 @@
               "type": "file-explorer",
               "state": {
                 "sortOrder": "alphabetical",
-                "autoReveal": false
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
               },
               "icon": "lucide-folder-closed",
               "title": "파일 탐색기"
