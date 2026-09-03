@@ -4,17 +4,21 @@
     "type": "split",
     "children": [
       {
-        "id": "b9a388df69e86d23",
+        "id": "da538185bfdbae0e",
         "type": "tabs",
         "children": [
           {
-            "id": "799bba11d2fa5982",
+            "id": "752b72efa0569d52",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "src/content/blog/가상화 파헤치기-1장/index.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "새 탭"
+              "title": "index"
             }
           }
         ]
@@ -76,7 +80,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "0170cc3043c33d5a",
@@ -181,48 +186,53 @@
       "bases:새 베이스 생성하기": false
     }
   },
-  "active": "a483558e7f44467c",
+  "active": "752b72efa0569d52",
   "lastOpenFiles": [
+    "src/content/blog/가상화 파헤치기-1장/1세대_가상화_기술_반_가상화.png",
+    "src/content/blog/가상화 파헤치기-1장/1세대_가상화_기술_전_가상화.png",
+    "src/content/blog/가상화 파헤치기-1장/index.md",
+    "src/content/blog/가상화 파헤치기-1장/VM_Exit_사이클.png",
+    "src/content/blog/가상화 파헤치기-인트로/index.md",
+    "무제.md",
     "무제.base",
     "무제 1.canvas",
-    "무제.md",
-    "무제",
-    "src/content/blog/templates/index.md",
     "src/content/blog/나만의 Agent 설계/index.md",
-    "src/content/blog/현대 LLM의 동작 방식 이해/index.md",
     "src/content/blog/나만의 Agent 설계",
-    "src/content/blog/templates/example.png",
-    "src/content/blog/grill me 분석 및 업그레이드 하기/index.md",
-    "src/content/blog/AI Engineering 11주차 버퍼기간/index.md",
-    "src/content/blog/AI Engineering 10주차 Day1 LangChain/index.md",
-    "src/content/blog/AI Engineering 9주차 Day4 프로젝트/index.md",
-    "src/content/blog/AI Engineering 9주차 Day4 프로젝트/faiss_index_vs_vectordb.png",
-    "src/content/blog/AI Engineering 9주차 Day1/index.md",
-    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/index.md",
-    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/connector confluence page 생성 허용.png",
-    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/connector 설정.png",
-    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/Claude_Feature.png",
-    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/atlassian rovo mcp 연결화면.png",
-    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/스킬 사용 흔적.png",
-    "src/content/blog/현대 LLM의 동작 방식 이해/llm_full_inference_pipeline.png",
-    "src/content/blog/AI Agent/index.md",
-    "src/content/blog/AI Engineering 9주차 Day3 RAG 구현/index.md",
+    "src/content/blog/가상화.md",
+    "src/content/blog/가상화 파헤치기-1장/2세대_가상화_기술_하드웨어_가상화.png",
+    "src/content/blog/가상화 파헤치기 인트로/index.md",
+    "src/content/blog/가상화 파헤치기 인트로/PCIe_예시.png",
+    "src/content/blog/가상화 파헤치기 인트로/PCIe_단자그림.png",
+    "src/content/blog/가상화 파헤치기 인트로",
     "src/content/blog/AI Engineering 9주차 Day3 RAG 구현/tfidf_score_decomposition_bars.png",
     "src/content/blog/AI Engineering 9주차 Day3 RAG 구현/rag_chunking_function_call_chain.png",
+    "src/content/blog/AI Engineering 11주차 버퍼기간/index.md",
     "src/content/blog/AI Engineering 11주차 버퍼기간",
+    "src/content/blog/가상화 파헤치기-1장/2세대_가상화 기술_하드웨어_가상화.png",
+    "src/content/blog/가상화 파헤치기-1장/VT-X_기술(2세대_가상화_하드웨어_가상화).png",
+    "src/content/blog/가상화 파헤치기-1장",
+    "src/content/blog/가상화 파헤치기/무제",
+    "src/content/blog/grill me 분석 및 업그레이드 하기/index.md",
+    "src/content/blog/templates/index.md",
+    "src/content/blog/가상화 파헤치기-인트로",
+    "src/content/blog/AI Engineering 10주차 Day1 LangChain/index.md",
+    "src/content/blog/AI Engineering 9주차 Day4 프로젝트/index.md",
+    "src/content/blog/AI Engineering 9주차 Day1/index.md",
+    "src/content/blog/AI Agent/index.md",
+    "src/content/blog/현대 LLM의 동작 방식 이해/index.md",
+    "src/content/blog/사내 Confluenence Cloud와 Cloud 연결/index.md",
+    "개선계획.md",
+    "무제.canvas",
+    "README.md",
+    "CLAUDE.md",
+    "운영가이드.md",
     "운영가이드.md.tmp.61820.f837f777da05",
     "dist/manifest_Bweo4gbS.mjs",
     "dist/chunks/astro/server_BCUodQ0I.mjs",
-    "dist/chunks/_astro_assets_Bsv4QSaN.mjs",
-    "dist/chunks/_astro_content_DF8QZ4qG.mjs",
-    "dist/chunks/_astro_data-layer-content_QbHjNiXT.mjs",
-    "dist/chunks/utils_Pi8nY4qQ.mjs",
     "2026-07-01.md",
-    "README.md",
+    "src/content/blog/AI Engineering 9주차 Day3 RAG 구현/index.md",
     "src/content/blog/AI Engineering 9주차/Week 9. Rag & Embedding.md",
     "src/content/blog/템플릿.md",
-    "무제.canvas",
-    "src/content/blog/index.md",
-    "운영가이드.md"
+    "src/content/blog/index.md"
   ]
 }
