@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "astro dev",
     "dev:admin": "node scripts/admin-local.mjs",
+    "dev:oauth": "wrangler dev --config workers/fragment-oauth/wrangler.jsonc --local",
+    "test:oauth": "playwright test --config playwright.oauth.config.ts",
     "test:admin": "playwright test --config playwright.admin.config.ts",
     "build": "astro build",
     "preview": "astro preview",
@@ -26,12 +28,15 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "@cloudflare/workers-types": "^4.20260702.1",
     "@playwright/test": "^1.63.0",
     "@types/cytoscape": "^3.21.9",
     "@types/node": "^22.20.2",
     "@types/sanitize-html": "^2.16.1",
     "decap-server": "^3.11.2",
+    "miniflare": "4.20260730.0",
     "typescript": "^5.9.3",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "wrangler": "4.100.0"
   }
 }

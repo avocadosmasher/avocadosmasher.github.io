@@ -1,4 +1,5 @@
 import { cmsConfig, prepareFragmentSave } from '../lib/fragment-admin';
+import { createOAuthTestConfig } from '../lib/fragment-admin-oauth';
 
 interface EntryData {
   toJS(): Record<string, unknown>;
@@ -15,14 +16,20 @@ const cmsWindow = window as typeof window & { CMS_MANUAL_INIT?: boolean; CMS?: C
 const status = document.getElementById('admin-status')!;
 
 async function start() {
-  // Production editing remains unavailable until the actual OAuth connection is ready.
-  if (status.dataset.local !== 'true') return;
-  if (!['127.0.0.1', 'localhost'].includes(location.hostname)) throw new Error('로컬 주소에서 실행하세요.');
+  const oauth = status.dataset.oauth ? JSON.parse(status.dataset.oauth) : undefined;
+  if (status.dataset.local !== 'true' && !oauth) return;
   const proxyUrl = 'http://127.0.0.1:8082/api/v1';
-  const response = await fetch(proxyUrl, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'info' }),
-  });
-  if (!response.ok || (await response.json()).repo !== 'cms') throw new Error('격리 저장 서버 연결을 확인하세요.');
+  let config: unknown;
+  if (oauth) {
+    config = createOAuthTestConfig({ repo: oauth.backend.repo, branch: oauth.backend.branch, origin: oauth.backend.base_url });
+  } else {
+    if (!['127.0.0.1', 'localhost'].includes(location.hostname)) throw new Error('로컬 주소에서 실행하세요.');
+    const response = await fetch(proxyUrl, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'info' }),
+    });
+    if (!response.ok || (await response.json()).repo !== 'cms') throw new Error('격리 저장 서버 연결을 확인하세요.');
+    config = { ...cmsConfig, load_config_file: false, backend: { name: 'proxy', proxy_url: proxyUrl } };
+  }
   cmsWindow.CMS_MANUAL_INIT = true;
   await new Promise<void>((resolve, reject) => {
     const script = document.createElement('script');
@@ -36,11 +43,7 @@ async function start() {
     const data = entry.get('data');
     return data.merge(prepareFragmentSave(data.toJS()));
   } });
-  cms.init({ config: {
-    ...cmsConfig, load_config_file: false,
-    // Direct proxy selection prevents a failed local connection falling back to GitHub.
-    backend: { name: 'proxy', proxy_url: proxyUrl },
-  } });
+  cms.init({ config });
   status.hidden = true;
 }
 start().catch(error => {

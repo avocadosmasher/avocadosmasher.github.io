@@ -1,10 +1,10 @@
 # Fragment 외부 인증 연결 준비
 
-확인일: 2026-09-12. A03-4 산출물. 후보 비교와 설정 설계까지 완료했으며 계정 생성, 인증 서버 구현·배포, 실제 로그인·GitHub 저장은 아직 수행하지 않았다.
+확인일: 2026-09-12. A03-4 설계에 이어 A04-1의 인증 서버 구현·로컬 검증을 완료했다. 계정 생성·외부 배포·실제 로그인·GitHub 저장은 아직 수행하지 않았다. 실행 가능한 최신 설정은 [Worker 실행 안내](./workers/fragment-oauth/README.md)를 기준으로 한다. 아래 후보 비교와 계정 설정 절차는 유지한다.
 
 ## 권장 구성
 
-**GitHub Pages는 유지하고, Cloudflare Workers Free에 GitHub OAuth 중계 서버를 두는 방안**을 권장한다. PC를 계속 켜둘 필요가 없고, 현재 Decap의 `github` backend를 유지할 수 있다. Cloudflare는 로그인 제공자가 아니라 인증 코드를 토큰으로 교환하는 서버의 실행 장소이며, 작성자는 GitHub 계정으로 로그인한다. 이 권장은 아래 자료와 현재 프로젝트 구조에 따른 설계 판단이다. Worker 코드는 다음 태스크에서 구현·검증해야 한다.
+**GitHub Pages는 유지하고, Cloudflare Workers Free에 GitHub OAuth 중계 서버를 두는 방안**을 권장한다. PC를 계속 켜둘 필요가 없고, 현재 Decap의 `github` backend를 유지할 수 있다. Cloudflare는 로그인 제공자가 아니라 인증 코드를 토큰으로 교환하는 서버의 실행 장소이며, 작성자는 GitHub 계정으로 로그인한다. 이 권장은 아래 자료와 현재 프로젝트 구조에 따른 설계 판단이다. Worker 코드는 A04-1에서 로컬 검증했다.
 
 ```mermaid
 sequenceDiagram
@@ -77,7 +77,7 @@ Secret·사용자 access token은 대화, Markdown, `public/`, Astro의 공개 �
 6. **개발 작업:** CMS의 테스트 설정을 아래처럼 연결한다. 이 프로젝트는 `CMS.init`에 TypeScript 객체를 전달하므로 별도 `config.yml`을 만들지 않는다. `<...>` 값은 실제 확인한 값으로 바꾸며 운영 설정의 기본값으로 사용하지 않는다.
 
 ```ts
-// 후속 구현용 예시. 현재 실행 코드에는 적용하지 않았다.
+// 설정 형태 예시. 실제 설정은 createOAuthTestConfig가 검증·생성한다.
 const testBackend = {
   name: 'github',
   repo: '<테스트-소유자>/fragment-cms-auth-test',
@@ -90,11 +90,11 @@ const testBackend = {
 // local_backend: false, load_config_file: false를 적용한다.
 ```
 
-`base_url`은 인증 서버의 origin, `auth_endpoint`는 로그인 시작 경로이며 GitHub의 callback과 다르다. 위 옵션 전달과 `auth_scope`는 고정 vendor에서 확인했지만 실제 연결은 A04에서 검증한다. 현재 `src/scripts/fragment-admin.ts`는 로컬 모드가 아니면 종료하므로 설정 객체만 바꿔서는 웹 로그인이 열리지 않는다. 후속 구현에서 별도의 테스트 인증 모드와 필수 설정 누락 검사를 추가해야 한다. 기존 `dev:admin`의 격리 proxy 동작은 유지한다.
+`base_url`은 인증 서버의 origin, `auth_endpoint`는 로그인 시작 경로이며 GitHub의 callback과 다르다. A04-1에서 별도 테스트 인증 모드와 필수 설정 누락 검사를 추가했다. `FRAGMENT_CMS_OAUTH_TEST=1`과 테스트 저장소·브랜치·OAuth origin을 함께 전달해야 한다. 일반 실행은 인증 준비 안내를 표시하고 기존 `dev:admin`의 격리 proxy 동작도 유지한다. 실제 계정 연결은 A04-2에서 검증한다.
 
 ## 인증 서버 구현 시 고정할 계약
 
-다음은 A04-1의 테스트 기준이다. 문서 작성으로 통과한 것으로 간주하지 않는다.
+다음은 A04-1의 설계 기준이다. 로컬 검증 결과와 미검증 항목은 Worker 실행 안내와 개발 기록에 구분했다.
 
 - `/auth`는 예측 불가능한 `state`와 PKCE S256을 생성한다. `/callback`은 브라우저 세션에 결합된 state의 서명·만료·일치를 검사하고, 누락·변조·재사용을 거부한다. 구체적 저장 방식은 구현 시 정하고 테스트한다.
 - code 교환 시 동일한 callback URL과 PKCE verifier를 사용한다. 로그인 취소·GitHub 오류·만료 code를 성공 토큰으로 전달하지 않는다. GitHub 공식 흐름이 이 값들을 권장한다. [GitHub 웹 OAuth 흐름](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps/)
@@ -128,6 +128,6 @@ Worker 유지보수 대신 관리형 OAuth를 선택한다면 다음 순서로 �
 
 로그인은 성공했으나 저장이 실패하면 대상 repo/branch, 실제 쓰기 권한, 보호 규칙, 승인 scope를 확인한다. callback 실패는 등록 URL과 서버 설정, state/PKCE를 확인한다. 팝업에서 돌아오지 않으면 차단 여부와 origin·핸드셰이크를 확인한다. 단위 테스트의 mock 성공은 실제 로그인·커밋 증거가 아니다.
 
-다음 작은 태스크는 **A04-1: OAuth Worker와 테스트 CMS 설정의 로컬 구현·검증**이다. 계정 설정 전에도 코드와 실패 테스트를 준비할 수 있다. 그 다음 **A04-2: 테스트 환경 배포 및 실제 로그인 → 저장 → 다른 세션 읽기**로 나눈다. A04 완료 전에는 G05/G07/H05나 운영 웹 편집 완료로 표시하지 않는다.
+다음 작은 태스크는 **A04-2: 테스트 환경 배포 및 실제 로그인 → 저장 → 다른 세션 읽기**다. A04-1의 로컬 검증은 완료했다. A04 완료 전에는 G05/G07/H05나 운영 웹 편집 완료로 표시하지 않는다.
 
 계정 설정 후 공유할 정보는 테스트 저장소명·브랜치, Worker URL, 테스트 관리 화면 URL, Secret 설정 완료 여부다. 비밀값 자체는 공유하지 않는다.

@@ -1,0 +1,16 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "fragment-oauth-test",
+  "main": "worker.ts",
+  "compatibility_date": "2026-08-06",
+  "workers_dev": true,
+  "durable_objects": { "bindings": [{ "name": "OAUTH_SESSIONS", "class_name": "OAuthSession" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["OAuthSession"] }],
+  "vars": {
+    "GITHUB_CLIENT_ID": "",
+    "CMS_ORIGIN": "",
+    "OAUTH_CALLBACK_URL": "",
+    "GITHUB_SCOPE": "public_repo"
+  },
+  "observability": { "enabled": false }
+}
