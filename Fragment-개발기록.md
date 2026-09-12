@@ -53,7 +53,24 @@
 - C 화면: Fragments 메뉴를 찾는 Playwright 테스트 선작성 → 메뉴 부재로 실패 → 화면 추가 → 통과.
 - E/F의 브라우저 시나리오도 구현 전에 작성했지만 개별 시나리오의 Red 실행은 따로 기록하지 못했다. 전체 E2E 통과를 모든 작업에서 엄격한 TDD를 수행했다는 증거로 사용하지 않는다.
 
-## 다음 재개 지점 — A03-1: CMS 설정/저장 데이터 계약
+## A03-1 — 검증 완료 (2026-09-12)
+
+- 최초 체크포인트 `5cbe8fb`를 `feat/fragments`에 커밋하고 원격 push 성공. 샌드박스의 .git 쓰기 및 네트워크 제한은 권한 허용 후 재실행해 해결했다.
+- Red: `npx vitest run tests/unit/admin.test.ts`가 `fragment-admin` 모듈 부재로 exit 1. assertion 실패가 아닌 테스트 수집 실패임을 구분한다.
+- Green: `src/lib/fragment-admin.ts`에 CMS 설정 객체와 저장 준비 함수를 추가했다. 운영 local_backend=false, 삭제 비활성화, ID 숨김, 기존 스키마 필드와 관계 유형을 사용한다.
+- 새 ID는 제목과 독립적인 `fragment-<UUID>` 형식이다. 기존 ID를 전달하면 폼의 변경된 ID보다 우선하며, 저장 준비 결과를 다시 전달해도 ID를 유지한다. 본문 보존과 필수값 검증은 기존 Zod 스키마를 확장해 처리한다.
+- 검증: `npx vitest run` 4개 파일/13개 테스트 통과. `npx astro check` 오류 0·경고 0·기존 hint 4개. 공통 스키마·관계 유형을 재사용하며 추가 리팩터링은 없었다.
+- 이번 단계는 설정/저장 준비 계약만 완료다. CMS에서 실제로 이 함수를 호출하는 연결, 기존 파일 ID 전달, 폼의 저장 전 ID 생성 시점과 파일명 유지, OAuth 설정, 파일 쓰기는 아직 검증하지 않았다. UUID 충돌/중복 ID와 관계 참조는 기존 컬렉션 검증으로 최종 차단한다.
+- 설정 객체의 GitHub main 대상은 향후 운영용이다. 아직 관리 화면에 연결하지 않았으며 로컬 실험에서는 반드시 격리 backend를 별도로 구성한다. 이번 작업은 개발 브랜치에만 push한다.
+- 참고: [Decap 설정](https://decapcms.org/docs/configuration-options/), [위젯](https://decapcms.org/docs/widgets/), [저장 이벤트](https://decapcms.org/docs/registering-events/). 실제 CMS 로딩·위젯 동작은 A03-2/3에서 확인한다.
+
+## 다음 재개 지점 — A03-2: 관리 화면·격리 로컬 proxy 연결
+
+- git 상태와 이 기록 확인 후 `/admin/` 화면에 설정과 저장 준비 함수를 연결한다.
+- 운영 콘텐츠 밖의 격리 데이터만 사용하는 로컬 proxy를 연결하고 화면 로딩·격리 경로를 검증한다.
+- A03-3에서 실제 폼 생성/수정 → Markdown 저장 → Astro 수집을 검증한다. OAuth까지 자동 확장하지 않는다.
+
+## 이전 재개 계획 — A03-1 (위 완료 기록으로 대체)
 
 사용자 요청(2026-09-11): 한 번에 작은 태스크 하나만 진행하고 테스트·기록 후 멈춘다. PC 상시 실행을 전제로 하지 않는다.
 
@@ -69,7 +86,7 @@
 
 ## 재시작 안내
 
-- 파일 변경은 작업 폴더에 저장되어 있다. 현재 커밋·push·배포는 하지 않았다.
+- 2026-09-12부터 `feat/fragments`에서 작업별 커밋·push한다. 최초 체크포인트는 `5cbe8fb`이며 실제 배포는 아직 하지 않았다.
 - PC를 재시작한 뒤 `npm run dev`로 개발 서버를 다시 실행할 수 있다. 서버 프로세스나 대화 메모리에만 저장된 필수 상태는 없다.
 - 테스트: `npm test`, `npm run check`, `npm run test:e2e`. Playwright는 4399 포트에 자체 서버를 시작하고 종료한다.
 - 현재 파일 기준으로 `npm run build` 후 `npm run test:e2e:preview`를 실행하는 것은 H 단계의 남은 검증이다. 이전 A01의 build 성공과 혼동하지 않는다.
