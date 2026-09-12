@@ -2,6 +2,8 @@
 
 A03-3 기준: 관리 화면에서 카드 생성·수정·Markdown 저장·다른 브라우저에서 재열기·Astro 수집을 검증했다. GitHub OAuth와 운영 저장·배포는 아직 연결하지 않았다.
 
+외부 계정·비용·OAuth 연결 순서는 [외부 인증 연결 안내](./Fragment-외부-인증.md)를 참고한다. A03-4에서 구성 준비를 마쳤으며 실제 인증 연결은 A04에서 진행한다.
+
 1. `npm run dev:admin` 실행.
 2. `http://127.0.0.1:4400/admin/` 접속 후 `Login` 클릭. 여기서는 로컬 proxy 접속이며 GitHub OAuth 로그인이 아니다.
 3. `CMS 격리 연결 확인` 카드를 열거나 새 카드를 만든다. `Publish` → `Publish now`로 로컬 파일에 저장하며 `Changes saved`를 확인한다.
