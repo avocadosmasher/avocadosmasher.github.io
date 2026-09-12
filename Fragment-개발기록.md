@@ -129,6 +129,15 @@
 - 다음: 사용자가 별도 Cloudflare Pages 프로젝트에 ZIP을 업로드하고 `/admin/`의 테스트 대상 표시와 로그인 버튼을 확인한 뒤 실제 관리 화면 URL과 수동 판정을 전달한다. 커밋·푸시는 판정 대기 중이다.
 - 첫 업로드 후 `https://fragment-cms-test.pages.dev/`, `/admin/`, `/admin/index.html`이 모두 HTTP 404임을 외부에서 재현했다. PowerShell `Compress-Archive`가 ZIP 엔트리를 Windows 역슬래시(`admin\\index.html`)로 기록한 것이 원인이었다. POSIX 슬래시 엔트리와 루트 진입 페이지를 포함한 수정 ZIP으로 교체해 재검증한다.
 - 수정 배포에서 HTML·주 진입 스크립트·Decap vendor가 HTTP 200임을 확인했지만 화면이 로딩 문구에서 멈췄다. 주 진입 스크립트가 import하는 `_astro/fragments.pNdcZjSe.js`가 첫 수정 ZIP에 누락된 패키징 오류였다. 해당 의존성을 포함한 `fragment-cms-test-pages-v2.zip`을 만들고 ZIP 안의 정적 import가 모두 해소되는지 검사했다.
+- 사용자 수동 확인으로 v2의 저장소·브랜치 표기와 GitHub 로그인 버튼 표시가 통과했다. 관리 화면 배포 기록은 `65436da`로 개발 브랜치에 push했다.
+- Cloudflare CLI를 `rdd0426@gmail.com` 계정에 OAuth 로그인했다. 계정 표시명 `Rdd0426@gmail.com's Account`와 실제 `rdd0426.workers.dev` 서브도메인의 대소문자 표시는 연결 오류가 아니다.
+- GitHub OAuth App Client ID, CMS origin `https://fragment-cms-test.pages.dev`, callback `https://fragment-oauth-test.rdd0426.workers.dev/callback`을 Worker 공개 변수에 반영했다. Client Secret은 저장소나 대화에 넣지 않는다.
+- `OAUTH_STATE_SECRET` 생성 시 첫 PowerShell 난수 API가 실패했는데 파이프라인이 계속되어 임시 값이 등록됐다. 이를 즉시 호환 가능한 `RandomNumberGenerator.Create().GetBytes`의 새 32바이트 난수로 교체했다. 첫 값은 OAuth 코드 배포 전 교체되어 인증 요청에 사용되지 않았다.
+- OAuth 단위·workerd 통합 테스트 2개 파일/9개 통과, Worker·테스트 `tsc --noEmit` 통과, 실제 설정 dry-run 통과. 샌드박스 spawn EPERM은 권한 허용 후 재실행했다.
+- Worker 버전 `0a712553-b6a3-42b5-917d-7dd825719243`을 `fragment-oauth-test.rdd0426.workers.dev`에 배포했다. 배포 후 루트와 올바른 `/auth` 요청이 모두 HTTP 503/no-store를 반환해 Hello World 교체와 Client Secret 미설정 시 fail-closed를 확인했다.
+- 다음: 사용자가 GitHub OAuth App에서 발급한 Client Secret을 Cloudflare의 `GITHUB_CLIENT_SECRET` Secret으로 직접 등록한다. 등록 후 실제 GitHub 리다이렉트와 로그인·저장을 인수한다.
+- 사용자가 `GITHUB_CLIENT_SECRET` 등록 완료를 확인했다. 실제 `/auth` 요청은 HTTP 302로 GitHub `/login/oauth/authorize`에 이동하며 Client ID, 정확한 callback, `public_repo`, PKCE S256, 임의 state/challenge와 HttpOnly·Secure·SameSite=Lax 쿠키가 모두 포함됨을 값 노출 없이 검사했다.
+- 첫 외부 검사에서 302 조건은 통과했지만 결과 표시용 PowerShell `System.Web.HttpUtility` 타입이 없어 명령이 exit 1이었다. Node 표준 URL 파서로 같은 계약을 재검사해 exit 0을 확인했다. 실제 사용자 승인과 CMS 복귀는 수동 판정 대기 중이다.
 
 ## 다음 재개 지점 — A04-2: 외부 테스트 환경 연결·실제 저장 인수
 

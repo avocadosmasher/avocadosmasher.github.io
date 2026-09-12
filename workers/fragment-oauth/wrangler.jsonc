@@ -7,9 +7,9 @@
   "durable_objects": { "bindings": [{ "name": "OAUTH_SESSIONS", "class_name": "OAuthSession" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["OAuthSession"] }],
   "vars": {
-    "GITHUB_CLIENT_ID": "",
-    "CMS_ORIGIN": "",
-    "OAUTH_CALLBACK_URL": "",
+    "GITHUB_CLIENT_ID": "Ov23liY7o7sgE1FY7PMd",
+    "CMS_ORIGIN": "https://fragment-cms-test.pages.dev",
+    "OAUTH_CALLBACK_URL": "https://fragment-oauth-test.rdd0426.workers.dev/callback",
     "GITHUB_SCOPE": "public_repo"
   },
   "observability": { "enabled": false }
