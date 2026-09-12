@@ -9,4 +9,8 @@ test('admin without explicit local mode does not contact a proxy or GitHub', asy
   await expect(page.getByRole('status')).toHaveText('웹 편집 인증 연결을 준비 중입니다.');
   await expect(page.getByRole('status')).toHaveAttribute('data-local', 'false');
   expect(backendRequests).toEqual([]);
+  await page.goto('/fragments/');
+  const cards = JSON.parse(await page.locator('#fragment-data').textContent() ?? '[]');
+  expect(cards.some((card: { id: string }) => card.id === 'ept')).toBe(true);
+  expect(cards.some((card: { id: string }) => ['cms-connection', 'stable-existing-id'].includes(card.id))).toBe(false);
 });

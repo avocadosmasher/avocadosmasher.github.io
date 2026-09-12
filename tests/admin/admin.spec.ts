@@ -17,7 +17,7 @@ test('A03-2: CMS loads only isolated cards and opens the editor', async ({ page,
   });
   expect(response.ok()).toBe(true);
   const entries = await response.json();
-  expect(entries).toHaveLength(1);
+  expect(entries).toHaveLength(2);
   expect(JSON.stringify(entries)).toContain('cms-connection');
   const outside = await request.post('http://127.0.0.1:8082/api/v1', {
     data: { action: 'getEntry', params: { branch: 'main', path: '../../src/content/fragments/ept.md' } },
