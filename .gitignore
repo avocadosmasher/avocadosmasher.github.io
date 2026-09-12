@@ -19,3 +19,10 @@ pnpm-debug.log*
 .idea/
 # obsidian 설정
 .obsidian
+playwright-report/
+test-results/
+coverage/
+.fragment-test/
+.dev.vars
+.wrangler/
+.fragment-check.log

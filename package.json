@@ -7,9 +7,29 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "check": "astro check",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test:e2e": "playwright test",
+    "test:e2e:preview": "node scripts/test-preview.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
-    "astro": "^5.6.0"
+    "astro": "^5.6.0",
+    "cytoscape": "^3.34.3",
+    "marked": "^18.0.12",
+    "sanitize-html": "^2.17.7",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@playwright/test": "^1.63.0",
+    "@types/cytoscape": "^3.21.9",
+    "@types/node": "^22.20.2",
+    "@types/sanitize-html": "^2.16.1",
+    "decap-server": "^3.11.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
   }
 }

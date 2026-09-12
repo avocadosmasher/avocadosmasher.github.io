@@ -1,0 +1,52 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { validateFragments } from '../../lib/fragments';
+import { fragmentHtml } from '../../lib/fragment-content';
+import { href } from '../../utils';
+import '../../styles/fragments.css';
+
+const entries = await getCollection('fragments');
+let cards;
+try {
+  const validated = validateFragments(entries.map(entry => entry.data));
+  cards = validated.map((card, index) => ({ ...card, html: fragmentHtml(entries[index].body ?? '') }));
+} catch (error) {
+  throw new Error(`Fragment 콘텐츠 검증 실패 (${entries.map(e => e.filePath ?? e.id).join(', ')}): ${error}`);
+}
+const categories = [...new Set(cards.map(card => card.category))].sort((a, b) => a.localeCompare(b, 'ko'));
+---
+<BaseLayout title="Fragments" description="공부하며 모은 개념의 조각들" active="Fragments">
+  <main class="fragments home" id="fragments">
+    <header class="fragment-head">
+      <div><p class="hero__eyebrow">작은 개념, 이어지는 이해</p><h1>Fragments</h1><p class="lead">기억하고 싶은 개념을 모으고, 연결하고, 다시 꺼내 봅니다.</p></div>
+      <a class="btn btn--ghost" href={href('admin/')}>카드 작성 · 수정 ↗</a>
+    </header>
+    <section class="fragment-toolbar" aria-label="개념 찾기">
+      <label class="fragment-search">개념 검색<input type="search" id="fragment-search" aria-label="개념 검색" placeholder="용어, 별칭, 설명으로 찾아보세요" autocomplete="off" /></label>
+      <label>카테고리<select id="fragment-category"><option value="">전체 ({cards.length})</option>{categories.map(category => <option value={category}>{category} ({cards.filter(c => c.category === category).length})</option>)}</select></label>
+    </section>
+    <div class="fragment-list-head"><p id="fragment-count" role="status" aria-live="polite"></p><div class="fragment-views"><button id="cards-view" aria-pressed="true">카드 보기</button><button id="graph-view" aria-pressed="false">관계 그래프</button></div></div>
+    <p id="fragment-notice" role="status" hidden></p>
+    <section id="fragment-list" aria-label="개념 카드 목록"><div id="fragment-grid" class="fragment-grid"></div><p id="fragment-empty" class="fragment-empty" hidden>조건에 맞는 개념이 없습니다.</p><nav id="fragment-pages" class="fragment-pages" aria-label="카드 페이지"></nav></section>
+    <section id="fragment-graph-panel" aria-label="개념 관계 그래프" hidden>
+      <div class="fragment-graph-tools"><label>중심 개념<select id="graph-focus"><option value="">전체 관계</option>{cards.map(c => <option value={c.id}>{c.title}</option>)}</select></label><button id="graph-zoom-in" aria-label="그래프 확대">＋</button><button id="graph-zoom-out" aria-label="그래프 축소">−</button><button id="graph-fit">전체 맞춤</button></div>
+      <p class="fragment-hint">개념을 눌러 카드를 열어보세요. 흐린 개념은 검색 조건 밖의 연결된 이웃입니다. 화살표는 선행·상위 개념을 가리킵니다.</p>
+      <p id="graph-status" role="status"></p><button id="graph-retry" hidden>그래프 다시 불러오기</button>
+      <div id="fragment-graph"></div>
+      <div id="graph-accessible" class="fragment-graph-links" aria-label="그래프 개념 목록"></div>
+    </section>
+    <noscript><p>검색·팝업·그래프를 사용하려면 JavaScript를 켜주세요.</p><ul>{cards.map(c => <li><strong>{c.title}</strong> — {c.summary}</li>)}</ul></noscript>
+    <dialog id="fragment-dialog" aria-labelledby="fragment-dialog-title">
+      <div class="fragment-dialog-top"><span id="fragment-dialog-category"></span><button id="fragment-close" aria-label="닫기" autofocus>닫기 ×</button></div>
+      <h2 id="fragment-dialog-title"></h2><p id="fragment-dialog-aliases" class="fragment-hint"></p><p id="fragment-dialog-summary" class="fragment-summary"></p>
+      <div id="fragment-dialog-body" class="prose"></div><div id="fragment-dialog-tags" class="fragment-tags"></div>
+      <section class="fragment-relations"><h3>연결된 개념</h3><div id="fragment-dialog-relations"></div></section>
+      <button id="fragment-related-graph" class="btn btn--ghost">이 개념의 관계 보기</button>
+    </dialog>
+    <script id="fragment-data" type="application/json" set:html={JSON.stringify(cards).replace(/</g, '\\u003c')}></script>
+  </main>
+  <script>
+    import '../../scripts/fragments';
+  </script>
+</BaseLayout>

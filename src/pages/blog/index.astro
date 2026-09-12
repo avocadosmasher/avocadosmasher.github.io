@@ -42,21 +42,21 @@ const posts = (await getCollection('blog'))
 </BaseLayout>
 
 <script>
-  const grid = document.getElementById('cardGrid');
-  const cards = Array.from(grid.querySelectorAll('.card'));
-  const empty = document.getElementById('emptyState');
-  const listTitle = document.getElementById('listTitle');
-  const listCount = document.getElementById('listCount');
-  const listFilter = document.getElementById('listFilter');
-  const inlineSearch = document.getElementById('inlineSearch');
+  const grid = document.getElementById('cardGrid')!;
+  const cards = Array.from(grid.querySelectorAll<HTMLElement>('.card'));
+  const empty = document.getElementById('emptyState')!;
+  const listTitle = document.getElementById('listTitle')!;
+  const listCount = document.getElementById('listCount')!;
+  const listFilter = document.getElementById('listFilter')!;
+  const inlineSearch = document.getElementById('inlineSearch') as HTMLInputElement;
 
   let activeCat = '전체';
-  let activeTag = null;
+  let activeTag: string | null = null;
   let query = '';
 
   // URL 쿼리(?category=, ?tag=)로 초기 필터 설정
   const params = new URLSearchParams(window.location.search);
-  if (params.get('category')) activeCat = params.get('category');
+  if (params.get('category')) activeCat = params.get('category')!;
   if (params.get('tag')) activeTag = params.get('tag');
 
   function apply() {
@@ -97,7 +97,7 @@ const posts = (await getCollection('blog'))
   document.querySelectorAll('.cat-item').forEach((el) => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
-      activeCat = el.getAttribute('data-cat');
+      activeCat = el.getAttribute('data-cat') ?? '전체';
       activeTag = null;
       query = '';
       inlineSearch.value = '';
@@ -114,8 +114,8 @@ const posts = (await getCollection('blog'))
       apply();
     });
   });
-  inlineSearch.addEventListener('input', (e) => {
-    query = e.target.value.trim().toLowerCase();
+  inlineSearch.addEventListener('input', () => {
+    query = inlineSearch.value.trim().toLowerCase();
     apply();
   });
 

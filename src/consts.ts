@@ -154,6 +154,7 @@ export const PROJECTS: ProjectItem[] = [
 export const NAV = [
   { label: '홈', path: '' },
   { label: '블로그', path: 'blog/' },
+  { label: 'Fragments', path: 'fragments/' },
   { label: '태그', path: 'tags/' },
   { label: '소개', path: 'about/' },
 ];

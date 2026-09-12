@@ -29,7 +29,7 @@ const { title, description, active = '홈' } = Astro.props;
       document.querySelectorAll('.sidebar-toggle').forEach((btn) => {
         btn.addEventListener('click', () => {
           const target = btn.getAttribute('data-target');
-          document.getElementById(target)?.classList.add('is-open');
+          if (target) document.getElementById(target)?.classList.add('is-open');
           document.getElementById('backdrop')?.classList.add('is-open');
         });
       });
