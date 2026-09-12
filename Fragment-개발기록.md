@@ -39,11 +39,11 @@
 | D 검색/페이징 | 검색·정규화·페이지 계산·URL 상태 구현, 단위 테스트와 검색 E2E 통과 | 13/25개 fixture로 실제 페이지 이동·이력 복원 검증 |
 | E 팝업 | 상세, Escape/닫기, 포커스 복원, 관련 카드, 직접 URL | Tab 순환·잘못된 ID·이력 동작 추가 인수 |
 | F 그래프 | Cytoscape 지연 로딩, 관계 데이터, 기본 조작, 카드 연결 | 그래프 노드 클릭·실패/재시도·필터·500개 성능 인수 |
-| G 웹 편집 | decap-server 개발 의존성 설치만 완료 | 관리 화면/설정/실제 로컬 저장 모두 미구현. CMS 다운로드 직전 중단되었고 public/admin에는 파일이 없음 |
-| H 통합/배포 | 기존 공개 페이지 회귀 5번째 E2E에 포함 | 현재 신규 코드의 프로덕션 build/preview, CI 게이트, 실제 배포 모두 미완료 |
+| G 웹 편집 | A03-2까지 관리 화면·설정·격리 proxy 연결 및 카드 읽기 검증 | 실제 폼 저장·수정 인수와 OAuth 미완료 |
+| H 통합/배포 | 기존 공개 페이지 회귀, A03-2 프로덕션 build 성공 | preview 전체 인수, CI 게이트, 실제 배포 미완료 |
 | I 종료 문서 | 이 개발 기록과 계획 유지 | 운영 가이드, 최종 검토, 최종 개발 보고서 미완료 |
 
-예제 콘텐츠는 `src/content/fragments/ept.md`, `gpa.md`, `hpa.md` 3개다. 실제 운영 배포 전 예제 포함 여부를 검토한다. 현재 `/admin/` 대상 작성 링크는 연결된 페이지가 없어 아직 동작하지 않는다.
+예제 콘텐츠는 `src/content/fragments/ept.md`, `gpa.md`, `hpa.md` 3개다. 실제 운영 배포 전 예제 포함 여부를 검토한다. `/admin/`은 로컬 명시 실행에서 CMS가 열리며 일반 실행/운영 빌드에서는 인증 연결 준비 안내를 표시한다.
 
 ## TDD 증거 기록
 
@@ -64,11 +64,26 @@
 - 설정 객체의 GitHub main 대상은 향후 운영용이다. 아직 관리 화면에 연결하지 않았으며 로컬 실험에서는 반드시 격리 backend를 별도로 구성한다. 이번 작업은 개발 브랜치에만 push한다.
 - 참고: [Decap 설정](https://decapcms.org/docs/configuration-options/), [위젯](https://decapcms.org/docs/widgets/), [저장 이벤트](https://decapcms.org/docs/registering-events/). 실제 CMS 로딩·위젯 동작은 A03-2/3에서 확인한다.
 
-## 다음 재개 지점 — A03-2: 관리 화면·격리 로컬 proxy 연결
+## A03-2 — 검증 완료 (2026-09-12)
 
-- git 상태와 이 기록 확인 후 `/admin/` 화면에 설정과 저장 준비 함수를 연결한다.
-- 운영 콘텐츠 밖의 격리 데이터만 사용하는 로컬 proxy를 연결하고 화면 로딩·격리 경로를 검증한다.
-- A03-3에서 실제 폼 생성/수정 → Markdown 저장 → Astro 수집을 검증한다. OAuth까지 자동 확장하지 않는다.
+- 시작 기준: `ae6a9ed`, 작업 폴더 깨끗함. 개발 브랜치 `feat/fragments` 유지.
+- `/admin/` Astro 페이지, CMS 수동 초기화와 preSave 연결, `npm run dev:admin` 실행기를 추가했다. public/index.html·config.yml 대신 기존 TypeScript 설정을 직접 전달한다.
+- CMS 3.16.2 브라우저 파일(약 4.9 MiB)을 고정해 저장하고 라이선스·제3자 고지·SHA256을 vendor README에 기록했다. 런타임 CDN 요청은 없다.
+- proxy는 127.0.0.1:8082, Astro는 127.0.0.1:4400. cwd와 GIT_REPO_DIRECTORY를 `.fragment-test/cms`로 고정한다. 기존 연습 데이터를 보존하고 실행 종료 시 두 자식 프로세스를 종료한다. 포트 사용 중에는 시작하지 않는다.
+- 로컬은 proxy backend를 직접 선택해 GitHub로 fallback하지 않는다. 운영은 인증 미연결 안내만 표시한다. 관리 목록은 ID 대신 title을 표시하도록 summary 설정을 추가했다.
+- Red: 최초 실행기 부재의 서버 시작 실패는 유효한 Red로 세지 않았다. 실행기 구성 후 `/admin/` 미구현으로 카드 표시 assertion 실패를 확인했다(exit 1).
+- Green/Refactor: CMS 로그인 버튼 렌더링을 기다리도록 테스트를 수정하고, 관리 화면에서 카드 제목·용어·요약 표시를 확인했다. proxy API 검증 요청의 필수 branch/depth도 보완했다.
+- 검증: `npx vitest run` 13개 통과; `npx playwright test --config playwright.admin.config.ts` 2개 통과(격리 카드 읽기·폼 열기·상위 경로 거부·운영 파일 불변, proxy 장애 안내); `npx playwright test` 6개 통과; `npx astro check` 오류 0·경고 0·기존 hint 4개.
+- 일반/관리 Playwright를 동시 실행하면서 공통 산출물 경로 충돌(ENOENT)이 있었다. 관리 결과 경로를 `.fragment-test/admin-results`로 분리하고 재검증했다.
+- `FRAGMENT_CMS_LOCAL=1` 환경에서 프로덕션 build 성공(12페이지), dist/admin/index.html의 data-local=false 확인. 최초 빌드는 샌드박스 EPERM으로 실패했으며 권한 허용 후 성공했다. preview 전체 검증/배포는 이번에 수행하지 않았다.
+- [로컬 CMS 실행 안내](./Fragment-로컬-CMS.md) 작성. 운영 카드 원본은 변경하지 않았다.
+- 남은 사항: 실제 폼 생성/수정·파일 쓰기·기존 ID/파일명 보존·Astro 수집은 A03-3에서 인수한다. preSave 연결만으로 저장 성공을 주장하지 않는다. 운영 OAuth 및 GitHub 저장은 아직 미연결이다.
+
+## 다음 재개 지점 — A03-3: 폼 생성·수정 → 파일 저장 검증
+
+- git 상태와 이 기록 확인 후 테스트별 격리 fixture 준비/보존 정책을 확장한다.
+- 실제 CMS 폼에서 새 카드 생성·저장 → Markdown 확인 → 같은 카드 수정·재열기 → ID/파일명/본문 유지 → Astro 수집을 검증한다.
+- 현재 hidden ID 생성은 preSave에 연결되어 있다. CMS의 slug 계산 시점, 선택 필드의 null/빈 값 처리, 기존 ID 보존을 실제 저장으로 검증하고 필요한 최소 수정을 한다. OAuth까지 자동 확장하지 않는다.
 
 ## 이전 재개 계획 — A03-1 (위 완료 기록으로 대체)
 

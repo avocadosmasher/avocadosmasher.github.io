@@ -1,0 +1,21 @@
+---
+import { href } from '../../utils';
+const local = import.meta.env.DEV && process.env.FRAGMENT_CMS_LOCAL === '1';
+---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Fragments 관리</title>
+  </head>
+  <body>
+    <div id="admin-status" role="status" data-local={String(local)} data-vendor={href('admin/vendor/decap-cms-3.16.2.js')}>
+      {local ? '로컬 연습용 관리 화면을 불러오는 중입니다.' : '웹 편집 인증 연결을 준비 중입니다.'}
+    </div>
+    <script>
+      import '../../scripts/fragment-admin';
+    </script>
+  </body>
+</html>

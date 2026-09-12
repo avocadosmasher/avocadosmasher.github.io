@@ -33,7 +33,7 @@ const fields: CmsField[] = [
   { name: 'body', label: '보충 설명', widget: 'markdown', required: false },
 ];
 
-// A03-2 will wire this config into the CMS. OAuth configuration is still pending.
+// Shared field contract; production OAuth configuration is still pending.
 export const cmsConfig = {
   backend: { name: 'github', repo: 'avocadosmasher/avocadosmasher.github.io', branch: 'main' },
   local_backend: false,
@@ -42,6 +42,7 @@ export const cmsConfig = {
   collections: [{
     name: 'fragments', label: 'Fragments', folder: 'src/content/fragments',
     create: true, delete: false, identifier_field: 'id', slug: '{{id}}',
+    summary: '{{title}}',
     extension: 'md', format: 'frontmatter', fields,
   }],
 };
