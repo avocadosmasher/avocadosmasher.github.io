@@ -119,6 +119,17 @@
 - [Worker 실행 안내](./workers/fragment-oauth/README.md)와 외부/로컬 CMS 안내를 갱신했다. Durable Objects의 별도 Free 한도도 안내했다.
 - 남은 한계: mock 403에서 Decap은 repo 오류를 표시하지만 Logging in 버튼이 비활성 상태로 남는다. 새로고침 복구와 향후 G05/G06 개선 항목으로 기록했다. 실제 토큰 만료·재로그인·입력 보존, refresh, GitHub 권한 정책, 실계정 저장은 아직 미검증이다.
 
+## A04-2 — 테스트 관리 화면 업로드 준비 (2026-09-13)
+
+- 사용자가 Cloudflare 계정 및 Worker 주소 `https://fragment-oauth-test.rdd0426.workers.dev`, 테스트 저장소 `avocadosmasher/fragment-cms-auth-test` 준비를 확인했다.
+- `git ls-remote`로 `main`과 `cms-test`가 `69a7f2541add0a92eb42b91653fcf6bedff283a8`에 있음을 확인했다. 원격 변경은 수행하지 않았다.
+- 테스트 OAuth 환경변수에 위 저장소·Worker와 `cms-test`를 전달해 `npm run build -- --outDir .fragment-test/oauth-site` 성공(12페이지). 최초 샌드박스 spawn EPERM은 권한 허용 후 재실행했다.
+- 생성된 admin HTML의 저장소·브랜치·Worker URL을 검사했다. `/admin/`과 해당 HTML이 참조하는 단일 번들, 고정 CMS vendor 및 라이선스를 `.fragment-test/cms-upload-191b9af9e6834c8eb1fddad85f0e5b61.zip`에 묶었다. 업로드 ZIP에는 블로그 페이지가 포함되지 않는다. 산출물은 Git 제외 대상이다.
+- `git diff --check` 통과. 실행 코드 변경은 없으며 단위/E2E 검사는 재실행하지 않았다. HTTPS 화면 렌더링, OAuth App/Secret 연결, Worker 실제 코드 배포, 로그인·저장은 아직 미검증이다.
+- 다음: 사용자가 별도 Cloudflare Pages 프로젝트에 ZIP을 업로드하고 `/admin/`의 테스트 대상 표시와 로그인 버튼을 확인한 뒤 실제 관리 화면 URL과 수동 판정을 전달한다. 커밋·푸시는 판정 대기 중이다.
+- 첫 업로드 후 `https://fragment-cms-test.pages.dev/`, `/admin/`, `/admin/index.html`이 모두 HTTP 404임을 외부에서 재현했다. PowerShell `Compress-Archive`가 ZIP 엔트리를 Windows 역슬래시(`admin\\index.html`)로 기록한 것이 원인이었다. POSIX 슬래시 엔트리와 루트 진입 페이지를 포함한 수정 ZIP으로 교체해 재검증한다.
+- 수정 배포에서 HTML·주 진입 스크립트·Decap vendor가 HTTP 200임을 확인했지만 화면이 로딩 문구에서 멈췄다. 주 진입 스크립트가 import하는 `_astro/fragments.pNdcZjSe.js`가 첫 수정 ZIP에 누락된 패키징 오류였다. 해당 의존성을 포함한 `fragment-cms-test-pages-v2.zip`을 만들고 ZIP 안의 정적 import가 모두 해소되는지 검사했다.
+
 ## 다음 재개 지점 — A04-2: 외부 테스트 환경 연결·실제 저장 인수
 
 - 별도 공개 테스트 저장소와 `cms-test` 브랜치, HTTPS 테스트 관리 화면, Cloudflare Worker URL, GitHub OAuth App과 Secret 설정이 필요하다. 사용자는 Cloudflare/Netlify 계정이 아직 없다고 한 상태다.
