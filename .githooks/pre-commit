@@ -1,0 +1,2 @@
+#!/bin/sh
+exec node scripts/manual-review.mjs check-commit

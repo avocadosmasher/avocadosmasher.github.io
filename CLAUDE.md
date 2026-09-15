@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+작업 완료 절차는 `AGENTS.md`를 따른다. 자동 검사 후 사용자에게 기능·방법·예상 결과를 포함한 수동 테스트 가이드를 제공하고, 명시적인 ‘통과’ 판정을 받은 뒤에만 커밋·푸시한다.
+
 ## Commands
 
 ```bash
