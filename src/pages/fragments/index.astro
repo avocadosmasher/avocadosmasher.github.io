@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { validateFragments } from '../../lib/fragments';
 import { fragmentHtml } from '../../lib/fragment-content';
-import { href } from '../../utils';
+import FragmentComposer from '../../components/FragmentComposer.astro';
 import '../../styles/fragments.css';
 
 const entries = await getCollection('fragments');
@@ -20,7 +20,7 @@ const categories = [...new Set(cards.map(card => card.category))].sort((a, b) =>
   <main class="fragments home" id="fragments">
     <header class="fragment-head">
       <div><p class="hero__eyebrow">작은 개념, 이어지는 이해</p><h1>Fragments</h1><p class="lead">기억하고 싶은 개념을 모으고, 연결하고, 다시 꺼내 봅니다.</p></div>
-      <a class="btn btn--ghost" href={href('admin/')}>카드 작성 · 수정 ↗</a>
+      <button class="btn btn--ghost" id="fragment-compose" type="button" aria-haspopup="dialog">새 카드</button>
     </header>
     <section class="fragment-toolbar" aria-label="개념 찾기">
       <label class="fragment-search">개념 검색<input type="search" id="fragment-search" aria-label="개념 검색" placeholder="용어, 별칭, 설명으로 찾아보세요" autocomplete="off" /></label>
@@ -45,6 +45,7 @@ const categories = [...new Set(cards.map(card => card.category))].sort((a, b) =>
       <button id="fragment-related-graph" class="btn btn--ghost">이 개념의 관계 보기</button>
     </dialog>
     <script id="fragment-data" type="application/json" set:html={JSON.stringify(cards).replace(/</g, '\\u003c')}></script>
+    <FragmentComposer categories={categories} />
   </main>
   <script>
     import '../../scripts/fragments';
