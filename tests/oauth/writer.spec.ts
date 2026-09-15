@@ -44,9 +44,15 @@ test('native composer logs in, validates, saves once and links the commit', asyn
   expect(puts).toBe(0);
   await dialog.getByLabel('요약', { exact: true }).fill('저장 테스트');
   await save.dblclick();
-  await expect(dialog.getByRole('link', { name: 'GitHub에서 저장 결과 확인' })).toHaveAttribute('href', `https://github.com/${repo}/commit/${'a'.repeat(40)}`);
+  await expect(dialog).not.toBeVisible();
+  await expect(page.locator('#composer-feedback')).toContainText('“한글 카드” 카드를 저장했습니다.');
+  await expect(page.getByRole('link', { name: 'GitHub에서 저장 결과 확인' })).toHaveAttribute('href', `https://github.com/${repo}/commit/${'a'.repeat(40)}`);
   expect(puts).toBe(1);
-  await expect(dialog.getByRole('button', { name: '저장 완료', exact: true })).toBeDisabled();
+  const trigger = page.getByRole('button', { name: '새 카드', exact: true });
+  await expect(trigger).toBeFocused();
+  await trigger.click();
+  await expect(dialog.getByLabel('용어', { exact: true })).toBeEmpty();
+  await expect(dialog.getByRole('button', { name: '카드 저장', exact: true })).toBeEnabled();
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('writer_test_token');
 });
 
@@ -72,8 +78,38 @@ test('lost PUT response preserves the draft and retry verifies the existing file
   await expect(dialog.getByRole('status')).toContainText('응답');
   await expect(dialog.getByLabel('용어', { exact: true })).toHaveValue('한글 카드');
   await dialog.getByRole('button', { name: '같은 내용으로 다시 저장' }).click();
-  await expect(dialog.getByRole('link', { name: 'GitHub에서 저장 결과 확인' })).toBeVisible();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole('link', { name: 'GitHub에서 저장 결과 확인' })).toBeVisible();
   expect(puts).toBe(1);
+});
+
+test('pending save cannot be dismissed and failure keeps the draft', async ({ page, context }) => {
+  await loginRoute(context);
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  await context.route('https://api.github.com/**', async route => {
+    if (route.request().method() === 'PUT') {
+      await held;
+      await route.fulfill({ status: 500, json: {} });
+    } else if (route.request().url().includes('/contents/')) await route.fulfill({ status: 404, json: {} });
+    else await route.fulfill({ json: { full_name: repo, private: false, permissions: { push: true } } });
+  });
+  const dialog = await openForm(page);
+  await dialog.getByRole('button', { name: 'GitHub 로그인', exact: true }).click();
+  await dialog.getByRole('button', { name: '카드 저장', exact: true }).click();
+  try {
+    await expect(dialog.getByRole('button', { name: '닫기', exact: true })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await page.mouse.click(2, 2);
+    await expect(dialog).toBeVisible();
+  } finally { release(); }
+  await expect(dialog.getByRole('button', { name: '같은 내용으로 다시 저장' })).toBeEnabled();
+  await expect(dialog.getByLabel('용어', { exact: true })).toHaveValue('한글 카드');
+  await page.mouse.click(2, 2);
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole('button', { name: '새 카드', exact: true }).click();
+  await expect(dialog.getByLabel('용어', { exact: true })).toHaveValue('한글 카드');
+  await expect(page.locator('#composer-success')).toBeEmpty();
 });
 
 test('read-only GitHub access does not enable save and keeps input', async ({ page, context }) => {
@@ -105,11 +141,12 @@ test('expired token can reauthenticate and retry the same draft', async ({ page,
   await expect(dialog.getByLabel('요약', { exact: true })).toHaveValue('저장 테스트');
   await dialog.getByRole('button', { name: 'GitHub 로그인', exact: true }).click();
   await dialog.getByRole('button', { name: '같은 내용으로 다시 저장' }).click();
-  await expect(dialog.getByRole('link', { name: 'GitHub에서 저장 결과 확인' })).toBeVisible();
+  await expect(dialog).not.toBeVisible();
+  await expect(page.getByRole('link', { name: 'GitHub에서 저장 결과 확인' })).toBeVisible();
   expect(paths).toHaveLength(2);
   expect(paths[0]).toBe(paths[1]);
+  await page.getByRole('button', { name: '새 카드', exact: true }).click();
   await dialog.getByRole('button', { name: '로그아웃', exact: true }).click();
-  await dialog.getByRole('button', { name: '다른 카드 작성', exact: true }).click();
   await expect(dialog.getByRole('button', { name: '카드 저장', exact: true })).toBeDisabled();
   await expect(dialog.getByLabel('용어', { exact: true })).toBeEmpty();
 });

@@ -22,6 +22,10 @@ const categories = [...new Set(cards.map(card => card.category))].sort((a, b) =>
       <div><p class="hero__eyebrow">작은 개념, 이어지는 이해</p><h1>Fragments</h1><p class="lead">기억하고 싶은 개념을 모으고, 연결하고, 다시 꺼내 봅니다.</p></div>
       <button class="btn btn--ghost" id="fragment-compose" type="button" aria-haspopup="dialog">새 카드</button>
     </header>
+    <div id="composer-feedback" role="status" aria-live="polite" aria-atomic="true">
+      <p id="composer-success"></p>
+      <a id="composer-result" target="_blank" rel="noopener noreferrer" hidden>GitHub에서 저장 결과 확인</a>
+    </div>
     <section class="fragment-toolbar" aria-label="개념 찾기">
       <label class="fragment-search">개념 검색<input type="search" id="fragment-search" aria-label="개념 검색" placeholder="용어, 별칭, 설명으로 찾아보세요" autocomplete="off" /></label>
       <label>카테고리<select id="fragment-category"><option value="">전체 ({cards.length})</option>{categories.map(category => <option value={category}>{category} ({cards.filter(c => c.category === category).length})</option>)}</select></label>

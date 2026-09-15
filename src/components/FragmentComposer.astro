@@ -35,8 +35,6 @@ if (process.env.FRAGMENT_CMS_OAUTH_TEST === '1') {
     <p class="fragment-hint">용어, 요약, 카테고리는 필수 항목입니다. 관계 지정과 기존 카드 수정은 다음 단계에서 연결합니다.</p>
     <div class="composer-actions"><button type="button" class="btn btn--ghost" id="composer-later">닫고 나중에 이어 쓰기</button><button id="composer-save" type="submit" class="btn" disabled aria-describedby="composer-status">카드 저장</button></div>
   </form>
-  <p><a id="composer-result" target="_blank" rel="noopener noreferrer" hidden>GitHub에서 저장 결과 확인</a></p>
-  <button type="button" id="composer-next" class="btn btn--ghost" hidden>다른 카드 작성</button>
 </dialog>
 <script>
   import '../scripts/fragment-composer';
@@ -57,7 +55,6 @@ if (process.env.FRAGMENT_CMS_OAUTH_TEST === '1') {
   .composer-actions { border-top:1px solid var(--line); padding-top:18px; flex-wrap:wrap; }
   button:disabled { opacity:.45; cursor:not-allowed; }
   .composer-session { padding:12px 0; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
-  #composer-result { color:var(--accent); text-decoration:underline; }
   input:read-only,textarea:read-only { opacity:.7; }
   @media(max-width:560px) { dialog { padding:20px; } .composer-columns { grid-template-columns:1fr; } }
 </style>

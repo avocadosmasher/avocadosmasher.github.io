@@ -15,6 +15,13 @@ test('inline composer keeps input when closed and respects the mobile viewport',
   await expect(trigger).toBeFocused();
   await trigger.click();
   await expect(editor.getByLabel('용어', { exact: true })).toHaveValue('새 개념');
+  await editor.getByLabel('용어', { exact: true }).click();
+  await expect(editor).toBeVisible();
+  await page.mouse.click(2, 2);
+  await expect(editor).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  await trigger.click();
+  await expect(editor.getByLabel('용어', { exact: true })).toHaveValue('새 개념');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await editor.getByRole('button', { name: '닫기', exact: true }).click();
   await expect(page).toHaveURL(/q=EPT/);
