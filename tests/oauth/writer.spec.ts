@@ -14,7 +14,7 @@ async function openForm(page: Page) {
   const dialog = page.getByRole('dialog', { name: '새 카드 작성' });
   await dialog.getByLabel('용어', { exact: true }).fill('한글 카드');
   await dialog.getByLabel('요약', { exact: true }).fill('저장 테스트');
-  await dialog.getByLabel('카테고리', { exact: true }).fill('테스트');
+  await dialog.getByLabel('카테고리', { exact: true }).selectOption('DevOps');
   return dialog;
 }
 
@@ -29,6 +29,7 @@ test('native composer logs in, validates, saves once and links the commit', asyn
       expect(payload.branch).toBe('cms-test');
       expect(payload.sha).toBeUndefined();
       expect(Buffer.from(payload.content, 'base64').toString('utf8')).toContain('title: "한글 카드"');
+      expect(Buffer.from(payload.content, 'base64').toString('utf8')).toContain('category: "DevOps"');
       await route.fulfill({ status: 201, json: { content: { path: new URL(route.request().url()).pathname.split('/contents/')[1] }, commit: { sha: 'a'.repeat(40) } } });
     } else if (route.request().url().includes('/contents/')) await route.fulfill({ status: 404, json: {} });
     else await route.fulfill({ json: { full_name: repo, private: false, permissions: { push: true } } });
@@ -52,6 +53,8 @@ test('native composer logs in, validates, saves once and links the commit', asyn
   await expect(trigger).toBeFocused();
   await trigger.click();
   await expect(dialog.getByLabel('용어', { exact: true })).toBeEmpty();
+  await expect(dialog.getByLabel('카테고리', { exact: true })).toHaveValue('');
+  await expect(dialog.getByLabel('카테고리', { exact: true })).toBeEnabled();
   await expect(dialog.getByRole('button', { name: '카드 저장', exact: true })).toBeEnabled();
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('writer_test_token');
 });
@@ -77,6 +80,8 @@ test('lost PUT response preserves the draft and retry verifies the existing file
   await dialog.getByRole('button', { name: '카드 저장', exact: true }).click();
   await expect(dialog.getByRole('status')).toContainText('응답');
   await expect(dialog.getByLabel('용어', { exact: true })).toHaveValue('한글 카드');
+  await expect(dialog.getByLabel('카테고리', { exact: true })).toHaveValue('DevOps');
+  await expect(dialog.getByLabel('카테고리', { exact: true })).toBeDisabled();
   await dialog.getByRole('button', { name: '같은 내용으로 다시 저장' }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.getByRole('link', { name: 'GitHub에서 저장 결과 확인' })).toBeVisible();

@@ -1,5 +1,23 @@
 import { expect, test } from '@playwright/test';
 
+test('composer offers the blog sidebar categories and preserves a selection', async ({ page }) => {
+  await page.goto('/blog/');
+  const categories = await page.locator('#sidebar [data-cat]').evaluateAll(items =>
+    items.map(item => item.getAttribute('data-cat')!).filter(value => value !== '전체'));
+  expect(categories.length).toBeGreaterThan(0);
+  await page.goto('/fragments/');
+  await page.getByRole('button', { name: '새 카드', exact: true }).click();
+  const editor = page.getByRole('dialog', { name: '새 카드 작성' });
+  const category = editor.getByLabel('카테고리', { exact: true });
+  await expect(category.locator('option')).toHaveText(['카테고리를 선택해주세요', ...categories]);
+  await expect(category).toHaveValue('');
+  expect(await category.evaluate((element: HTMLSelectElement) => element.validity.valueMissing)).toBe(true);
+  await category.selectOption(categories.at(-1)!);
+  await page.mouse.click(2, 2);
+  await page.getByRole('button', { name: '새 카드', exact: true }).click();
+  await expect(category).toHaveValue(categories.at(-1)!);
+});
+
 test('inline composer keeps input when closed and respects the mobile viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/fragments/?q=EPT');

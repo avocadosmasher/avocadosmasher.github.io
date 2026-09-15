@@ -1,6 +1,6 @@
 ---
-interface Props { categories: string[] }
-const { categories } = Astro.props;
+import { CATEGORIES } from '../consts';
+const categories = Object.keys(CATEGORIES);
 import { createWriterConfig } from '../lib/fragment-writer';
 let writerConfig;
 let configError = '';
@@ -25,8 +25,10 @@ if (process.env.FRAGMENT_CMS_OAUTH_TEST === '1') {
   <form id="composer-form">
     <label>용어<input name="title" required autofocus placeholder="예: 가상 메모리" /></label>
     <label>요약<textarea name="summary" required rows="3" placeholder="이 개념을 짧게 설명해주세요"></textarea></label>
-    <label>카테고리<input name="category" required list="composer-categories" placeholder="기존 카테고리 선택 또는 직접 입력" /></label>
-    <datalist id="composer-categories">{categories.map(category => <option value={category} />)}</datalist>
+    <label>카테고리<span class="category-select"><select name="category" required aria-label="카테고리">
+      <option value="" disabled selected>카테고리를 선택해주세요</option>
+      {categories.map(category => <option value={category}>{category}</option>)}
+    </select></span></label>
     <div class="composer-columns">
       <label>별칭<input name="aliases" placeholder="쉼표로 구분 · Virtual Memory, VM" /></label>
       <label>태그<input name="tags" placeholder="쉼표로 구분 · 운영체제, 메모리" /></label>
@@ -49,12 +51,16 @@ if (process.env.FRAGMENT_CMS_OAUTH_TEST === '1') {
   #composer-close { padding:8px 12px; border:1px solid var(--line); border-radius:8px; }
   form { display:grid; gap:18px; margin-top:24px; }
   label { min-width:0; }
-  input,textarea { width:100%; box-sizing:border-box; background:var(--paper); color:var(--ink); border:1px solid var(--line-strong); border-radius:9px; padding:12px; font:inherit; }
+  input,textarea,select { width:100%; box-sizing:border-box; background:var(--paper); color:var(--ink); border:1px solid var(--line-strong); border-radius:9px; padding:12px; font:inherit; }
   textarea { resize:vertical; }
+  .category-select { position:relative; display:block; }
+  .category-select select { appearance:none; padding-right:44px; }
+  .category-select::after { content:''; position:absolute; right:18px; top:50%; width:8px; height:8px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); transform:translateY(-70%) rotate(45deg); pointer-events:none; }
+  @media (forced-colors:active) { .category-select select { appearance:auto; } .category-select::after { display:none; } }
   .composer-columns { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .composer-actions { border-top:1px solid var(--line); padding-top:18px; flex-wrap:wrap; }
   button:disabled { opacity:.45; cursor:not-allowed; }
   .composer-session { padding:12px 0; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
-  input:read-only,textarea:read-only { opacity:.7; }
+  input:read-only,textarea:read-only,select:disabled { opacity:.7; }
   @media(max-width:560px) { dialog { padding:20px; } .composer-columns { grid-template-columns:1fr; } }
 </style>

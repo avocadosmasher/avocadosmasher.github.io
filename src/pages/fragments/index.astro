@@ -49,7 +49,7 @@ const categories = [...new Set(cards.map(card => card.category))].sort((a, b) =>
       <button id="fragment-related-graph" class="btn btn--ghost">이 개념의 관계 보기</button>
     </dialog>
     <script id="fragment-data" type="application/json" set:html={JSON.stringify(cards).replace(/</g, '\\u003c')}></script>
-    <FragmentComposer categories={categories} />
+    <FragmentComposer />
   </main>
   <script>
     import '../../scripts/fragments';

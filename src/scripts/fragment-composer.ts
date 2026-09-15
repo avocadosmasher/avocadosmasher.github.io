@@ -11,7 +11,7 @@ const logout = document.querySelector<HTMLButtonElement>('#composer-logout');
 const result = document.querySelector<HTMLAnchorElement>('#composer-result')!;
 const success = document.getElementById('composer-success')!;
 const closers = ['composer-close', 'composer-later'].map(id => document.getElementById(id) as HTMLButtonElement);
-const fields = [...form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input,textarea')];
+const fields = [...form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input,textarea,select')];
 const config = dialog.dataset.writer ? createWriterConfig(JSON.parse(dialog.dataset.writer)) : undefined;
 let token = '';
 let busy = false;
@@ -22,7 +22,10 @@ function render() {
   save.textContent = busy && pending ? '저장 확인 중…' : pending ? '같은 내용으로 다시 저장' : '카드 저장';
   if (login) { login.disabled = busy; login.hidden = !!token; }
   if (logout) { logout.disabled = busy; logout.hidden = !token; }
-  for (const field of fields) field.readOnly = !!pending;
+  for (const field of fields) {
+    if (field instanceof HTMLSelectElement) field.disabled = !!pending;
+    else field.readOnly = !!pending;
+  }
   for (const closer of closers) closer.disabled = busy;
   form.setAttribute('aria-busy', String(busy));
 }
