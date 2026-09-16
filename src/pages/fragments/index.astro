@@ -28,6 +28,7 @@ const editPaths = Object.fromEntries(entries.map(entry => [entry.data.id,
       <p id="composer-success"></p>
       <a id="composer-result" target="_blank" rel="noopener noreferrer" hidden>GitHub에서 저장 결과 확인</a>
     </div>
+    <div id="fragment-sync" hidden><p id="fragment-sync-status" class="fragment-hint" role="status" aria-live="polite"></p><button id="fragment-sync-retry" type="button" class="btn btn--ghost" hidden>최신 카드 다시 불러오기</button></div>
     <section class="fragment-toolbar" aria-label="개념 찾기">
       <label class="fragment-search">개념 검색<input type="search" id="fragment-search" aria-label="개념 검색" placeholder="용어, 별칭, 설명으로 찾아보세요" autocomplete="off" /></label>
       <label>카테고리<select id="fragment-category"><option value="">전체 ({cards.length})</option>{categories.map(category => <option value={category}>{category} ({cards.filter(c => c.category === category).length})</option>)}</select></label>

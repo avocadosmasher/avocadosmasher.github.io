@@ -2,6 +2,10 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { oauthPopup } from '../../workers/fragment-oauth/worker';
 
 const repo = 'tester/fragment-cms-auth-test';
+// These tests isolate writes; live snapshot behavior is covered by sync.spec.ts.
+test.beforeEach(async ({ page }) => {
+  await page.route('**/git/trees/**', route => route.fulfill({ status: 503, json: {} }));
+});
 async function loginRoute(context: BrowserContext, result = { token: 'writer_test_token', provider: 'github' as const }) {
   await context.route('https://oauth.example/**', async route => {
     const response = oauthPopup('http://127.0.0.1:4401', result);

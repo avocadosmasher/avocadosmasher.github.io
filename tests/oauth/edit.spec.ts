@@ -1,5 +1,6 @@
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { oauthPopup } from '../../workers/fragment-oauth/worker';
+import { readFileSync } from 'node:fs';
 
 const repo = 'tester/fragment-cms-auth-test';
 const path = 'src/content/fragments/ept.md';
@@ -14,6 +15,16 @@ async function mock(context: BrowserContext, mode = 'normal') {
   });
   await context.route('https://api.github.com/**', async route => {
     const request = route.request();
+    if (request.url().includes('/git/trees/')) return route.fulfill({ json: { truncated: false, tree: [
+      { path, type: 'blob', sha },
+      { path: 'src/content/fragments/gpa.md', type: 'blob', sha: 'd'.repeat(40) },
+      { path: 'src/content/fragments/hpa.md', type: 'blob', sha: 'e'.repeat(40) },
+    ] } });
+    if (request.url().includes('/git/blobs/')) {
+      const blobSha = new URL(request.url()).pathname.split('/').at(-1)!;
+      const content = blobSha === sha ? source : readFileSync(`src/content/fragments/${blobSha[0] === 'd' ? 'gpa' : 'hpa'}.md`, 'utf8');
+      return route.fulfill({ json: { sha: blobSha, encoding: 'base64', content: Buffer.from(content).toString('base64') } });
+    }
     if (!request.url().includes('/contents/')) return route.fulfill({ json: { full_name: repo, private: false, permissions: { push: true } } });
     expect(new URL(request.url()).pathname).toBe(`/repos/${repo}/contents/${path}`);
     if (request.method() === 'PUT') {
@@ -46,12 +57,14 @@ test('edit loads remote content, preserves file/ID/relations and reopens the sav
   await editor.getByRole('button', { name: '수정 저장' }).click();
   await expect(editor).not.toBeVisible();
   await expect(page.locator('#composer-success')).toContainText('수정한 EPT');
+  await expect(page.locator('[data-fragment-card="ept"]')).toContainText('수정한 EPT');
   expect(remote.writes).toHaveLength(1);
   expect(remote.source()).toContain('id: "ept"');
   expect(remote.source()).toContain('relations: [{"target":"gpa","type":"prerequisite"}]');
   expect(remote.source()).toContain('category: "Infra"');
   const another = await context.newPage();
   await another.goto('/fragments/?card=ept');
+  await expect(another.locator('#fragment-dialog-title')).toHaveText('수정한 EPT');
   await another.locator('#fragment-edit').click();
   await another.locator('#composer-login').click();
   await expect(another.getByLabel('용어', { exact: true })).toHaveValue('수정한 EPT');

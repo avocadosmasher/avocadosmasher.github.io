@@ -1,5 +1,8 @@
 import { graphData, paginate, parseState, relationLabels, searchFragments, stateUrl, type PublicFragment } from '../lib/fragments';
 import type { Core } from 'cytoscape';
+import { createWriterConfig } from '../lib/fragment-writer';
+import { loadFragmentSnapshot } from '../lib/fragment-snapshot';
+import { liveFragment } from '../lib/fragment-live';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const cards: PublicFragment[] = JSON.parse($('fragment-data').textContent ?? '[]');
@@ -13,6 +16,55 @@ let state = parseState(location.search, categories);
 let lastFocus: HTMLElement | null = null;
 let cy: Core | undefined;
 let graphGeneration = 0;
+const writerData = $('fragment-composer').dataset.writer;
+const writerConfig = writerData ? createWriterConfig(JSON.parse(writerData)) : undefined;
+let snapshotGeneration = 0;
+let authoritative = !writerConfig;
+let hasRendered = false;
+// A direct link may refer to a card created after this HTML was built.
+if (writerConfig) state = parseState(location.search, [...categories, new URLSearchParams(location.search).get('category') ?? '']);
+
+function updateCollection(next: PublicFragment[]) {
+  const selectedFocus = focus.value;
+  cards.splice(0, cards.length, ...next);
+  byId.clear(); cards.forEach(card => byId.set(card.id, card));
+  categories.splice(0, categories.length, ...[...new Set(cards.map(card => card.category))].sort((a, b) => a.localeCompare(b, 'ko')));
+  category.replaceChildren(new Option(`전체 (${cards.length})`, ''), ...categories.map(value => new Option(`${value} (${cards.filter(card => card.category === value).length})`, value)));
+  if (!categories.includes(state.category)) state.category = '';
+  focus.replaceChildren(new Option('전체 관계', ''), ...cards.map(card => new Option(card.title, card.id)));
+  focus.value = byId.has(selectedFocus) ? selectedFocus : '';
+  render();
+}
+async function refreshCards() {
+  if (!writerConfig) return;
+  const generation = ++snapshotGeneration;
+  $('fragment-sync').hidden = false;
+  $('fragment-sync-status').textContent = '최신 카드를 불러오고 있습니다.';
+  $('fragment-sync-retry').hidden = true;
+  try {
+    const snapshot = await loadFragmentSnapshot(writerConfig);
+    if (generation !== snapshotGeneration) return;
+    const next = snapshot.map(item => liveFragment(item.draft));
+    authoritative = true;
+    window.dispatchEvent(new CustomEvent('fragment-paths', { detail: Object.fromEntries(snapshot.map(item => [item.draft.id, item.path])) }));
+    updateCollection(next);
+    $('fragment-sync-status').textContent = '최신 카드를 불러왔습니다.';
+  } catch {
+    if (generation !== snapshotGeneration) return;
+    $('fragment-sync-status').textContent = '최신 카드를 확인하지 못했습니다. 현재 목록은 이전 내용일 수 있습니다. 잠시 후 다시 불러와주세요.';
+    $('fragment-sync-retry').hidden = false;
+    if (!hasRendered) render();
+  }
+}
+window.addEventListener('fragment-saved', event => {
+  const { card } = (event as CustomEvent<{ card: PublicFragment; path: string }>).detail;
+  // An earlier GET must never overwrite the result of a completed save.
+  snapshotGeneration++;
+  updateCollection([...cards.filter(item => item.id !== card.id), card]);
+  $('fragment-sync-status').textContent = '저장한 카드를 현재 목록에 반영했습니다.';
+  $('fragment-sync-retry').hidden = true;
+});
+$('fragment-sync-retry').addEventListener('click', () => void refreshCards());
 
 function text(tag: string, value: string, className = '') {
   const element = document.createElement(tag);
@@ -40,6 +92,7 @@ function closeCard() {
 function renderDialog() {
   const card = byId.get(state.card);
   if (!card) {
+    if (state.card && !authoritative) return;
     if (state.card) { $('fragment-notice').hidden = false; $('fragment-notice').textContent = '찾을 수 없는 카드입니다. 목록에서 다시 선택해주세요.'; state.card = ''; url(); }
     if (dialog.open) { dialog.close(); lastFocus?.focus(); }
     return;
@@ -49,7 +102,7 @@ function renderDialog() {
   $('fragment-dialog-category').textContent = card.category;
   $('fragment-dialog-aliases').textContent = card.aliases.join(' · ');
   $('fragment-dialog-summary').textContent = card.summary;
-  // HTML is sanitized during the build; user metadata is always inserted as text.
+  // Build HTML and live Markdown HTML are sanitized before reaching this boundary.
   $('fragment-dialog-body').innerHTML = card.html;
   $('fragment-dialog-tags').replaceChildren(...card.tags.map(tag => text('span', `#${tag}`)));
   const links = card.relations.map(rel => button(`${relationLabels[rel.type]} · ${byId.get(rel.target)?.title ?? rel.target}`, () => openCard(rel.target, true)));
@@ -58,6 +111,7 @@ function renderDialog() {
   $('fragment-close').focus();
 }
 function render() {
+  hasRendered = true;
   input.value = state.q; category.value = state.category;
   const found = searchFragments(cards, state.q, state.category);
   const page = paginate(found, state.page);
@@ -135,4 +189,5 @@ $('graph-zoom-in').addEventListener('click', () => { if (cy) cy.zoom(cy.zoom() *
 $('graph-zoom-out').addEventListener('click', () => { if (cy) cy.zoom(cy.zoom() / 1.2); });
 new MutationObserver(() => { if (state.view === 'graph') void renderGraph(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 window.addEventListener('popstate', () => { state = parseState(location.search, categories); render(); });
-render();
+if (writerConfig) void refreshCards();
+else render();

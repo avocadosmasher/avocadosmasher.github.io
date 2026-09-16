@@ -45,6 +45,10 @@ export async function loadFragment(config: WriterConfig, token: string, path: st
   requireResponse(response);
   const file = await responseJson(response);
   const source = readFile(file, path);
+  return { path, sha: file.sha, draft: parseFragmentSource(source, id) };
+}
+
+export function parseFragmentSource(source: string, id?: string): WriterDraft {
   try {
     const match = source.match(/^\uFEFF?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/);
     if (!match) throw new Error('frontmatter');
@@ -54,9 +58,10 @@ export async function loadFragment(config: WriterConfig, token: string, path: st
     // Unknown fields must not be silently removed by the schema on save.
     const allowed = ['id', 'title', 'summary', 'category', 'aliases', 'tags', 'relations'];
     if (!metadata || typeof metadata !== 'object' || Object.keys(metadata).some(key => !allowed.includes(key))) throw new Error('fields');
+    if (typeof metadata.id !== 'string') throw new Error('missing id');
     const draft = prepareFragmentSave({ ...metadata, body: match[2] });
-    if (draft.id !== id) throw new Error('id');
-    return { path, sha: file.sha, draft };
+    if (id !== undefined && draft.id !== id) throw new Error('id');
+    return draft;
   } catch { throw new WriterError('conflict', '카드 ID 또는 원문 형식을 확인할 수 없어 수정을 중단했습니다. GitHub 원문을 확인해주세요.'); }
 }
 

@@ -1,5 +1,6 @@
 import { createWriterConfig, draftFromFields, loadFragment, saveExistingFragment, saveNewFragment, verifyWriter, WriterError, type WriterDraft, type ExistingFragment } from '../lib/fragment-writer';
 import { loginWriter } from '../lib/fragment-writer-login';
+import { liveFragment } from '../lib/fragment-live';
 
 const dialog = document.querySelector<HTMLDialogElement>('#fragment-composer')!;
 const trigger = document.querySelector<HTMLButtonElement>('#fragment-compose')!;
@@ -21,6 +22,11 @@ let editingId = '';
 let returnFocus: HTMLElement = trigger;
 const edit = document.querySelector<HTMLButtonElement>('#fragment-edit')!;
 const editPaths: Record<string, string> = JSON.parse(document.getElementById('fragment-edit-paths')!.textContent ?? '{}');
+window.addEventListener('fragment-paths', event => {
+  const paths = (event as CustomEvent<Record<string, string>>).detail;
+  for (const id of Object.keys(editPaths)) delete editPaths[id];
+  Object.assign(editPaths, paths);
+});
 const heading = document.getElementById('composer-title')!;
 const categoryField = form.elements.namedItem('category') as HTMLSelectElement;
 type Session = { values: Record<string, string>; pending?: WriterDraft; existing?: ExistingFragment; message: string };
@@ -127,10 +133,13 @@ form.addEventListener('submit', async event => {
   busy = true; render();
   status.textContent = 'GitHub 저장 결과를 확인하고 있습니다. 페이지를 떠나지 마세요.';
   try {
+    // Render before writing so a display failure cannot be mistaken for a failed GitHub save.
+    const savedCard = liveFragment(pending);
+    const savedPath = existing?.path ?? `src/content/fragments/${pending.id}.md`;
     const response = existing ? await saveExistingFragment(config, token, existing, pending) : await saveNewFragment(config, token, pending);
     result.href = response.url;
     result.hidden = false;
-    success.textContent = `“${pending.title}” 카드를 저장했습니다. 공개 목록에는 사이트 업데이트 후 표시됩니다.`;
+    success.textContent = `“${pending.title}” 카드를 저장했습니다. 목록과 상세에도 반영했습니다.`;
     form.reset(); pending = undefined; existing = undefined;
     sessions.delete(editingId);
     status.textContent = editingId ? '저장했습니다. 다시 수정하면 최신 원문을 불러옵니다.' : '새 카드를 작성해주세요.';
@@ -139,6 +148,8 @@ form.addEventListener('submit', async event => {
       returnFocus = trigger;
     }
     dialog.close();
+    editPaths[savedCard.id] = savedPath;
+    window.dispatchEvent(new CustomEvent('fragment-saved', { detail: { card: savedCard, path: savedPath } }));
   } catch (error) {
     if (error instanceof WriterError && ['auth', 'permission'].includes(error.code)) token = '';
     status.textContent = error instanceof WriterError ? error.message : '저장 결과를 확인하지 못했습니다. 같은 내용으로 다시 저장해주세요.';
