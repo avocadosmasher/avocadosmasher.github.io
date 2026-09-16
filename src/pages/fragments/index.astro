@@ -15,6 +15,8 @@ try {
   throw new Error(`Fragment 콘텐츠 검증 실패 (${entries.map(e => e.filePath ?? e.id).join(', ')}): ${error}`);
 }
 const categories = [...new Set(cards.map(card => card.category))].sort((a, b) => a.localeCompare(b, 'ko'));
+const editPaths = Object.fromEntries(entries.map(entry => [entry.data.id,
+  entry.filePath?.replace(/\\/g, '/').match(/(?:^|\/)(src\/content\/fragments\/.+\.md)$/)?.[1] ?? '']));
 ---
 <BaseLayout title="Fragments" description="공부하며 모은 개념의 조각들" active="Fragments">
   <main class="fragments home" id="fragments">
@@ -47,8 +49,10 @@ const categories = [...new Set(cards.map(card => card.category))].sort((a, b) =>
       <div id="fragment-dialog-body" class="prose"></div><div id="fragment-dialog-tags" class="fragment-tags"></div>
       <section class="fragment-relations"><h3>연결된 개념</h3><div id="fragment-dialog-relations"></div></section>
       <button id="fragment-related-graph" class="btn btn--ghost">이 개념의 관계 보기</button>
+      <button id="fragment-edit" class="btn btn--ghost" hidden>로그인하고 수정</button>
     </dialog>
     <script id="fragment-data" type="application/json" set:html={JSON.stringify(cards).replace(/</g, '\\u003c')}></script>
+    <script is:inline id="fragment-edit-paths" type="application/json" set:html={JSON.stringify(editPaths).replace(/</g, '\\u003c')}></script>
     <FragmentComposer />
   </main>
   <script>

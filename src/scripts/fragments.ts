@@ -45,6 +45,7 @@ function renderDialog() {
     return;
   }
   $('fragment-dialog-title').textContent = card.title;
+  $('fragment-edit').dataset.cardId = card.id;
   $('fragment-dialog-category').textContent = card.category;
   $('fragment-dialog-aliases').textContent = card.aliases.join(' · ');
   $('fragment-dialog-summary').textContent = card.summary;

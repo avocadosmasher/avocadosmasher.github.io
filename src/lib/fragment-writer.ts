@@ -1,5 +1,6 @@
 import { prepareFragmentSave } from './fragment-admin';
 import { createOAuthTestConfig } from './fragment-admin-oauth';
+import { parseDocument } from 'yaml';
 
 export interface WriterConfig { repo: string; branch: string; origin: string }
 export type WriterDraft = ReturnType<typeof prepareFragmentSave>;
@@ -14,10 +15,73 @@ export function createWriterConfig(input: { repo?: string; branch?: string; orig
   return { repo: backend.repo, branch: backend.branch, origin: backend.base_url };
 }
 
-export function draftFromFields(input: Record<string, string>): WriterDraft {
+export function draftFromFields(input: Record<string, string>, existing?: WriterDraft): WriterDraft {
   const list = (value = '') => [...new Set(value.split(',').map(item => item.trim()).filter(Boolean))];
   return prepareFragmentSave({ title: input.title, summary: input.summary, category: input.category,
-    aliases: list(input.aliases), tags: list(input.tags), body: input.body ?? '', relations: [] });
+    aliases: existing && input.aliases === existing.aliases.join(', ') ? existing.aliases : list(input.aliases),
+    tags: existing && input.tags === existing.tags.join(', ') ? existing.tags : list(input.tags),
+    body: input.body ?? '', relations: existing?.relations ?? [] }, existing?.id);
+}
+
+export interface ExistingFragment { path: string; sha: string; draft: WriterDraft }
+function filePath(path: string) {
+  if (!/^src\/content\/fragments\/(?:[A-Za-z0-9_-]+\/)*[A-Za-z0-9_-]+\.md$/.test(path)) {
+    throw new WriterError('conflict', '수정할 카드의 파일 경로를 확인할 수 없습니다.');
+  }
+  return path;
+}
+function readFile(file: any, path: string) {
+  if (file.type !== 'file' || file.path !== path || !/^[a-f0-9]{40}$/.test(file.sha ?? '') ||
+      file.encoding !== 'base64' || typeof file.content !== 'string') {
+    throw new WriterError('conflict', '카드 원문과 파일 버전을 확인할 수 없습니다.');
+  }
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(Uint8Array.from(atob(file.content.replace(/\s/g, '')), c => c.charCodeAt(0))); }
+  catch { throw new WriterError('conflict', '카드 원문을 읽을 수 없습니다.'); }
+}
+export async function loadFragment(config: WriterConfig, token: string, path: string, id: string, upstream: typeof fetch = fetch): Promise<ExistingFragment> {
+  filePath(path);
+  await verifyWriter(config, token, upstream);
+  const response = await api(config, token, upstream)(`/contents/${path}?ref=${encodeURIComponent(config.branch)}`);
+  requireResponse(response);
+  const file = await responseJson(response);
+  const source = readFile(file, path);
+  try {
+    const match = source.match(/^\uFEFF?---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)([\s\S]*)$/);
+    if (!match) throw new Error('frontmatter');
+    const document = parseDocument(match[1], { uniqueKeys: true });
+    if (document.errors.length) throw new Error('yaml');
+    const metadata = document.toJS({ maxAliasCount: 50 });
+    // Unknown fields must not be silently removed by the schema on save.
+    const allowed = ['id', 'title', 'summary', 'category', 'aliases', 'tags', 'relations'];
+    if (!metadata || typeof metadata !== 'object' || Object.keys(metadata).some(key => !allowed.includes(key))) throw new Error('fields');
+    const draft = prepareFragmentSave({ ...metadata, body: match[2] });
+    if (draft.id !== id) throw new Error('id');
+    return { path, sha: file.sha, draft };
+  } catch { throw new WriterError('conflict', '카드 ID 또는 원문 형식을 확인할 수 없어 수정을 중단했습니다. GitHub 원문을 확인해주세요.'); }
+}
+
+/** Compare against the version read when opening; never create a replacement file. */
+export async function saveExistingFragment(config: WriterConfig, token: string, existing: ExistingFragment, draft: WriterDraft, upstream: typeof fetch = fetch) {
+  const path = filePath(existing.path);
+  if (draft.id !== existing.draft.id || !/^[a-f0-9]{40}$/.test(existing.sha)) throw new WriterError('conflict', '원래 카드 ID와 버전을 유지해주세요.');
+  const markdown = markdownForDraft(draft);
+  const request = api(config, token, upstream);
+  await verifyWriter(config, token, upstream);
+  const current = await request(`/contents/${path}?ref=${encodeURIComponent(config.branch)}`);
+  requireResponse(current);
+  const file = await responseJson(current);
+  const source = readFile(file, path);
+  if (source === markdown) return { recovered: true, url: `https://github.com/${config.repo}/blob/${encodeURIComponent(config.branch)}/${path}` };
+  if (file.sha !== existing.sha) throw new WriterError('conflict', '다른 곳에서 카드가 변경되었습니다. 입력은 보존했습니다. 필요한 내용을 복사한 뒤 페이지를 새로고침하고 다시 수정해주세요.');
+  const response = await request(`/contents/${path}`, { method: 'PUT', body: JSON.stringify({
+    message: `fix(fragments): update ${draft.id}`, branch: config.branch, sha: existing.sha, content: encode(markdown),
+  }) });
+  requireResponse(response);
+  const saved = await responseJson(response);
+  if (response.status !== 200 || saved.content?.path !== path || !/^[a-f0-9]{40}$/.test(saved.commit?.sha ?? '')) {
+    throw new WriterError('network', '저장 결과를 확인하지 못했습니다. 같은 내용으로 다시 저장해주세요.');
+  }
+  return { recovered: false, url: `https://github.com/${config.repo}/commit/${saved.commit.sha}` };
 }
 
 export function markdownForDraft(draft: WriterDraft): string {
@@ -25,7 +89,7 @@ export function markdownForDraft(draft: WriterDraft): string {
   // JSON scalars/arrays are also valid YAML; escape line separators to prevent injected keys.
   const quote = (value: unknown) => JSON.stringify(value).replace(/[\u0085\u2028\u2029]/g,
     char => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`);
-  return `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${quote(value)}`).join('\n')}\n---\n${body}\n`;
+  return `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${quote(value)}`).join('\n')}\n---\n${body}${body.endsWith('\n') ? '' : '\n'}`;
 }
 
 function encode(value: string) {
