@@ -38,9 +38,11 @@ const editPaths = Object.fromEntries(entries.map(entry => [entry.data.id,
     <section id="fragment-list" aria-label="개념 카드 목록"><div id="fragment-grid" class="fragment-grid"></div><p id="fragment-empty" class="fragment-empty" hidden>조건에 맞는 개념이 없습니다.</p><nav id="fragment-pages" class="fragment-pages" aria-label="카드 페이지"></nav></section>
     <section id="fragment-graph-panel" aria-label="개념 관계 그래프" hidden>
       <div class="fragment-graph-tools"><label>중심 개념<select id="graph-focus"><option value="">전체 관계</option>{cards.map(c => <option value={c.id}>{c.title}</option>)}</select></label><button id="graph-zoom-in" aria-label="그래프 확대">＋</button><button id="graph-zoom-out" aria-label="그래프 축소">−</button><button id="graph-fit">전체 맞춤</button></div>
-      <p class="fragment-hint">개념을 눌러 카드를 열어보세요. 흐린 개념은 검색 조건 밖의 연결된 이웃입니다. 화살표는 선행·상위 개념을 가리킵니다.</p>
+      <p class="fragment-hint">노드에 마우스를 올리면 직접 연결된 개념과 선을 강조합니다. 클릭하면 상세가 열립니다. 아래 개념 버튼에서도 키보드로 탐색할 수 있습니다.</p>
+      <p id="graph-empty-relations" class="fragment-hint" hidden></p>
       <p id="graph-status" role="status"></p><button id="graph-retry" hidden>그래프 다시 불러오기</button>
-      <div id="fragment-graph"></div>
+      <p id="graph-selection" class="fragment-hint" role="status" aria-live="polite">노드에 마우스를 올리거나 아래 개념 버튼에 포커스를 두세요.</p>
+      <div id="fragment-graph" aria-label="개념 관계 그래프 화면"></div>
       <div id="graph-accessible" class="fragment-graph-links" aria-label="그래프 개념 목록"></div>
     </section>
     <noscript><p>검색·팝업·그래프를 사용하려면 JavaScript를 켜주세요.</p><ul>{cards.map(c => <li><strong>{c.title}</strong> — {c.summary}</li>)}</ul></noscript>

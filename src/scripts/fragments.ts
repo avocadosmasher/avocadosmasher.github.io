@@ -16,6 +16,25 @@ let state = parseState(location.search, categories);
 let lastFocus: HTMLElement | null = null;
 let cy: Core | undefined;
 let graphGeneration = 0;
+let pinnedNode = '';
+const graphHint = '노드에 마우스를 올리거나 아래 개념 버튼에 포커스를 두세요.';
+function highlightNode(id = pinnedNode) {
+  if (!cy || cy.destroyed()) return;
+  cy.elements().removeClass('graph-muted graph-neighbor graph-active');
+  const node = cy.getElementById(id);
+  if (!id || node.empty()) { $('graph-selection').textContent = graphHint; return; }
+  const neighborhood = node.closedNeighborhood();
+  cy.elements().difference(neighborhood).addClass('graph-muted');
+  neighborhood.addClass('graph-neighbor');
+  node.addClass('graph-active');
+  $('graph-selection').textContent = `${byId.get(id)?.title ?? id} · 직접 연결 ${node.neighborhood().nodes().length}개`;
+}
+function fitGraph() {
+  if (!cy || cy.destroyed()) return;
+  cy.resize(); cy.fit(undefined, 32);
+  // A single concept must not expand into an oversized label.
+  if (cy.zoom() > 1.4) { cy.zoom(1.4); cy.center(); }
+}
 const writerData = $('fragment-composer').dataset.writer;
 const writerConfig = writerData ? createWriterConfig(JSON.parse(writerData)) : undefined;
 let snapshotGeneration = 0;
@@ -149,10 +168,24 @@ function render() {
 }
 async function renderGraph() {
   const generation = ++graphGeneration;
+  pinnedNode = '';
+  $('graph-selection').textContent = graphHint;
   const matches = new Set(searchFragments(cards, state.q, state.category).map(c => c.id));
   const data = graphData(cards, focus.value || undefined, matches);
   $('graph-status').textContent = '관계를 불러오는 중…'; $('graph-retry').hidden = true;
-  $('graph-accessible').replaceChildren(...data.nodes.map(node => button(node.data.label, () => openCard(node.data.id))));
+  const noRelations = $('graph-empty-relations');
+  noRelations.hidden = !data.nodes.length || !!data.edges.length;
+  noRelations.textContent = cards.every(card => !card.relations.length)
+    ? '관계가 아직 등록되지 않았습니다. 현재는 개념만 표시합니다. 카드 간 관계를 지정하는 기능은 준비 중입니다.'
+    : '현재 선택 범위에는 연결된 관계가 없습니다. 다른 중심 개념이나 전체 관계를 선택해보세요.';
+  $('graph-accessible').replaceChildren(...data.nodes.map(node => {
+    const control = button(node.data.label, () => { pinnedNode = node.data.id; highlightNode(); openCard(node.data.id); });
+    control.addEventListener('mouseenter', () => highlightNode(node.data.id));
+    control.addEventListener('mouseleave', () => highlightNode());
+    control.addEventListener('focus', () => highlightNode(node.data.id));
+    control.addEventListener('blur', () => highlightNode());
+    return control;
+  }));
   try {
     const { default: cytoscape } = await import('cytoscape');
     if (generation !== graphGeneration) return;
@@ -160,13 +193,30 @@ async function renderGraph() {
     const dark = document.documentElement.dataset.theme === 'dark';
     cy = cytoscape({ container: $('fragment-graph'), elements: [...data.nodes, ...data.edges],
       style: [
-        { selector: 'node', style: { label: 'data(label)', 'background-color': '#8070e8', color: dark ? '#f2f2f6' : '#17171f', 'font-size': 13, 'text-valign': 'bottom', 'text-margin-y': 8, width: 28, height: 28 } },
+        { selector: 'node', style: { label: 'data(label)', 'background-color': '#8070e8', color: dark ? '#f2f2f6' : '#17171f', 'font-size': 13, 'text-valign': 'bottom', 'text-margin-y': 8, 'text-wrap': 'wrap', 'text-max-width': '132px', 'text-overflow-wrap': 'anywhere', 'line-height': 1.3, width: 28, height: 28 } },
         { selector: 'node[outside = 1]', style: { opacity: 0.45 } },
-        { selector: 'edge', style: { label: 'data(label)', width: 1.5, 'line-color': '#9690ae', color: dark ? '#cbcbd4' : '#41414c', 'font-size': 10, 'curve-style': 'bezier' } },
+        { selector: 'edge', style: { label: 'data(label)', width: 1.5, 'line-color': '#9690ae', color: dark ? '#cbcbd4' : '#41414c', 'font-size': 10, 'curve-style': 'bezier',
+          'text-background-color': getComputedStyle($('fragment-graph')).backgroundColor,
+          'text-background-opacity': 1, 'text-background-padding': '3px',
+        } },
         { selector: 'edge[directed = 1]', style: { 'target-arrow-shape': 'triangle', 'target-arrow-color': '#9690ae' } },
-      ], layout: { name: data.nodes.length > 80 ? 'circle' : 'cose', animate: false, padding: 45 }, minZoom: 0.2, maxZoom: 3,
+        { selector: '.graph-neighbor', style: { opacity: 1 } },
+        { selector: 'node.graph-neighbor', style: { 'background-color': dark ? '#b1a5ff' : '#6956d4', 'border-width': 2, 'border-color': dark ? '#e7e1ff' : '#463596' } },
+        { selector: 'node.graph-active', style: { 'border-width': 4, 'border-color': dark ? '#ffffff' : '#312269' } },
+        { selector: 'edge.graph-neighbor', style: { width: 3, 'line-color': dark ? '#c0b4ff' : '#6956d4', 'target-arrow-color': dark ? '#c0b4ff' : '#6956d4', color: dark ? '#eeeaff' : '#463596' } },
+        { selector: '.graph-muted', style: { opacity: 0.16 } },
+      ], layout: data.edges.length === 0
+        ? { name: 'grid', cols: $('fragment-graph').clientWidth < 560 ? 2 : Math.ceil(Math.sqrt(data.nodes.length * 2)), avoidOverlap: true, avoidOverlapPadding: 24, nodeDimensionsIncludeLabels: true, animate: false, padding: 32 }
+        : data.nodes.length > 80
+          ? { name: 'circle', nodeDimensionsIncludeLabels: true, avoidOverlap: true, animate: false, padding: 32 }
+          : { name: 'cose', nodeDimensionsIncludeLabels: true, componentSpacing: 80, nodeRepulsion: () => 6000, idealEdgeLength: () => 100, animate: false, padding: 32 },
+      minZoom: 0.1, maxZoom: 3,
     });
-    cy.on('tap', 'node', event => openCard(event.target.id()));
+    fitGraph();
+    cy.on('mouseover', 'node', event => { $('fragment-graph').style.cursor = 'pointer'; highlightNode(event.target.id()); });
+    cy.on('mouseout', 'node', () => { $('fragment-graph').style.cursor = ''; highlightNode(); });
+    cy.on('tap', 'node', event => { pinnedNode = event.target.id(); highlightNode(); openCard(pinnedNode); });
+    cy.on('tap', event => { if (event.target === cy) { pinnedNode = ''; highlightNode(); } });
     $('graph-status').textContent = data.nodes.length ? `${data.nodes.length}개 개념 · ${data.edges.length}개 관계` : '조건에 맞는 개념이 없습니다.';
   } catch {
     if (generation !== graphGeneration) return;
@@ -184,7 +234,11 @@ dialog.addEventListener('click', event => { if (event.target === dialog) { const
 $('fragment-related-graph').addEventListener('click', () => { focus.value = state.card; closeCard(); state.view = 'graph'; url('push'); render(); $('graph-focus').focus(); });
 focus.addEventListener('change', () => void renderGraph());
 $('graph-retry').addEventListener('click', () => void renderGraph());
-$('graph-fit').addEventListener('click', () => cy?.fit(undefined, 45));
+$('fragment-graph').addEventListener('mouseleave', () => {
+  $('fragment-graph').style.cursor = '';
+  highlightNode();
+});
+$('graph-fit').addEventListener('click', fitGraph);
 $('graph-zoom-in').addEventListener('click', () => { if (cy) cy.zoom(cy.zoom() * 1.2); });
 $('graph-zoom-out').addEventListener('click', () => { if (cy) cy.zoom(cy.zoom() / 1.2); });
 new MutationObserver(() => { if (state.view === 'graph') void renderGraph(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });

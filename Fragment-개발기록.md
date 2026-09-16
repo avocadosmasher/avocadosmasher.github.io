@@ -1,5 +1,20 @@
 # Fragment 개발 기록
 
+## 그래프 관계 텍스트 배경 (2026-09-16, 수동 판정 대기)
+
+- 사용자가 이전 그래프 테스트 목록을 명시적으로 통과 판정했다. 별도 Graft 설정(.gitignore, .ignore, AGENTS.md)은 이번 승인 범위에 포함하지 않고 스테이징에서 제외해 파일을 보존했다. 승인 명령은 남아 있는 unstaged 변경을 이유로 훅에서 차단되어 승인 기록·커밋이 생성되지 않았다. 이어 실행된 push는 Everything up-to-date로 새 커밋을 전송하지 않았다. 훅을 우회하지 않았다.
+- 추가 요청에 따라 edge 관계 텍스트 뒤에 그래프의 실제 배경색과 같은 불투명 배경과 3px 여백을 적용했다. 글자 부분의 선을 가리고 테마 변경 시 다시 계산한다. 기존 통과 판정은 이 추가 변경의 승인으로 해석하지 않는다.
+- 검증: `npx playwright test --config playwright.oauth.config.ts tests/oauth/graph.spec.ts` 3개 통과. `npx astro check` 오류 0·경고 0·기존 hint 4개, `npm run build` 12페이지 성공. 로컬 그래프 URL HTTP 200 확인. 스타일 변경이므로 새 테스트와 단위 전체 재실행은 생략했다. 밝은/어두운 테마의 시각적 만족도는 사용자 수동 판정 대상이며 외부 배포는 수행하지 않았다.
+- 수동 확인: `http://127.0.0.1:4321/fragments/?view=graph`에서 관계 글자 뒤로 선이 비치지 않는지, 노드 강조와 테마 전환 후에도 배경이 자연스러운지 확인한다.
+
+## 그래프 가독성·이웃 강조 — 재개 검증 (2026-09-16, 수동 판정 대기)
+
+- `feat/fragments`, HEAD `e89b86c`에서 미커밋 그래프 UI 3파일과 `tests/oauth/graph.spec.ts`를 찾아 이어서 검증했다. 기존 Graft 설정의 스테이징은 보존했다. 이전 G03-LIVE는 Git 이력상 커밋됐으며 아래 수동 대기 표기는 당시 기록이다. 작성자 삭제(G08-UI)는 후속 작업이다.
+- 긴 제목 줄바꿈, 관계가 없는 그래프의 격자 배치·안내, 전체 맞춤 확대 제한, 마우스/키보드의 직접 이웃 강조와 상세 열기를 확인했다. 캔버스 밖으로 바로 나가면 강조가 남는 실패를 재현해 DOM mouseleave에서 복원하도록 수정했다.
+- 브라우저 테스트는 캔버스 준비·스크롤 좌표 반영 후 실제 포인터로 hover하도록 재시도하며, 이벤트를 강제로 발생시키지 않는다. 1280px/390px에서 제목 경계의 겹침·가로 넘침, 이웃 강조·해제, 키보드 상세 열기·포커스 복원, 중심 개념 전환을 검증했다.
+- 자동 검사: `npx vitest run` 10파일/40개 통과. 수정 후 `npx playwright test --config playwright.oauth.config.ts` 19개, `npx playwright test` 8개 통과. 최종 `npx astro check` 오류 0·경고 0·기존 hint 4개, `npm run build` 12페이지 성공. 최초 브라우저 실패는 위 수정 후 해결했다.
+- OAuth 브라우저 검사는 GitHub 응답을 mock 처리했다. 실제 계정 로그인·쓰기, 외부 배포와 전체 preview E2E는 이번에 수행하지 않았다. 수동 확인은 로컬 `/fragments/?view=graph`에서 진행한다. 승인 기록·커밋·push는 실행하지 않는다.
+
 ## G03-LIVE — 저장 후 목록·상세 반영 (2026-09-16, 수동 판정 대기)
 
 - 사용자가 G03-UI 테스트를 명시적으로 통과 판정했다. 승인받은 스테이징 내용 그대로 `node scripts/manual-review.mjs approve` → `847260e` 커밋 → `feat/fragments` push 완료. 첫 승인 명령의 샌드박스 spawnSync EPERM은 권한 허용 재실행으로 해결했다. 새 변경에는 이전 승인을 적용하지 않는다.
@@ -261,3 +276,10 @@
 
 - Cloudflare 테스트 사이트·Worker·GitHub OAuth App 연결은 완료했다. 기존 Decap 인수와 전용 폼 인수를 구분하며, 재개 지점은 위 G02-UI 기록을 따른다.
 - 실제 OAuth·커밋·배포 검증 전에는 A04/G05/G07/H05를 완료로 표시하지 않는다.
+
+## Graft 저장소 그래프 및 Codex 연동 (2026-09-16)
+
+- `npm install -g @nanonets/graft`를 실행해 `@nanonets/graft@0.18.0`을 설치했다. 설치 중 `tree-sitter-swift` peer 의존성 경고가 있었지만 설치는 성공했다.
+- 저장소에서 `graft init`을 실행해 그래프를 생성했다. 46개 파일을 파싱하고 168 nodes, 422 edges, 46 cards를 생성했으며 `graft/` 폴더에 기록했다.
+- 첫 실행에서 Codex 전역 설정 파일 쓰기가 `EPERM`으로 실패해 `graft init --agents agents --no-build`를 권한 승인 후 다시 실행했다. Codex 설정, Graft 훅, `AGENTS.md`, `.gitignore`, `.ignore` 연동을 확인했다.
+- 자동 검사: `graft init` 그래프 빌드 성공, `graft/` 존재 확인, `INDEX.md`를 제외한 맵 문서 46개 확인. 애플리케이션 자동 테스트는 동작 코드 변경이 없어 실행하지 않았다.

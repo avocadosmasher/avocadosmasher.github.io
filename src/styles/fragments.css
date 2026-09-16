@@ -43,5 +43,7 @@ body:has(#fragment-dialog[open]){overflow:hidden;}
 #fragment-graph{height:480px;border:1px solid var(--line);border-radius:16px;background:var(--surface);}
 .fragment-graph-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;max-height:160px;overflow:auto;padding:4px;}
 #graph-status{font-size:13px;color:var(--muted);}
+#graph-empty-relations{padding:14px 16px;background:var(--accent-soft);border-radius:10px;line-height:1.7;}
+#graph-selection{min-height:2.6em;overflow-wrap:anywhere;}
 @media(max-width:900px){.fragment-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.fragment-head{align-items:flex-start;flex-direction:column;}}
 @media(max-width:560px){.fragments{padding-top:30px;}.fragment-toolbar{flex-direction:column;padding:16px;}.fragment-grid{grid-template-columns:1fr;}.fragment-list-head{align-items:flex-start;flex-direction:column;}#fragment-dialog{padding:20px;}#fragment-graph{height:380px;}}
