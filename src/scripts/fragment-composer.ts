@@ -1,5 +1,6 @@
 import { createWriterConfig, deleteFragment, draftFromFields, loadFragment, saveExistingFragment, saveNewFragment, saveRelationChanges, verifyWriter, WriterError, type WriterDraft, type ExistingFragment } from '../lib/fragment-writer';
 import { loginWriter } from '../lib/fragment-writer-login';
+import { recoveryPlan, reloginMessage, type RecoveryContext } from '../lib/fragment-recovery';
 import { liveFragment } from '../lib/fragment-live';
 import { relationEditor } from './fragment-relations';
 
@@ -8,13 +9,27 @@ const trigger = document.querySelector<HTMLButtonElement>('#fragment-compose')!;
 const form = document.querySelector<HTMLFormElement>('#composer-form')!;
 const status = document.getElementById('composer-status')!;
 const errorPanel = document.getElementById('composer-error')!;
-function showFailure(title: string, message: string) {
+const reloginButton = document.getElementById('composer-error-login') as HTMLButtonElement;
+/** The action a failed save or delete can finish once the writer logs in again. */
+let interrupted: RecoveryContext | undefined;
+function showPanel(title: string, message: string, relogin: boolean) {
   status.textContent = message;
   document.getElementById('composer-error-title')!.textContent = title;
   document.getElementById('composer-error-message')!.textContent = message;
+  reloginButton.hidden = !relogin;
   errorPanel.hidden = false;
   errorPanel.focus();
   errorPanel.scrollIntoView({ block: 'nearest' });
+}
+function showFailure(error: unknown, context: RecoveryContext) {
+  const plan = recoveryPlan(error, context);
+  interrupted = plan.relogin ? context : undefined;
+  showPanel(plan.title, plan.message, plan.relogin);
+}
+function hideFailure() {
+  errorPanel.hidden = true;
+  reloginButton.hidden = true;
+  interrupted = undefined;
 }
 const save = document.querySelector<HTMLButtonElement>('#composer-save')!;
 const remove = document.querySelector<HTMLButtonElement>('#composer-delete')!;
@@ -55,7 +70,7 @@ function fill(values: Record<string, string>) {
   relations.reset();
 }
 function switchSession(id: string) {
-  errorPanel.hidden = true;
+  hideFailure();
   remember(); editingId = id;
   const session = sessions.get(id);
   pending = session?.pending; existing = session?.existing;
@@ -64,12 +79,15 @@ function switchSession(id: string) {
   heading.textContent = id ? '카드 수정' : '새 카드 작성';
 }
 
+/** The button the writer presses next, named in failure and re-login guidance. */
+function saveLabel() { return pending ? '같은 내용으로 다시 저장' : editingId ? '수정 저장' : '카드 저장'; }
 function render() {
   relations.render(!!pending || busy || (!!editingId && !existing));
   remove.hidden = !config || !token || !existing || !editingId;
   remove.disabled = busy || !!pending;
   save.disabled = !config || !token || busy || (!!editingId && !existing);
-  save.textContent = busy && pending ? '저장 확인 중…' : pending ? '같은 내용으로 다시 저장' : editingId ? '수정 저장' : '카드 저장';
+  save.textContent = busy && pending ? '저장 확인 중…' : saveLabel();
+  reloginButton.disabled = busy;
   edit.hidden = !config;
   edit.textContent = token ? '카드 수정' : '로그인하고 수정';
   if (login) { login.disabled = busy; login.hidden = !!token; }
@@ -119,7 +137,7 @@ dialog.addEventListener('click', event => {
 dialog.addEventListener('cancel', event => { if (busy) event.preventDefault(); });
 dialog.addEventListener('close', () => { remember(); returnFocus.focus(); });
 
-login?.addEventListener('click', async () => {
+async function authenticate(resume?: RecoveryContext) {
   if (!config || busy) return;
   busy = true; render();
   status.textContent = 'GitHub 로그인과 작성 권한을 확인하고 있습니다.';
@@ -127,13 +145,22 @@ login?.addEventListener('click', async () => {
     const candidate = await loginWriter(config);
     await verifyWriter(config, candidate);
     token = candidate;
-    status.textContent = '로그인되었습니다. 카드를 저장할 수 있습니다.';
+    if (resume) showPanel('다시 로그인했습니다', reloginMessage(resume), false);
+    else { hideFailure(); status.textContent = '로그인되었습니다. 카드를 저장할 수 있습니다.'; }
+    // The draft stays untouched: a re-login only reloads the original when it was never read.
     await fetchExisting();
   } catch (error) {
     token = '';
-    status.textContent = error instanceof Error ? error.message : '로그인을 완료하지 못했습니다.';
-  } finally { busy = false; render(); }
-});
+    const message = error instanceof Error ? error.message : '로그인을 완료하지 못했습니다.';
+    if (resume) showPanel('다시 로그인하지 못했습니다', `${message} 입력은 그대로 유지했습니다.`, true);
+    else status.textContent = message;
+  } finally {
+    busy = false; render();
+    if (resume && token) (resume.action === 'delete' ? remove : save).focus();
+  }
+}
+login?.addEventListener('click', () => { void authenticate(); });
+reloginButton.addEventListener('click', () => { void authenticate(interrupted); });
 logout?.addEventListener('click', () => {
   if (busy) return;
   token = '';
@@ -143,7 +170,7 @@ logout?.addEventListener('click', () => {
 remove.addEventListener('click', async () => {
   if (!config || !token || !existing || busy || pending) return;
   if (!window.confirm(`“${existing.draft.title}” 카드를 삭제할까요? 저장하지 않은 수정 내용도 사라집니다. 다른 카드가 참조하고 있으면 삭제하지 않습니다.`)) return;
-  errorPanel.hidden = true;
+  hideFailure();
   busy = true; render();
   status.textContent = '최신 버전과 관계를 확인하고 삭제하고 있습니다. 페이지를 떠나지 마세요.';
   try {
@@ -160,13 +187,13 @@ remove.addEventListener('click', async () => {
     window.dispatchEvent(new CustomEvent('fragment-deleted', { detail: next }));
   } catch (error) {
     if (error instanceof WriterError && ['auth', 'permission'].includes(error.code)) token = '';
-    showFailure('카드 삭제를 완료하지 못했습니다', error instanceof WriterError && error.code !== 'network' ? error.message : '삭제 결과를 확인하지 못했습니다. 입력과 목록은 유지했습니다. 다시 삭제를 눌러 확인해주세요.');
+    showFailure(error, { action: 'delete', retryLabel: '카드 삭제' });
   } finally { busy = false; render(); }
 });
 form.addEventListener('submit', async event => {
   event.preventDefault();
   if (!config || !token || busy || (editingId && !existing)) return;
-  errorPanel.hidden = true;
+  hideFailure();
   if (!pending) {
     try { pending = draftFromFields(values(), existing?.draft); }
     catch { status.textContent = '용어, 요약, 카테고리에 공백 이외의 내용을 입력해주세요.'; return; }
@@ -196,7 +223,7 @@ form.addEventListener('submit', async event => {
   } catch (error) {
     if (error instanceof WriterError && ['auth', 'permission'].includes(error.code)) token = '';
     if (error instanceof WriterError && ['snapshot', 'rate-limit', 'relation'].includes(error.code)) pending = undefined;
-    showFailure('카드 저장을 완료하지 못했습니다', error instanceof WriterError ? error.message : '저장 결과를 확인하지 못했습니다. 같은 내용으로 다시 저장해주세요.');
+    showFailure(error, { action: 'save', retryLabel: saveLabel() });
   } finally { busy = false; render(); }
 });
 // Deliberately no token persistence or logging. Full refresh starts a new login.

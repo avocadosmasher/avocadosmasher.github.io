@@ -52,6 +52,7 @@ if (process.env.FRAGMENT_CMS_OAUTH_TEST === '1') {
     <div id="composer-error" role="alert" tabindex="-1" hidden>
       <strong id="composer-error-title"></strong>
       <p id="composer-error-message"></p>
+      <button type="button" class="btn btn--ghost" id="composer-error-login" hidden>다시 로그인</button>
     </div>
     <div class="composer-actions"><button type="button" class="btn btn--ghost" id="composer-later">닫고 나중에 이어 쓰기</button><button type="button" class="btn btn--ghost" id="composer-delete" hidden aria-describedby="composer-status">카드 삭제</button><button id="composer-save" type="submit" class="btn" disabled aria-describedby="composer-status">카드 저장</button></div>
   </form>
@@ -80,6 +81,8 @@ if (process.env.FRAGMENT_CMS_OAUTH_TEST === '1') {
   #composer-error { border:2px solid var(--ink); border-radius:12px; padding:16px; background:var(--paper); color:var(--ink); overflow-wrap:anywhere; }
   #composer-error[hidden] { display:none; }
   #composer-error p { margin:8px 0 0; }
+  #composer-error-login { margin-top:12px; }
+  #composer-error-login[hidden] { display:none; }
   #composer-error:focus { outline:3px solid var(--accent); outline-offset:3px; }
   fieldset { min-width:0; display:grid; gap:12px; border:1px solid var(--line); border-radius:12px; padding:16px; }
   #composer-relation-list { list-style:none; padding:0; margin:0; }

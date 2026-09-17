@@ -1,6 +1,19 @@
 # Fragment 개발 기록
 
-## 관계·삭제 피드백 수정 — 자동 검증·테스트 배포 완료, 수동 판정 대기 (2026-09-17)
+## G05/G06-UI — 실패 안내에서 재로그인과 초안 복구 (2026-09-17, 수동 판정 대기)
+
+- 시작 기준: HEAD `90617a1`(관계 편집·삭제 가드는 사용자 통과 후 push 완료), `feat/fragments`. 작업 폴더에는 이전 Graft 설정 변경만 남아 있었고 이번에도 스테이징에서 제외한다.
+- 범위: 저장·삭제 중 로그인 만료(`auth`)·권한 확인 실패(`permission`)로 토큰이 사라졌을 때, 실패 안내 영역 안에서 바로 다시 로그인하고 입력한 초안 그대로 같은 작업을 이어가게 한다. 실패 안내가 다음에 누를 버튼 이름을 함께 알려준다.
+- `src/lib/fragment-recovery.ts`를 추가해 오류 → 화면 안내 결정을 순수 함수로 분리했다. `recoveryPlan(error, {action, retryLabel})`은 제목·문구·재로그인 필요 여부를 돌려주고, 삭제의 `network`·비 WriterError는 기존 재시도 문구를 유지한다. `reloginMessage`는 재로그인 후 눌러야 할 버튼 이름을 안내한다.
+- 작성 폼에는 안내 영역 안의 `다시 로그인` 버튼(`#composer-error-login`)을 추가했다. 로그인 동작을 `authenticate(resume?)`로 공통화해, 재로그인 성공 시 안내를 `다시 로그인했습니다…`로 바꾸고 로그인 버튼을 숨기며 포커스를 저장 또는 삭제 버튼으로 옮긴다. 재로그인 실패·취소는 사유를 그대로 보여주고 버튼을 남긴다. 이미 원문을 읽은 수정 세션은 재로그인이 초안을 덮어쓰지 않는다(`fetchExisting`의 기존 조기 반환).
+- Red: `npx vitest run tests/unit/fragment-recovery.test.ts`가 모듈 부재로 수집 실패(exit 1). 브라우저 `tests/oauth/relogin.spec.ts` 2개는 `#composer-error-login` 부재로 타임아웃 실패. Green: 단위 5개, 브라우저 2개 통과.
+- Refactor: 기존 `showFailure(title, message)` 호출부(저장·삭제)를 `showFailure(error, context)`로 정리하고 문구 상수를 새 모듈로 옮겼다. 저장 버튼 라벨은 `saveLabel()` 하나로 계산해 안내 문구와 실제 버튼 이름이 어긋나지 않게 했다.
+- 검증: Vitest 12파일/64개 통과(workerd 통합 제외), OAuth Playwright 34개 통과, 일반 Playwright 8개 통과, `npx astro check` 오류 0·경고 0·기존 hint 4개, `npm run build` 12페이지, `node scripts/build-writer-test.mjs --remote` 12페이지(원격 스냅샷 읽기 성공), `git diff --check` 통과.
+- 환경 제약: `tests/integration/oauth-runtime.test.ts` 3개는 `spawn UNKNOWN`으로 실행하지 못했다. 원인은 `node_modules/workerd` 바이너리 부재이며 `npm install` 후에도 복구되지 않았다(미서명 개발 바이너리 차단 환경과 일치). 이번 변경은 Worker 코드를 건드리지 않았고, 이를 기능 실패로 기록하지 않되 미확인으로 남긴다.
+- 테스트 배포 `https://08a46335.fragment-cms-test.pages.dev` 완료. 고정 수동 주소 `https://fragment-cms-test.pages.dev/fragments/`에서 HTTP 200과 새 `#composer-error-login` 포함을 확인했다. 실제 GitHub 계정의 토큰 만료·재로그인·재시도는 이번 수동 판정 대상이다.
+- 관련 파일만 스테이징하고 판정을 기다린다. 승인 명령·커밋·push는 실행하지 않았다.
+
+## 관계·삭제 피드백 수정 — 사용자 통과·`90617a1` push 완료 (2026-09-17)
 
 - 재개 기준 HEAD `0435654`, `feat/fragments`. 이전 관계·삭제의 미커밋 구현과 스테이징을 보존했다. Graft 설정 변경은 작업 스테이징에서 제외했다. `.githooks`가 이미 활성화되어 있었다.
 - 사용자 확정: **같은 두 카드 사이에는 방향·유형과 무관하게 관계 하나만 허용**. 작성 폼에서 이미 연결된 대상은 `이미 연결됨`으로 비활성화하고 저장 직전 반대 방향 관계도 검사한다. 카드당 하나 제한이 아니며 기존 중복 데이터를 자동 삭제하지 않는다. 기존 관계 제거는 해당 방향의 출발 카드를 수정해 저장한다.
