@@ -1,10 +1,11 @@
 import { prepareFragmentSave } from './fragment-admin';
 import { createOAuthTestConfig } from './fragment-admin-oauth';
 import { parseDocument } from 'yaml';
+import { validateFragments } from './fragments';
 
 export interface WriterConfig { repo: string; branch: string; origin: string }
 export type WriterDraft = ReturnType<typeof prepareFragmentSave>;
-export type WriterErrorCode = 'auth' | 'permission' | 'conflict' | 'network';
+export type WriterErrorCode = 'auth' | 'permission' | 'conflict' | 'network' | 'snapshot' | 'rate-limit' | 'relation';
 export class WriterError extends Error {
   constructor(public code: WriterErrorCode, message: string) { super(message); }
 }
@@ -20,7 +21,7 @@ export function draftFromFields(input: Record<string, string>, existing?: Writer
   return prepareFragmentSave({ title: input.title, summary: input.summary, category: input.category,
     aliases: existing && input.aliases === existing.aliases.join(', ') ? existing.aliases : list(input.aliases),
     tags: existing && input.tags === existing.tags.join(', ') ? existing.tags : list(input.tags),
-    body: input.body ?? '', relations: existing?.relations ?? [] }, existing?.id);
+    body: input.body ?? '', relations: input.relations === undefined ? existing?.relations ?? [] : JSON.parse(input.relations) }, existing?.id);
 }
 
 export interface ExistingFragment { path: string; sha: string; draft: WriterDraft }
@@ -97,6 +98,88 @@ export function markdownForDraft(draft: WriterDraft): string {
   return `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${quote(value)}`).join('\n')}\n---\n${body}${body.endsWith('\n') ? '' : '\n'}`;
 }
 
+/** Pin relation checks and branch writes to the same revision. */
+async function mutationSnapshot(config: WriterConfig, token: string, upstream: typeof fetch) {
+  const sha = (value: unknown): string => {
+    if (typeof value !== 'string' || !/^[a-f0-9]{40}$/.test(value)) throw new WriterError('network', '파일 버전과 작업 결과를 확인하지 못했습니다. 다시 시도해주세요.');
+    return value;
+  };
+  const request = api(config, token, upstream);
+  await verifyWriter(config, token, upstream);
+  const json = async (endpoint: string, method?: string, body?: unknown) => {
+    const response = await request(endpoint, method ? { method, body: JSON.stringify(body) } : {});
+    if ([409, 422].includes(response.status)) throw new WriterError('conflict', '다른 곳에서 저장소가 변경되어 작업을 중단했습니다. 다시 시도하면 최신 관계를 확인합니다.');
+    requireResponse(response);
+    return responseJson(response);
+  };
+  const branch = config.branch.split('/').map(encodeURIComponent).join('/');
+  const ref = await json(`/git/ref/heads/${branch}`);
+  if (ref.ref !== `refs/heads/${config.branch}` || ref.object?.type !== 'commit') throw new WriterError('conflict', '작업할 브랜치를 확인할 수 없습니다.');
+  const head = sha(ref.object.sha);
+  const commit = await json(`/git/commits/${head}`);
+  if (commit.sha !== head) throw new WriterError('conflict', '저장소 버전이 일치하지 않습니다.');
+  const baseTree = sha(commit.tree?.sha);
+  const { loadFragmentSnapshot } = await import('./fragment-snapshot');
+  let snapshot: ExistingFragment[];
+  try {
+    const root = `https://api.github.com/repos/${config.repo}`;
+    snapshot = await loadFragmentSnapshot(config, async url => {
+      const address = String(url);
+      if (!address.startsWith(`${root}/git/`)) throw new Error('Unexpected snapshot URL');
+      const response = await request(address.slice(root.length));
+      requireResponse(response);
+      return response;
+    }, head);
+  } catch (error) {
+    if (error instanceof WriterError && ['auth', 'permission', 'rate-limit'].includes(error.code)) throw error;
+    throw new WriterError('snapshot', '최신 카드와 관계를 조회·검증하지 못해 저장·삭제 요청을 보내지 않았습니다. 입력은 유지됩니다. 잠시 후 다시 시도하고, 계속 실패하면 저장소의 카드 원문과 관계 대상을 확인해주세요.');
+  }
+  const publish = async (entry: { path: string; content: string } | { path: string; sha: null }, message: string) => {
+    const tree = await json('/git/trees', 'POST', { base_tree: baseTree, tree: [{ ...entry, mode: '100644', type: 'blob' }] });
+    const commit = await json('/git/commits', 'POST', { message, tree: sha(tree.sha), parents: [head] });
+    const committedSha = sha(commit.sha);
+    const updated = await json(`/git/refs/heads/${branch}`, 'PATCH', { sha: committedSha, force: false });
+    if (updated.ref !== `refs/heads/${config.branch}` || updated.object?.sha !== committedSha) throw new WriterError('network', '작업 결과를 확인하지 못했습니다. 다시 시도해주세요.');
+    return `https://github.com/${config.repo}/commit/${committedSha}`;
+  };
+  return { snapshot, head, publish };
+}
+
+/** Relation edits must not race with deletion of a selected target. */
+export async function saveRelationChanges(config: WriterConfig, token: string, draft: WriterDraft, existing?: ExistingFragment, upstream: typeof fetch = fetch) {
+  const path = filePath(existing?.path ?? `src/content/fragments/${draft.id}.md`);
+  if (existing && (existing.draft.id !== draft.id || !/^[a-f0-9]{40}$/.test(existing.sha))) throw new WriterError('conflict', '원래 카드 ID와 버전을 유지해주세요.');
+  const markdown = markdownForDraft(draft);
+  const keys = draft.relations.map(relation => relation.target);
+  if (new Set(keys).size !== keys.length) throw new WriterError('relation', '같은 두 카드 사이에는 방향·유형과 무관하게 관계 하나만 허용합니다. 중복 관계를 제거해주세요.');
+  const { snapshot, head, publish } = await mutationSnapshot(config, token, upstream);
+  const current = snapshot.find(card => card.path === path);
+  if (current && markdownForDraft(current.draft) === markdown) return { recovered: true, url: `https://github.com/${config.repo}/commit/${head}` };
+  if (existing ? !current || current.sha !== existing.sha || current.draft.id !== draft.id : !!current) throw new WriterError('conflict', '다른 곳에서 카드가 변경되었습니다. 필요한 입력을 복사한 뒤 새로고침하고 다시 수정해주세요.');
+  const reverse = snapshot.find(card => keys.includes(card.draft.id) && card.draft.relations.some(relation => relation.target === draft.id));
+  if (reverse) throw new WriterError('relation', `“${reverse.draft.title}” 카드에서 이미 이 카드로 연결되어 있습니다. 같은 두 카드 사이에는 관계 하나만 허용합니다. 추가한 관계를 제거하거나 해당 카드에서 기존 관계를 제거·저장한 뒤 다시 시도해주세요.`);
+  try { validateFragments([...snapshot.filter(card => card.path !== path).map(card => card.draft), draft]); }
+  catch { throw new WriterError('conflict', '관계 대상이 없어졌거나 자기 자신을 참조합니다. 입력을 복사한 뒤 새로고침하여 관계 대상을 다시 확인해주세요.'); }
+  return { recovered: false, url: await publish({ path, content: markdown }, `feat(fragments): save relations for ${draft.id}`) };
+}
+
+/** Delete against one complete revision, then publish only as a fast-forward. */
+export async function deleteFragment(config: WriterConfig, token: string, existing: ExistingFragment, upstream: typeof fetch = fetch) {
+  const path = filePath(existing.path);
+  if (!/^[a-f0-9]{40}$/.test(existing.sha)) throw new WriterError('conflict', '카드 버전을 확인할 수 없습니다.');
+  const { snapshot, head, publish } = await mutationSnapshot(config, token, upstream);
+  const current = snapshot.find(card => card.path === path);
+  const url = `https://github.com/${config.repo}/commit/`;
+  if (!current) {
+    if (snapshot.some(card => card.draft.id === existing.draft.id)) throw new WriterError('conflict', '카드 파일이 이동되었습니다. 새로고침 후 다시 확인해주세요.');
+    return { recovered: true, url: url + head, snapshot };
+  }
+  if (current.sha !== existing.sha || current.draft.id !== existing.draft.id) throw new WriterError('conflict', '다른 곳에서 카드가 변경되었습니다. 필요한 입력을 복사한 뒤 새로고침하고 다시 삭제해주세요.');
+  const references = snapshot.filter(card => card.draft.relations.some(relation => relation.target === existing.draft.id));
+  if (references.length) throw new WriterError('conflict', `이 카드를 참조하는 카드가 있어 삭제할 수 없습니다: ${references.map(card => card.draft.title).join(', ')}. 해당 카드 수정 → 이 카드로 향하는 관계 제거 → 수정 저장 → 이 카드 삭제 재시도 순서로 진행해주세요.`);
+  return { recovered: false, url: await publish({ path, sha: null }, `feat(fragments): delete ${existing.draft.id}`), snapshot: snapshot.filter(card => card.path !== path) };
+}
+
 function encode(value: string) {
   let binary = '';
   for (const byte of new TextEncoder().encode(value)) binary += String.fromCharCode(byte);
@@ -117,6 +200,9 @@ function api(config: WriterConfig, token: string, upstream: typeof fetch) {
 }
 function requireResponse(response: Response) {
   if (response.ok) return;
+  if (response.status === 429 || (response.status === 403 && (response.headers.get('X-RateLimit-Remaining') === '0' || response.headers.has('Retry-After')))) {
+    throw new WriterError('rate-limit', 'GitHub 요청 한도에 도달했습니다. 입력은 유지됩니다. 잠시 기다린 뒤 같은 작업을 다시 시도해주세요.');
+  }
   if (response.status === 401) throw new WriterError('auth', '로그인이 만료되었습니다. 다시 로그인해주세요.');
   if ([403, 404].includes(response.status)) throw new WriterError('permission', '저장소 쓰기 권한이나 브랜치 접근을 확인해주세요.');
   if ([409, 422].includes(response.status)) throw new WriterError('conflict', '저장이 거부되었습니다. 같은 내용으로 다시 저장해 결과를 확인해주세요.');

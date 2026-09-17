@@ -2,7 +2,7 @@ import { createWriterConfig, parseFragmentSource, type ExistingFragment, type Wr
 import { validateFragments } from './fragments';
 
 /** Read one complete public Git tree; blob IDs keep all cards at the same revision. */
-export async function loadFragmentSnapshot(config: WriterConfig, upstream: typeof fetch = fetch): Promise<ExistingFragment[]> {
+export async function loadFragmentSnapshot(config: WriterConfig, upstream: typeof fetch = fetch, revision = config.branch): Promise<ExistingFragment[]> {
   createWriterConfig(config);
   const read = async (path: string) => {
     const response = await upstream(`https://api.github.com/repos/${config.repo}${path}`, {
@@ -12,7 +12,7 @@ export async function loadFragmentSnapshot(config: WriterConfig, upstream: typeo
     if (!response.ok) throw new Error(`카드 조회 실패 (${response.status})`);
     return response.json();
   };
-  const tree = await read(`/git/trees/${encodeURIComponent(config.branch)}?recursive=1`);
+  const tree = await read(`/git/trees/${encodeURIComponent(revision)}?recursive=1`);
   if (tree.truncated !== false || !Array.isArray(tree.tree)) throw new Error('전체 카드 목록을 확인하지 못했습니다.');
   const files = tree.tree.filter((entry: any) => typeof entry.path === 'string' && entry.path.startsWith('src/content/fragments/') && entry.path.endsWith('.md'));
   const cards: ExistingFragment[] = [];

@@ -52,6 +52,7 @@ function updateCollection(next: PublicFragment[]) {
   if (!categories.includes(state.category)) state.category = '';
   focus.replaceChildren(new Option('전체 관계', ''), ...cards.map(card => new Option(card.title, card.id)));
   focus.value = byId.has(selectedFocus) ? selectedFocus : '';
+  window.dispatchEvent(new CustomEvent('fragment-collection', { detail: cards }));
   render();
 }
 async function refreshCards() {
@@ -84,6 +85,13 @@ window.addEventListener('fragment-saved', event => {
   $('fragment-sync-retry').hidden = true;
 });
 $('fragment-sync-retry').addEventListener('click', () => void refreshCards());
+window.addEventListener('fragment-deleted', event => {
+  snapshotGeneration++;
+  authoritative = true;
+  updateCollection((event as CustomEvent<PublicFragment[]>).detail);
+  $('fragment-sync-status').textContent = '삭제 결과를 현재 목록에 반영했습니다.';
+  $('fragment-sync-retry').hidden = true;
+});
 
 function text(tag: string, value: string, className = '') {
   const element = document.createElement(tag);

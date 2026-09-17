@@ -1,5 +1,6 @@
 ---
 import { CATEGORIES } from '../consts';
+import { relationLabels } from '../lib/fragments';
 const categories = Object.keys(CATEGORIES);
 import { createWriterConfig } from '../lib/fragment-writer';
 let writerConfig;
@@ -34,8 +35,25 @@ if (process.env.FRAGMENT_CMS_OAUTH_TEST === '1') {
       <label>태그<input name="tags" placeholder="쉼표로 구분 · 운영체제, 메모리" /></label>
     </div>
     <label>보충 설명<textarea name="body" rows="6" placeholder="예시나 더 자세한 내용을 Markdown으로 남겨보세요"></textarea></label>
-    <p class="fragment-hint">용어, 요약, 카테고리는 필수 항목입니다. 기존 카드의 ID와 관계는 수정 후에도 유지됩니다. 관계 지정은 다음 단계에서 연결합니다.</p>
-    <div class="composer-actions"><button type="button" class="btn btn--ghost" id="composer-later">닫고 나중에 이어 쓰기</button><button id="composer-save" type="submit" class="btn" disabled aria-describedby="composer-status">카드 저장</button></div>
+    <fieldset id="composer-relations">
+      <legend>연결된 개념</legend>
+      <p class="fragment-hint">이 카드에서 연결할 카드를 선택하세요. 추가·제거한 관계는 카드를 저장해야 반영됩니다.</p>
+      <p class="fragment-hint">같은 두 카드 사이에는 방향·유형과 무관하게 관계 하나만 허용합니다. 이미 연결된 대상은 선택할 수 없습니다. 반대편 카드에서 만든 관계는 해당 카드를 수정해 제거해주세요.</p>
+      <input type="hidden" name="relations" id="composer-relation-value" value="[]" />
+      <label>관계 카드 검색<input id="composer-relation-search" type="search" placeholder="용어 또는 별칭으로 검색" /></label>
+      <label>관계 대상<select id="composer-relation-target"><option value="">카드를 선택해주세요</option></select></label>
+      <label>관계 유형<select id="composer-relation-type">{Object.entries(relationLabels).map(([value, label]) => <option value={value}>{label}</option>)}</select></label>
+      <p class="fragment-hint">선행 개념: 먼저 알아야 할 대상 · 상위 개념: 이 카드가 속한 대상</p>
+      <button type="button" class="btn btn--ghost" id="composer-relation-add">관계 추가</button>
+      <ul id="composer-relation-list" aria-label="추가한 관계"></ul>
+      <p id="composer-relation-notice" class="fragment-hint" aria-live="polite"></p>
+    </fieldset>
+    <p class="fragment-hint">용어, 요약, 카테고리는 필수 항목입니다. 기존 카드의 ID는 수정 후에도 유지됩니다.</p>
+    <div id="composer-error" role="alert" tabindex="-1" hidden>
+      <strong id="composer-error-title"></strong>
+      <p id="composer-error-message"></p>
+    </div>
+    <div class="composer-actions"><button type="button" class="btn btn--ghost" id="composer-later">닫고 나중에 이어 쓰기</button><button type="button" class="btn btn--ghost" id="composer-delete" hidden aria-describedby="composer-status">카드 삭제</button><button id="composer-save" type="submit" class="btn" disabled aria-describedby="composer-status">카드 저장</button></div>
   </form>
 </dialog>
 <script>
@@ -59,6 +77,15 @@ if (process.env.FRAGMENT_CMS_OAUTH_TEST === '1') {
   @media (forced-colors:active) { .category-select select { appearance:auto; } .category-select::after { display:none; } }
   .composer-columns { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
   .composer-actions { border-top:1px solid var(--line); padding-top:18px; flex-wrap:wrap; }
+  #composer-error { border:2px solid var(--ink); border-radius:12px; padding:16px; background:var(--paper); color:var(--ink); overflow-wrap:anywhere; }
+  #composer-error[hidden] { display:none; }
+  #composer-error p { margin:8px 0 0; }
+  #composer-error:focus { outline:3px solid var(--accent); outline-offset:3px; }
+  fieldset { min-width:0; display:grid; gap:12px; border:1px solid var(--line); border-radius:12px; padding:16px; }
+  #composer-relation-list { list-style:none; padding:0; margin:0; }
+  #composer-relation-list :global(li) { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 0; overflow-wrap:anywhere; }
+  #composer-relation-list :global(span) { min-width:0; }
+  #composer-relation-list :global(button) { flex-shrink:0; }
   button:disabled { opacity:.45; cursor:not-allowed; }
   .composer-session { padding:12px 0; border-bottom:1px solid var(--line); overflow-wrap:anywhere; }
   input:read-only,textarea:read-only,select:disabled { opacity:.7; }
