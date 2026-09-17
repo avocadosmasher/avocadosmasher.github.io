@@ -1,0 +1,74 @@
+name: Verify
+
+# 배포 경로와 PR 경로가 같은 검사를 쓰도록 재사용 워크플로로 분리한다.
+on:
+  workflow_call:
+    inputs:
+      upload_pages:
+        description: 검사에 성공한 build 산출물을 GitHub Pages 아티팩트로 업로드할지 여부
+        type: boolean
+        default: false
+
+jobs:
+  checks:
+    name: 타입·단위·통합·빌드·preview E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Type check
+        run: npm run check
+      - name: Unit & integration tests
+        run: npm test
+      - name: Build
+        run: npm run build
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      # 개발 서버가 아니라 위에서 만든 dist/ 를 preview 로 제공해 검증한다.
+      - name: Preview E2E
+        run: npm run test:e2e:preview
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+      - name: Upload Pages artifact
+        if: ${{ inputs.upload_pages }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  writer:
+    name: 작성·수정 OAuth E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      # 실제 GitHub·Worker 로 나가지 않는 mock 환경변수 구성으로 실행된다.
+      - name: OAuth E2E
+        run: npm run test:oauth
+      - name: Upload Playwright results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oauth-results
+          path: .fragment-test/oauth-results/
+          retention-days: 7
