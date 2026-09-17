@@ -34,6 +34,9 @@ jobs:
       # 개발 서버가 아니라 위에서 만든 dist/ 를 preview 로 제공해 검증한다.
       - name: Preview E2E
         run: npm run test:e2e:preview
+      # 페이지네이션까지 확인하려면 검증용 카드가 필요해 별도 서버로 실행한다.
+      - name: 모바일·테마·접근성 E2E
+        run: npm run test:h01
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
