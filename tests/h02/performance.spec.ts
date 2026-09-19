@@ -50,3 +50,20 @@ test('그래프 열기가 1,500개 관계 규모에서도 2초 목표 안에 조
   await nodeButton.click();
   await expect(page.getByRole('dialog')).toBeVisible();
 });
+
+// 노드 버튼은 그래프 계산보다 먼저 생긴다. 계산 중에 포커스한 노드도 그래프가 준비되면 강조돼야 한다.
+test('그래프 계산 중에 포커스한 노드 버튼도 준비되면 강조된다', async ({ page }) => {
+  await page.goto('/fragments/');
+  await expect(page.getByText('500개의 개념 · 1 / 42 페이지')).toBeVisible();
+  // 클릭과 포커스를 브라우저 안에서 연달아 실행해, 계산이 끝나기 전에 포커스했음을 보장한다.
+  const statusAtFocus = await page.evaluate(() => {
+    document.getElementById('graph-view')!.click();
+    (document.querySelector('#graph-accessible button') as HTMLButtonElement).focus();
+    return document.getElementById('graph-status')!.textContent;
+  });
+  expect(statusAtFocus).toBe('관계를 불러오는 중…');
+  const node = page.locator('#graph-accessible button').first();
+  await expect(page.locator('#graph-status')).toHaveText('500개 개념 · 1500개 관계');
+  await expect(node).toBeFocused();
+  await expect(page.locator('#graph-selection')).toContainText('직접 연결');
+});

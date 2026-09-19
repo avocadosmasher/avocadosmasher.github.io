@@ -253,6 +253,7 @@ async function renderGraph() {
     : '현재 선택 범위에는 연결된 관계가 없습니다. 다른 중심 개념이나 전체 관계를 선택해보세요.';
   $('graph-accessible').replaceChildren(...data.nodes.map(node => {
     const control = button(node.data.label, () => { pinnedNode = node.data.id; highlightNode(); openCard(node.data.id); });
+    control.dataset.node = node.data.id;
     control.addEventListener('mouseenter', () => highlightNode(node.data.id));
     control.addEventListener('mouseleave', () => highlightNode());
     control.addEventListener('focus', () => highlightNode(node.data.id));
@@ -327,6 +328,9 @@ async function renderGraph() {
     cy.on('mouseout', 'node', () => { $('fragment-graph').style.cursor = ''; highlightNode(); });
     cy.on('tap', 'node', event => { pinnedNode = event.target.id(); highlightNode(); openCard(pinnedNode); });
     cy.on('tap', event => { if (event.target === cy) { pinnedNode = ''; highlightNode(); } });
+    // 노드 버튼은 그래프보다 먼저 생기므로, 계산 중에 포커스한 버튼이 있으면 준비된 뒤 강조한다.
+    const focused = document.activeElement instanceof HTMLElement && $('graph-accessible').contains(document.activeElement) ? document.activeElement.dataset.node : undefined;
+    if (focused) highlightNode(focused);
     $('graph-status').textContent = data.nodes.length ? `${data.nodes.length}개 개념 · ${data.edges.length}개 관계` : '조건에 맞는 개념이 없습니다.';
   } catch {
     if (generation !== graphGeneration) return;

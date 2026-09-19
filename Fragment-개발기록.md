@@ -1,5 +1,15 @@
 # Fragment 개발 기록
 
+## 그래프 계산 중 키보드 포커스 강조 누락 수정 (2026-09-19, 수동 판정 대기)
+
+- 시작 기준: H02-CI `c66ff00`을 사용자 통과 후 커밋·push했다. 그 CI(run 35447852336)에서 이번에는 H01 키보드 테스트가 실패했다: 노드 버튼에 포커스했는데 `#graph-selection`에 "직접 연결"이 나오지 않았다. 이전 CI에서는 통과했으므로 타이밍 차이다. H02 단계는 앞 단계 실패로 실행되지 않았다.
+- 원인(실제 사용자 결함): 그래프 노드 목록 버튼은 그래프 계산 전에 동기적으로 만들어진다. 계산이 끝나기 전에 포커스하면 `highlightNode`가 `cy` 없음으로 바로 끝나고, 준비된 뒤 다시 적용하는 경로가 없었다. 키보드·스크린리더 사용자는 로딩 중에 이동하면 강조와 안내를 받지 못한다. 빠른 circle 배치 시절에는 드러나지 않다가 fcose + 느린 러너에서 드러났다.
+- Red: `tests/h02/performance.spec.ts`에 500개 fixture에서 클릭과 포커스를 브라우저 안에서 연달아 실행하는 테스트를 추가했다(포커스 시점 상태가 "관계를 불러오는 중…"임을 확인). CI와 같은 증상으로 실패함을 확인했다. 처음 쓴 `not.toHaveText` 방식은 그래프가 먼저 끝나 재현이 흔들려 이 방식으로 바꿨다.
+- 수정: `src/scripts/fragments.ts`에서 노드 버튼에 `data-node`를 달고, 그래프 준비 직후 포커스가 노드 목록 안에 있으면 그 노드를 강조한다.
+- 검증: `npm test` 75개, `npx astro check` 오류 0, `npm run test:h01` 3회 연속 4개 통과, `CI=1` H02 3개, `npm run build` 12페이지, `npm run test:e2e:preview` 8개, `npm run test:oauth` 34개 통과, `git diff --check` 통과.
+- 미확인: 실제 Actions 러너 결과는 push 후 확인한다.
+- 관련 파일만 스테이징하고 판정을 기다린다. 승인 명령·커밋·push는 실행하지 않았다.
+
 ## H02-CI — Actions 러너의 그래프 성능 기준 대응 (2026-09-19, 수동 판정 대기)
 
 - 시작 기준: H02 `827690d`와 capture-compare 스킬 `37e1e10`을 사용자 통과 판정 후 커밋·push했다. 스킬은 도구 설정이라 별도 커밋으로 나눴고, 승인 뒤 파일을 바꾸지 않기 위해 이 기록은 이번 작업에 넣는다. 스킬 본문은 `.agents/skills/capture-compare/`(Codex가 읽는 경로), Claude Code용 `.claude/skills/capture-compare/SKILL.md`는 본문을 가리키기만 한다. `codex exec`의 스킬 목록과 Claude Code 세션 목록 모두에서 인식을 확인했고, 사용자 요청(버튼 트렌드 6가지 비교)으로 실제 사용해 통과 판정을 받았다.
