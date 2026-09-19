@@ -19,3 +19,16 @@ pnpm-debug.log*
 .idea/
 # obsidian 설정
 .obsidian
+playwright-report/
+test-results/
+coverage/
+.fragment-test/
+.dev.vars
+.wrangler/
+.fragment-check.log
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/
+
+# 에이전트 도구 개인 설정 — 공유 설정(.claude/settings.json)만 버전 관리한다.
+.claude/settings.local.json

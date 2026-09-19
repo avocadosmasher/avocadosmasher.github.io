@@ -37,14 +37,14 @@ const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
 <script>
   const tocItems = Array.from(document.querySelectorAll('.toc__item'));
   const headingEls = tocItems
-    .map((it) => document.getElementById(it.getAttribute('data-target')))
-    .filter((el) => el);
+    .map((it) => document.getElementById(it.getAttribute('data-target') ?? ''))
+    .filter((el): el is HTMLElement => el !== null);
   const fill = document.getElementById('tocFill');
 
   // 클릭 시 부드럽게 이동
   tocItems.forEach((it) => {
     it.addEventListener('click', () => {
-      const el = document.getElementById(it.getAttribute('data-target'));
+      const el = document.getElementById(it.getAttribute('data-target') ?? '');
       el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
   });
@@ -57,7 +57,7 @@ const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
           if (e.isIntersecting) {
             const id = e.target.id;
             tocItems.forEach((it) => it.classList.toggle('is-active', it.getAttribute('data-target') === id));
-            const idx = headingEls.indexOf(e.target);
+            const idx = headingEls.findIndex(h => h === e.target);
             if (fill) fill.style.height = (((idx + 1) / headingEls.length) * 100) + '%';
           }
         });

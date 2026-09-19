@@ -1,0 +1,65 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { validateFragments } from '../../lib/fragments';
+import { fragmentHtml } from '../../lib/fragment-content';
+import FragmentComposer from '../../components/FragmentComposer.astro';
+import '../../styles/fragments.css';
+
+const entries = await getCollection('fragments');
+let cards;
+try {
+  const validated = validateFragments(entries.map(entry => entry.data));
+  cards = validated.map((card, index) => ({ ...card, html: fragmentHtml(entries[index].body ?? '') }));
+} catch (error) {
+  throw new Error(`Fragment 콘텐츠 검증 실패 (${entries.map(e => e.filePath ?? e.id).join(', ')}): ${error}`);
+}
+const categories = [...new Set(cards.map(card => card.category))].sort((a, b) => a.localeCompare(b, 'ko'));
+const editPaths = Object.fromEntries(entries.map(entry => [entry.data.id,
+  entry.filePath?.replace(/\\/g, '/').match(/(?:^|\/)(src\/content\/fragments\/.+\.md)$/)?.[1] ?? '']));
+---
+<BaseLayout title="Fragments" description="공부하며 모은 개념의 조각들" active="Fragments">
+  <main class="fragments home" id="fragments">
+    <header class="fragment-head">
+      <div><p class="hero__eyebrow">작은 개념, 이어지는 이해</p><h1>Fragments</h1><p class="lead">기억하고 싶은 개념을 모으고, 연결하고, 다시 꺼내 봅니다.</p></div>
+      <button class="btn btn--ghost" id="fragment-compose" type="button" aria-haspopup="dialog">새 카드</button>
+    </header>
+    <div id="composer-feedback" role="status" aria-live="polite" aria-atomic="true">
+      <p id="composer-success"></p>
+      <a id="composer-result" target="_blank" rel="noopener noreferrer" hidden>GitHub에서 저장 결과 확인</a>
+    </div>
+    <div id="fragment-sync" hidden><p id="fragment-sync-status" class="fragment-hint" role="status" aria-live="polite"></p><button id="fragment-sync-retry" type="button" class="btn btn--ghost" hidden>최신 카드 다시 불러오기</button></div>
+    <section class="fragment-toolbar" aria-label="개념 찾기">
+      <div class="fragment-control fragment-search"><label for="fragment-search">개념 검색</label><span class="fragment-field"><input type="search" id="fragment-search" aria-label="개념 검색" placeholder="용어, 별칭, 설명으로 찾아보세요" autocomplete="off" /><button type="button" class="fragment-clear" data-clears="fragment-search" aria-label="검색어 지우기" hidden></button></span></div>
+      <label>카테고리<span class="fragment-field fragment-select"><select id="fragment-category"><option value="">전체 ({cards.length})</option>{categories.map(category => <option value={category}>{category} ({cards.filter(c => c.category === category).length})</option>)}</select></span></label>
+    </section>
+    <div class="fragment-list-head"><p id="fragment-count" role="status" aria-live="polite"></p><div class="fragment-views"><button id="cards-view" aria-pressed="true">카드 보기</button><button id="graph-view" aria-pressed="false">관계 그래프</button></div></div>
+    <p id="fragment-notice" role="status" hidden></p>
+    <section id="fragment-list" aria-label="개념 카드 목록"><div id="fragment-grid" class="fragment-grid"></div><p id="fragment-empty" class="fragment-empty" hidden>조건에 맞는 개념이 없습니다.</p><nav id="fragment-pages" class="fragment-pages" aria-label="카드 페이지"></nav></section>
+    <section id="fragment-graph-panel" aria-label="개념 관계 그래프" hidden>
+      <div class="fragment-graph-tools"><div class="fragment-control fragment-focus"><label for="graph-focus-search">중심 개념</label><span class="fragment-field fragment-combo"><input id="graph-focus-search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="graph-focus-list" placeholder="전체 관계 · 이름으로 검색" autocomplete="off" aria-describedby="graph-focus-hint" /><button type="button" class="fragment-clear" data-clears="graph-focus-search" aria-label="중심 개념 지우기" hidden></button><button type="button" id="graph-focus-open" class="fragment-open" aria-label="개념 목록 열기" tabindex="-1"></button><ul id="graph-focus-list" class="fragment-listbox" role="listbox" aria-label="중심 개념 후보" hidden></ul></span></div><input id="graph-focus" type="hidden" value="" /><label>이웃 범위<span class="fragment-field fragment-select"><select id="graph-depth" disabled><option value="1">1단계</option><option value="2">2단계</option></select></span></label><div class="fragment-graph-buttons"><button id="graph-zoom-in" aria-label="그래프 확대">＋</button><button id="graph-zoom-out" aria-label="그래프 축소">−</button><button id="graph-fit">전체 맞춤</button></div></div>
+      <p class="fragment-hint">노드에 마우스를 올리면 직접 연결된 개념과 선을 강조합니다. 클릭하면 상세가 열립니다. 아래 개념 버튼에서도 키보드로 탐색할 수 있습니다.</p>
+      <p id="graph-empty-relations" class="fragment-hint" hidden></p>
+      <p id="graph-focus-hint" class="fragment-hint" aria-live="polite">개념 이름이나 별칭을 입력하면 그 개념을 중심으로 보여줍니다. 비우면 전체 관계입니다.</p>
+      <p id="graph-status" role="status"></p><button id="graph-retry" hidden>그래프 다시 불러오기</button>
+      <p id="graph-selection" class="fragment-hint" role="status" aria-live="polite">노드에 마우스를 올리거나 아래 개념 버튼에 포커스를 두세요.</p>
+      <div id="fragment-graph" aria-label="개념 관계 그래프 화면"></div>
+      <div id="graph-accessible" class="fragment-graph-links" aria-label="그래프 개념 목록"></div>
+    </section>
+    <noscript><p>검색·팝업·그래프를 사용하려면 JavaScript를 켜주세요.</p><ul>{cards.map(c => <li><strong>{c.title}</strong> — {c.summary}</li>)}</ul></noscript>
+    <dialog id="fragment-dialog" aria-labelledby="fragment-dialog-title">
+      <div class="fragment-dialog-top"><span id="fragment-dialog-category"></span><button id="fragment-close" aria-label="닫기" autofocus>닫기 ×</button></div>
+      <h2 id="fragment-dialog-title"></h2><p id="fragment-dialog-aliases" class="fragment-hint"></p><p id="fragment-dialog-summary" class="fragment-summary"></p>
+      <div id="fragment-dialog-body" class="prose"></div><div id="fragment-dialog-tags" class="fragment-tags"></div>
+      <section class="fragment-relations"><h3>연결된 개념</h3><div id="fragment-dialog-relations"></div></section>
+      <button id="fragment-related-graph" class="btn btn--ghost">이 개념의 관계 보기</button>
+      <button id="fragment-edit" class="btn btn--ghost" hidden>로그인하고 수정</button>
+    </dialog>
+    <script id="fragment-data" type="application/json" set:html={JSON.stringify(cards).replace(/</g, '\\u003c')}></script>
+    <script is:inline id="fragment-edit-paths" type="application/json" set:html={JSON.stringify(editPaths).replace(/</g, '\\u003c')}></script>
+    <FragmentComposer />
+  </main>
+  <script>
+    import '../../scripts/fragments';
+  </script>
+</BaseLayout>

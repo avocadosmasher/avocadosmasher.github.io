@@ -1,0 +1,33 @@
+---
+import { href } from '../../utils';
+import { createOAuthTestConfig } from '../../lib/fragment-admin-oauth';
+const local = import.meta.env.DEV && process.env.FRAGMENT_CMS_LOCAL === '1';
+const oauthTest = process.env.FRAGMENT_CMS_OAUTH_TEST === '1';
+let oauthConfig;
+let configError = '';
+if (oauthTest) {
+  try {
+    if (local) throw new Error('로컬 proxy와 OAuth 테스트는 함께 실행할 수 없습니다.');
+    oauthConfig = createOAuthTestConfig({ repo: process.env.FRAGMENT_CMS_TEST_REPO,
+      branch: process.env.FRAGMENT_CMS_TEST_BRANCH, origin: process.env.FRAGMENT_CMS_OAUTH_ORIGIN });
+  } catch (error) { configError = error instanceof Error ? error.message : '테스트 인증 설정을 확인하세요.'; }
+}
+---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Fragments 관리</title>
+  </head>
+  <body>
+    {oauthConfig && <p>GitHub 테스트 저장소: {oauthConfig.backend.repo} / {oauthConfig.backend.branch}</p>}
+    <div id="admin-status" role="status" data-local={String(local && !oauthTest)} data-oauth={oauthConfig ? JSON.stringify(oauthConfig) : undefined} data-vendor={href('admin/vendor/decap-cms-3.16.2.js')}>
+      {configError || (oauthConfig ? '테스트 관리 화면을 불러오는 중입니다.' : local ? '로컬 연습용 관리 화면을 불러오는 중입니다.' : '웹 편집 인증 연결을 준비 중입니다.')}
+    </div>
+    <script>
+      import '../../scripts/fragment-admin';
+    </script>
+  </body>
+</html>

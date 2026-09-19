@@ -1,0 +1,90 @@
+name: Verify
+
+# 배포 경로와 PR 경로가 같은 검사를 쓰도록 재사용 워크플로로 분리한다.
+on:
+  workflow_call:
+    inputs:
+      upload_pages:
+        description: 검사에 성공한 build 산출물을 GitHub Pages 아티팩트로 업로드할지 여부
+        type: boolean
+        default: false
+      writer_oauth_origin:
+        description: 운영 저장용 OAuth Worker origin. 비워 두면 작성 창은 미리보기로만 동작한다.
+        type: string
+        default: ''
+
+jobs:
+  checks:
+    name: 타입·단위·통합·빌드·preview E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Type check
+        run: npm run check
+      - name: Unit & integration tests
+        run: npm test
+      - name: Build
+        run: npm run build
+        env:
+          FRAGMENT_WRITER_OAUTH_ORIGIN: ${{ inputs.writer_oauth_origin }}
+      # 운영 origin을 넘겼는데 저장 설정이 빠진 산출물이 배포되지 않게 막는다.
+      - name: Check production writer
+        if: ${{ inputs.writer_oauth_origin != '' }}
+        run: grep -q '&#34;production&#34;:true' dist/fragments/index.html
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      # 개발 서버가 아니라 위에서 만든 dist/ 를 preview 로 제공해 검증한다.
+      - name: Preview E2E
+        run: npm run test:e2e:preview
+      # 페이지네이션까지 확인하려면 검증용 카드가 필요해 별도 서버로 실행한다.
+      - name: 모바일·테마·접근성 E2E
+        run: npm run test:h01
+      # 500개 카드/1,500개 관계 규모에서 검색·그래프 성능 목표를 회귀 검증한다.
+      - name: 대규모 카드 성능 E2E
+        run: npm run test:h02
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+      - name: Upload Pages artifact
+        if: ${{ inputs.upload_pages }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  writer:
+    name: 작성·수정 OAuth E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      # 실제 GitHub·Worker 로 나가지 않는 mock 환경변수 구성으로 실행된다.
+      - name: OAuth E2E
+        run: npm run test:oauth
+      - name: Upload Playwright results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oauth-results
+          path: .fragment-test/oauth-results/
+          retention-days: 7

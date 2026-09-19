@@ -4,7 +4,8 @@
   --surface:#FFFFFF;
   --ink:#17171F;
   --ink-soft:#41414C;
-  --muted:#76767F;
+  /* 본문 배경(--paper) 위에서 4.5:1 이상을 유지하는 보조 텍스트 색. */
+  --muted:#70707A;
   --line:#E9E7DF;
   --line-strong:#DAD8CE;
   --accent:#5849E0;
