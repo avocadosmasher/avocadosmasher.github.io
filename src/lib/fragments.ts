@@ -135,20 +135,26 @@ export function graphNodeDiameter(degree: number, maxDegree: number) {
 // minDistance 크기의 격자 칸에 나눠 이웃 칸끼리만 비교한다. 모든 쌍이 minDistance 이상이 되면 true.
 export function separateNodes(points: { x: number; y: number }[], minDistance: number, maxIterations = 2000) {
   const target = minDistance * 1.001;
+  // 반복마다 문자열 키를 수천 개 만들면 느려서 숫자 키를 쓴다. 칸 좌표가 ±32,768 안이면 겹치지 않는다.
+  const cell = (gx: number, gy: number) => gx * 65536 + gy;
+  const minSquared = minDistance * minDistance * 1.0001;
   for (let iteration = 0; iteration < maxIterations; iteration++) {
-    const grid = new Map<string, number[]>();
+    const grid = new Map<number, number[]>();
     points.forEach((point, index) => {
-      const key = `${Math.floor(point.x / minDistance)},${Math.floor(point.y / minDistance)}`;
+      const key = cell(Math.floor(point.x / minDistance), Math.floor(point.y / minDistance));
       grid.get(key)?.push(index) ?? grid.set(key, [index]);
     });
     let moved = false;
     for (let i = 0; i < points.length; i++) {
       const cx = Math.floor(points[i].x / minDistance), cy = Math.floor(points[i].y / minDistance);
       for (let gx = cx - 1; gx <= cx + 1; gx++) for (let gy = cy - 1; gy <= cy + 1; gy++) {
-        for (const j of grid.get(`${gx},${gy}`) ?? []) {
+        for (const j of grid.get(cell(gx, gy)) ?? []) {
           if (j <= i) continue;
           const a = points[i], b = points[j];
-          let dx = b.x - a.x, dy = b.y - a.y, distance = Math.hypot(dx, dy);
+          let dx = b.x - a.x, dy = b.y - a.y;
+          // 먼 쌍은 제곱 거리로 먼저 거른다. Math.hypot은 가까운 쌍에만 계산한다.
+          if (dx * dx + dy * dy > minSquared) continue;
+          let distance = Math.hypot(dx, dy);
           if (distance >= minDistance) continue;
           if (distance === 0) {
             const angle = i * 2.399963 + j;
