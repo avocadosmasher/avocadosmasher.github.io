@@ -2,16 +2,8 @@
 import { CATEGORIES } from '../consts';
 import { relationLabels } from '../lib/fragments';
 const categories = Object.keys(CATEGORIES);
-import { createWriterConfig } from '../lib/fragment-writer';
-let writerConfig;
-let configError = '';
-if (process.env.FRAGMENT_CMS_OAUTH_TEST === '1') {
-  try {
-    if (process.env.FRAGMENT_CMS_LOCAL === '1') throw new Error('Conflicting modes');
-    writerConfig = createWriterConfig({ repo: process.env.FRAGMENT_CMS_TEST_REPO,
-      branch: process.env.FRAGMENT_CMS_TEST_BRANCH, origin: process.env.FRAGMENT_CMS_OAUTH_ORIGIN });
-  } catch { configError = '테스트 저장 설정을 확인해주세요.'; }
-}
+import { writerConfigFromEnv } from '../lib/fragment-writer';
+const { config: writerConfig, error: configError } = writerConfigFromEnv(process.env);
 ---
 <dialog id="fragment-composer" aria-labelledby="composer-title" aria-describedby="composer-status" data-writer={writerConfig ? JSON.stringify(writerConfig) : undefined}>
   <div class="composer-heading"><p class="hero__eyebrow">기억하고 싶은 개념</p><button type="button" id="composer-close" aria-label="닫기">닫기 ×</button></div>
@@ -19,7 +11,7 @@ if (process.env.FRAGMENT_CMS_OAUTH_TEST === '1') {
   <p id="composer-status" class="fragment-hint" role="status" aria-live="polite">{configError || (writerConfig ? 'GitHub에 로그인하면 카드를 저장할 수 있습니다.' : '작성 화면 미리보기입니다. 저장 기능은 테스트 환경에서 확인할 수 있습니다.')}</p>
   <p class="fragment-hint">새로고침하거나 페이지를 떠나면 입력 내용과 로그인이 사라집니다.</p>
   {writerConfig && <div class="composer-session">
-    <p class="fragment-hint">테스트 저장 대상: {writerConfig.repo} / {writerConfig.branch}</p>
+    <p class="fragment-hint">{writerConfig.production ? '저장 대상' : '테스트 저장 대상'}: {writerConfig.repo} / {writerConfig.branch}</p>
     <button type="button" class="btn btn--ghost" id="composer-login">GitHub 로그인</button>
     <button type="button" class="btn btn--ghost" id="composer-logout" hidden>로그아웃</button>
   </div>}

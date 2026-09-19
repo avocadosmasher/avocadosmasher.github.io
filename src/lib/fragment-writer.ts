@@ -1,19 +1,40 @@
 import { prepareFragmentSave } from './fragment-admin';
+import { cmsConfig } from './fragment-admin';
 import { createOAuthTestConfig } from './fragment-admin-oauth';
 import { parseDocument } from 'yaml';
 import { validateFragments } from './fragments';
 
-export interface WriterConfig { repo: string; branch: string; origin: string }
+export interface WriterConfig { repo: string; branch: string; origin: string; production?: true }
 export type WriterDraft = ReturnType<typeof prepareFragmentSave>;
 export type WriterErrorCode = 'auth' | 'permission' | 'conflict' | 'network' | 'snapshot' | 'rate-limit' | 'relation';
 export class WriterError extends Error {
   constructor(public code: WriterErrorCode, message: string) { super(message); }
 }
 
-// Only explicit test configuration is enabled during the new UI acceptance phase.
-export function createWriterConfig(input: { repo?: string; branch?: string; origin?: string }): WriterConfig {
-  const { backend } = createOAuthTestConfig(input);
-  return { repo: backend.repo, branch: backend.branch, origin: backend.base_url };
+// Production writes need an explicit flag and may target only the blog repository's main branch.
+export function createWriterConfig(input: { repo?: string; branch?: string; origin?: string; production?: boolean }): WriterConfig {
+  if (input.production !== true) {
+    const { backend } = createOAuthTestConfig(input);
+    return { repo: backend.repo, branch: backend.branch, origin: backend.base_url };
+  }
+  const { repo = '', branch = '', origin = '' } = input;
+  let url: URL;
+  try { url = new URL(origin); } catch { throw new Error('OAuth 서버 주소를 설정하세요.'); }
+  if (url.protocol !== 'https:' || url.origin !== origin) throw new Error('OAuth 서버의 HTTPS origin을 입력하세요.');
+  if (repo !== cmsConfig.backend.repo || branch !== cmsConfig.backend.branch) throw new Error('운영 저장은 블로그 저장소의 main 브랜치만 허용합니다.');
+  return { repo, branch, origin, production: true };
+}
+
+/** Build-time choice: the isolated test repository, the production blog, or no saving. */
+export function writerConfigFromEnv(env: Record<string, string | undefined>): { config?: WriterConfig; error: string } {
+  const test = env.FRAGMENT_CMS_OAUTH_TEST === '1', productionOrigin = env.FRAGMENT_WRITER_OAUTH_ORIGIN;
+  if (!test && !productionOrigin) return { error: '' };
+  try {
+    if (env.FRAGMENT_CMS_LOCAL === '1' || (test && productionOrigin)) throw new Error('Conflicting modes');
+    return { error: '', config: test
+      ? createWriterConfig({ repo: env.FRAGMENT_CMS_TEST_REPO, branch: env.FRAGMENT_CMS_TEST_BRANCH, origin: env.FRAGMENT_CMS_OAUTH_ORIGIN })
+      : createWriterConfig({ repo: cmsConfig.backend.repo, branch: cmsConfig.backend.branch, origin: productionOrigin, production: true }) };
+  } catch { return { error: test ? '테스트 저장 설정을 확인해주세요.' : '저장 설정을 확인해주세요.' }; }
 }
 
 export function draftFromFields(input: Record<string, string>, existing?: WriterDraft): WriterDraft {

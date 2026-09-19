@@ -1,5 +1,16 @@
 # Fragment 개발 기록
 
+## P01 — 운영 저장 설정 코드 (2026-09-20, 수동 판정 대기)
+
+- 시작 기준: H03 `721f45a`를 사용자 통과 후 커밋·push했고, 그 CI(run 35455830617)가 성공했다. H03 수동 확인 중 사용자가 로그인·수정이 가이드에서 빠진 점을 지적했다. 운영 빌드에는 쓰기 설정이 없어 작성 창이 미리보기로만 동작하고, 저장 설정 검사가 운영 저장소와 `main`을 일부러 거부한다는 사실이 확인됐다. 이 빈틈을 P01(코드)과 P02(외부 연결)로 계획표에 추가했다.
+- 사용자 결정: 운영 OAuth는 테스트와 분리한다(운영용 Worker와 GitHub OAuth App을 따로 둔다). Worker 코드는 origin 하나만 허용하는 현재 구조를 유지한다.
+- Red: `tests/unit/fragment-writer.test.ts`에 운영 설정 테스트를 추가하고, 기능이 없어 실패함을 확인했다. 운영 설정은 블로그 저장소의 `main`만 허용하고(대소문자 다른 이름, 다른 브랜치도 거부), HTTPS origin만 받으며, 이미 검증한 설정을 다시 검증해도 결과가 같아야 한다. 테스트 설정에는 `production`이 붙지 않아야 한다.
+- 구현: `src/lib/fragment-writer.ts`의 `createWriterConfig`는 `production: true`가 명시된 경우에만 운영 규칙으로 검증한다. 저장·조회·로그인 경로가 모두 이 함수로 설정을 다시 검증하므로 플래그를 설정 객체에 담았다. 작성 창의 설정 분기는 `writerConfigFromEnv`로 옮겨 단위 테스트로 검증한다. `FRAGMENT_WRITER_OAUTH_ORIGIN`이 있을 때만 운영 저장을 켜고, 테스트·로컬 모드와 함께 설정되면 저장을 끈다. 작성 창에는 운영일 때 "저장 대상", 테스트일 때 "테스트 저장 대상"이라고 표시한다.
+- 빌드 확인: 기본 빌드에는 `data-writer`와 로그인 버튼이 없고 미리보기 안내가 나온다. 운영 변수 빌드에는 `production:true` 설정, "저장 대상: avocadosmasher/avocadosmasher.github.io / main", 로그인 버튼이 있다. 운영·테스트 변수를 동시에 주면 저장이 꺼지고 설정 확인 안내가 나온다.
+- 자동 검사: `npm test` 14파일/77개, `npm run check` 오류 0·경고 0, `npm run test:integration` 5개, `npm run build` 12페이지, `npm run test:e2e:preview` 8개, `npm run test:e2e` 8개, `npm run test:h01` 4개, `npm run test:oauth` 34개, `npm run test:admin` 4개 통과, `git diff --check` 통과. 그래프 변경이 없어 H02는 재실행하지 않았다.
+- 미확인: 운영 Worker가 아직 없으므로 운영 빌드의 실제 로그인·저장은 P02 이후에 확인한다. 배포 워크플로는 아직 운영 변수를 전달하지 않으므로, 지금 main에 배포해도 운영 사이트는 계속 미리보기로 동작한다.
+- 관련 파일만 스테이징하고 판정을 기다린다. 승인 명령·커밋·push는 실행하지 않았다.
+
 ## H03 — 통합 회귀와 정적 빌드 검증 (2026-09-20, 수동 판정 대기)
 
 - 시작 기준: G07 준비 기록 `9727cd2`를 사용자 통과 후 커밋·push했다. G07 인수 증거는 승인 뒤 파일을 바꾸지 않기 위해 이 기록에 남긴다.

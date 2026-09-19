@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createWriterConfig, draftFromFields, markdownForDraft, verifyWriter, saveNewFragment } from '../../src/lib/fragment-writer';
+import { createWriterConfig, writerConfigFromEnv, draftFromFields, markdownForDraft, verifyWriter, saveNewFragment } from '../../src/lib/fragment-writer';
 
 const config = { repo: 'tester/fragment-cms-auth-test', branch: 'cms-test', origin: 'https://oauth.example' };
 const draft = () => draftFromFields({ title: '주소: "변환"', summary: '한글\n---\nid: injected', category: 'Infra', aliases: ' VM, ,주소 ', tags: '', body: '**본문**\n<script>text</script>' });
@@ -10,6 +10,28 @@ describe('G02-UI: isolated GitHub new-card writes', () => {
     expect(() => createWriterConfig({ ...config, repo: 'avocadosmasher/avocadosmasher.github.io' })).toThrow();
     expect(() => createWriterConfig({ ...config, branch: 'main' })).toThrow();
     expect(() => draftFromFields({ title: ' ', summary: 'x', category: 'x' })).toThrow();
+  });
+  it('accepts production writes only for the blog repository main branch when explicitly requested', () => {
+    const production = { repo: 'avocadosmasher/avocadosmasher.github.io', branch: 'main', origin: 'https://oauth.example', production: true as const };
+    expect(createWriterConfig(production)).toEqual(production);
+    expect(createWriterConfig(createWriterConfig(production))).toEqual(production);
+    expect(() => createWriterConfig({ ...production, repo: 'tester/fragment-cms-auth-test' })).toThrow();
+    expect(() => createWriterConfig({ ...production, repo: 'Avocadosmasher/avocadosmasher.github.io' })).toThrow();
+    expect(() => createWriterConfig({ ...production, branch: 'cms-test' })).toThrow();
+    expect(() => createWriterConfig({ ...production, origin: 'http://oauth.example' })).toThrow();
+    expect(() => createWriterConfig({ ...production, origin: 'https://oauth.example/auth' })).toThrow();
+    expect(createWriterConfig(config)).not.toHaveProperty('production');
+  });
+  it('chooses the writer from build variables and fails closed on conflicting modes', () => {
+    const test = { FRAGMENT_CMS_OAUTH_TEST: '1', FRAGMENT_CMS_TEST_REPO: config.repo, FRAGMENT_CMS_TEST_BRANCH: config.branch, FRAGMENT_CMS_OAUTH_ORIGIN: config.origin };
+    const production = { FRAGMENT_WRITER_OAUTH_ORIGIN: 'https://oauth.example' };
+    expect(writerConfigFromEnv({})).toEqual({ error: '' });
+    expect(writerConfigFromEnv(test)).toEqual({ error: '', config });
+    expect(writerConfigFromEnv(production)).toEqual({ error: '', config: { repo: 'avocadosmasher/avocadosmasher.github.io', branch: 'main', origin: 'https://oauth.example', production: true } });
+    expect(writerConfigFromEnv({ ...test, ...production }).config).toBeUndefined();
+    expect(writerConfigFromEnv({ ...production, FRAGMENT_CMS_LOCAL: '1' }).config).toBeUndefined();
+    expect(writerConfigFromEnv({ FRAGMENT_WRITER_OAUTH_ORIGIN: 'http://oauth.example' })).toEqual({ error: '저장 설정을 확인해주세요.' });
+    expect(writerConfigFromEnv({ ...test, FRAGMENT_CMS_TEST_BRANCH: 'main' })).toEqual({ error: '테스트 저장 설정을 확인해주세요.' });
   });
   it('preserves text and creates a stable ID independent of the title', () => {
     const card = draft();
