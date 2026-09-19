@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('C01–D05: navigate, search aliases, filter and restore URL', async ({ page }) => {
   await page.goto('/');

@@ -25,6 +25,7 @@ jobs:
     uses: ./.github/workflows/verify.yml
     with:
       upload_pages: true
+      writer_oauth_origin: https://fragment-oauth.rdd0426.workers.dev
 
   deploy:
     needs: verify

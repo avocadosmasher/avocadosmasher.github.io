@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('composer offers the blog sidebar categories and preserves a selection', async ({ page }) => {
   await page.goto('/blog/');

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 test('admin without explicit local mode does not contact a proxy or GitHub', async ({ page }) => {
   const backendRequests: string[] = [];

@@ -8,6 +8,10 @@ on:
         description: 검사에 성공한 build 산출물을 GitHub Pages 아티팩트로 업로드할지 여부
         type: boolean
         default: false
+      writer_oauth_origin:
+        description: 운영 저장용 OAuth Worker origin. 비워 두면 작성 창은 미리보기로만 동작한다.
+        type: string
+        default: ''
 
 jobs:
   checks:
@@ -29,6 +33,12 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+        env:
+          FRAGMENT_WRITER_OAUTH_ORIGIN: ${{ inputs.writer_oauth_origin }}
+      # 운영 origin을 넘겼는데 저장 설정이 빠진 산출물이 배포되지 않게 막는다.
+      - name: Check production writer
+        if: ${{ inputs.writer_oauth_origin != '' }}
+        run: grep -q '&#34;production&#34;:true' dist/fragments/index.html
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
       # 개발 서버가 아니라 위에서 만든 dist/ 를 preview 로 제공해 검증한다.
