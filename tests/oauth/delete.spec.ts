@@ -65,7 +65,9 @@ test('author can cancel then delete, with list, search, graph and another tab re
   await another.goto('/fragments/?view=graph&card=delete-me');
   await expect(another.locator('#fragment-sync-status')).toContainText('최신 카드');
   await expect(another.locator('#fragment-dialog')).not.toBeVisible();
-  await expect(another.locator('#graph-focus option')).toHaveCount(1);
+  await another.getByRole('combobox', { name: '중심 개념' }).click();
+  await expect(another.getByRole('listbox', { name: '중심 개념 후보' })).toContainText('일치하는 개념이 없습니다');
+  await expect(another.getByRole('listbox', { name: '중심 개념 후보' }).getByRole('option')).toHaveCount(0);
 });
 
 for (const mode of ['reference', 'stale', 'race', 'lost', 'permission']) {

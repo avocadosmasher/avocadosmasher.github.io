@@ -149,7 +149,7 @@ test('페이지 이동 경계와 카테고리 필터가 함께 동작한다', as
   await expect(page.getByText('25개의 개념 · 3 / 3 페이지')).toBeVisible();
   await expect(page.getByRole('button', { name: '다음', exact: true })).toBeDisabled();
 
-  await page.locator('#fragment-category').selectOption('네트워크');
+  await page.locator('#fragment-category').selectOption('DevOps');
   await expect(page.getByText('6개의 개념 · 1 / 1 페이지')).toBeVisible();
   // 3페이지에서 필터를 바꾸면 범위 밖 페이지가 남지 않는다.
   await expect(page).not.toHaveURL(/page=[23]/);

@@ -63,15 +63,51 @@ export function stateUrl(state: FragmentState) {
   if (state.view === 'graph') params.set('view', 'graph');
   return params.size ? `?${params}` : '';
 }
-export function graphData(cards: Fragment[], focus?: string, matches?: Set<string>) {
+// 중심 개념 입력창의 자동완성 목록. 제목이 겹치면 ID를 붙여 구분한다.
+export function focusOptions(cards: Fragment[]) {
+  const counts = new Map<string, number>();
+  for (const card of cards) counts.set(card.title, (counts.get(card.title) ?? 0) + 1);
+  return cards.map(card => ({ id: card.id, label: (counts.get(card.title) ?? 0) > 1 ? `${card.title} · ${card.id}` : card.title }));
+}
+// 중심 개념 목록에 보여줄 후보. 제목 앞부분 → 별칭 앞부분 → 제목 포함 → 별칭 포함 순으로 정렬하고 limit개까지 자른다.
+export function filterFocusOptions(cards: Fragment[], text: string, limit = 50) {
+  const q = normalize(text);
+  const labels = new Map(focusOptions(cards).map(option => [option.id, option.label]));
+  const rank = (card: Fragment) => {
+    if (!q) return 0;
+    const title = normalize(card.title), aliases = card.aliases.map(normalize);
+    if (title.startsWith(q)) return 0;
+    if (aliases.some(alias => alias.startsWith(q))) return 1;
+    if (title.includes(q)) return 2;
+    if (aliases.some(alias => alias.includes(q))) return 3;
+    return -1;
+  };
+  const matched = cards.map(card => ({ card, score: rank(card) })).filter(item => item.score >= 0)
+    .sort((a, b) => a.score - b.score || a.card.title.localeCompare(b.card.title, 'ko') || a.card.id.localeCompare(b.card.id));
+  return { total: matched.length, options: matched.slice(0, limit).map(({ card }) => ({ id: card.id, label: labels.get(card.id)!, category: card.category })) };
+}
+// 입력한 글자를 중심 개념 ID로 바꾼다. 빈 입력은 전체 관계(''), 하나로 정해지지 않으면 undefined.
+export function resolveFocus(cards: Fragment[], text: string) {
+  const q = normalize(text);
+  if (!q) return '';
+  const labeled = focusOptions(cards).find(option => normalize(option.label) === q);
+  if (labeled) return labeled.id;
+  const named = cards.filter(card => [card.title, ...card.aliases].some(value => normalize(value) === q));
+  return named.length === 1 ? named[0].id : undefined;
+}
+
+// depth는 중심 개념에서 몇 단계 떨어진 이웃까지 포함할지다. 중심 개념이 없으면 검색 결과의 직접 이웃만 더한다.
+export function graphData(cards: Fragment[], focus?: string, matches?: Set<string>, depth = 1) {
   const selected = focus ? new Set([focus]) : matches ? new Set(matches) : new Set(cards.map(c => c.id));
-  const seeds = new Set(selected);
-  for (const card of cards) for (const rel of card.relations) {
-    if (seeds.has(card.id)) selected.add(rel.target);
-    if (seeds.has(rel.target)) selected.add(card.id);
+  for (let step = 0; step < (focus ? depth : 1); step++) {
+    const seeds = new Set(selected);
+    for (const card of cards) for (const rel of card.relations) {
+      if (seeds.has(card.id)) selected.add(rel.target);
+      if (seeds.has(rel.target)) selected.add(card.id);
+    }
   }
   const nodes = cards.filter(c => selected.has(c.id)).map(c => ({ data: { id: c.id, label: c.title, outside: matches && !matches.has(c.id) ? 1 : 0 } }));
-  const edges: { data: { id: string; source: string; target: string; label: string; directed: number } }[] = [];
+  const edges: { data: { id: string; source: string; target: string; label: string; type: keyof typeof relationLabels; directed: number } }[] = [];
   const seen = new Set<string>();
   for (const card of cards) for (const rel of card.relations) {
     if (!selected.has(card.id) || !selected.has(rel.target)) continue;
@@ -80,7 +116,53 @@ export function graphData(cards: Fragment[], focus?: string, matches?: Set<strin
     const id = `edge:${pair.join(':')}:${rel.type}`;
     if (seen.has(id)) continue;
     seen.add(id);
-    edges.push({ data: { id, source: card.id, target: rel.target, label: relationLabels[rel.type], directed: directed ? 1 : 0 } });
+    edges.push({ data: { id, source: card.id, target: rel.target, label: relationLabels[rel.type], type: rel.type, directed: directed ? 1 : 0 } });
   }
   return { nodes, edges };
+}
+
+export const graphNodeSize = { min: 10, max: 32, gap: 24 } as const;
+// 가장 큰 노드 두 개가 나란히 있어도 여유분만큼 떨어지는 중심 간 거리.
+export const graphNodeSpacing = graphNodeSize.max * 2 + graphNodeSize.gap;
+
+// 연결 수에 따라 키우되, 제곱근으로 완만하게 늘려 허브가 과하게 커지지 않게 한다.
+export function graphNodeDiameter(degree: number, maxDegree: number) {
+  if (maxDegree <= 0) return graphNodeSize.min;
+  return graphNodeSize.min + (graphNodeSize.max - graphNodeSize.min) * Math.sqrt(Math.min(degree, maxDegree) / maxDegree);
+}
+
+// force-directed 배치는 최소 거리를 보장하지 않으므로, 가까운 쌍을 서로 반씩 밀어내기를 반복한다.
+// minDistance 크기의 격자 칸에 나눠 이웃 칸끼리만 비교한다. 모든 쌍이 minDistance 이상이 되면 true.
+export function separateNodes(points: { x: number; y: number }[], minDistance: number, maxIterations = 2000) {
+  const target = minDistance * 1.001;
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
+    const grid = new Map<string, number[]>();
+    points.forEach((point, index) => {
+      const key = `${Math.floor(point.x / minDistance)},${Math.floor(point.y / minDistance)}`;
+      grid.get(key)?.push(index) ?? grid.set(key, [index]);
+    });
+    let moved = false;
+    for (let i = 0; i < points.length; i++) {
+      const cx = Math.floor(points[i].x / minDistance), cy = Math.floor(points[i].y / minDistance);
+      for (let gx = cx - 1; gx <= cx + 1; gx++) for (let gy = cy - 1; gy <= cy + 1; gy++) {
+        for (const j of grid.get(`${gx},${gy}`) ?? []) {
+          if (j <= i) continue;
+          const a = points[i], b = points[j];
+          let dx = b.x - a.x, dy = b.y - a.y, distance = Math.hypot(dx, dy);
+          if (distance >= minDistance) continue;
+          if (distance === 0) {
+            const angle = i * 2.399963 + j;
+            dx = Math.cos(angle); dy = Math.sin(angle); distance = 1;
+            b.x = a.x + dx; b.y = a.y + dy;
+          }
+          const push = (target - distance) / 2 / distance;
+          a.x -= dx * push; a.y -= dy * push;
+          b.x += dx * push; b.y += dy * push;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) return true;
+  }
+  return false;
 }

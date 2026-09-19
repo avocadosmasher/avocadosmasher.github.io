@@ -37,6 +37,9 @@ jobs:
       # 페이지네이션까지 확인하려면 검증용 카드가 필요해 별도 서버로 실행한다.
       - name: 모바일·테마·접근성 E2E
         run: npm run test:h01
+      # 500개 카드/1,500개 관계 규모에서 검색·그래프 성능 목표를 회귀 검증한다.
+      - name: 대규모 카드 성능 E2E
+        run: npm run test:h02
       - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4

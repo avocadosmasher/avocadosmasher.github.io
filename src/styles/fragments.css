@@ -6,7 +6,39 @@
 .fragment-toolbar{display:flex;gap:16px;padding:22px;background:var(--surface);border:1px solid var(--line);border-radius:16px;}
 .fragments label{display:flex;flex-direction:column;gap:7px;font-size:13px;color:var(--ink-soft);}
 .fragment-search{flex:1;min-width:0;}
-.fragments input,.fragments select{background:var(--paper);color:var(--ink);border:1px solid var(--line-strong);border-radius:9px;padding:12px;font:inherit;min-width:0;}
+.fragments{--control-h:46px;--control-font:15px;}
+.fragment-control{display:flex;flex-direction:column;gap:7px;min-width:0;}
+.fragments input,.fragments select{box-sizing:border-box;height:var(--control-h);background:var(--paper);color:var(--ink);border:1px solid var(--line-strong);border-radius:9px;padding:0 14px;font:inherit;font-size:var(--control-font);min-width:0;}
+/* 입력창·선택창의 ×와 목록 화살표는 브라우저마다 모양과 위치가 달라 숨기고, 같은 선 굵기로 직접 그린다.
+   화살표는 항상 오른쪽 끝(18px), ×는 그 왼쪽에 둔다. */
+.fragment-field{position:relative;display:block;}
+.fragment-field input,.fragment-field select{width:100%;}
+.fragments input[type=search]::-webkit-search-cancel-button,.fragments input[type=search]::-webkit-search-decoration{-webkit-appearance:none;appearance:none;}
+.fragments input::-webkit-calendar-picker-indicator{display:none!important;}
+.fragment-select select{appearance:none;padding-right:44px;}
+.fragment-field input[type=search]{padding-right:48px;}
+.fragment-combo input[type=search]{padding-right:84px;}
+.fragment-select::after,.fragment-open::after{content:'';position:absolute;right:18px;top:50%;width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:translateY(-70%) rotate(45deg);pointer-events:none;}
+.fragment-select:has(select:disabled)::after{opacity:.4;}
+.fragment-clear,.fragment-open{position:absolute;padding:0;border:0;background:transparent;color:var(--muted);cursor:pointer;}
+.fragment-clear{top:50%;right:8px;width:32px;height:32px;border-radius:7px;transform:translateY(-50%);}
+.fragment-combo .fragment-clear{right:44px;}
+.fragment-clear::before,.fragment-clear::after{content:'';position:absolute;left:50%;top:50%;width:13px;height:2px;border-radius:1px;background:currentColor;}
+.fragment-clear::before{transform:translate(-50%,-50%) rotate(45deg);}
+.fragment-clear::after{transform:translate(-50%,-50%) rotate(-45deg);}
+.fragment-open{top:0;right:0;width:44px;height:100%;border-radius:0 9px 9px 0;}
+.fragment-clear:hover{color:var(--ink);background:var(--accent-soft);}
+.fragment-open:hover::after{border-color:var(--ink);}
+/* 중심 개념 후보 목록은 입력창과 같은 폭·테두리·모서리로, 입력창 바로 아래에 펼친다. */
+.fragment-listbox{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:20;box-sizing:border-box;margin:0;padding:6px;list-style:none;max-height:min(360px,50dvh);overflow:auto;background:var(--surface);border:1px solid var(--line-strong);border-radius:9px;box-shadow:var(--shadow-lg);}
+.fragment-listbox [role=option]{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px;padding:0 10px;border-radius:7px;font-size:var(--control-font);color:var(--ink);cursor:pointer;}
+.fragment-listbox [role=option]:hover,.fragment-listbox .is-active{background:var(--accent-soft);}
+.fragment-listbox [aria-selected=true]{color:var(--accent);font-weight:600;}
+.fragment-option-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fragment-option-category{flex-shrink:0;font-size:12px;color:var(--muted);}
+.fragment-listbox-note{padding:10px;font-size:13px;color:var(--muted);}
+@media(forced-colors:active){.fragment-listbox .is-active{outline:2px solid Highlight;}}
+@media(forced-colors:active){.fragment-select select{appearance:auto;}.fragment-select::after{display:none;}.fragment-clear::before,.fragment-clear::after{background:ButtonText;}}
 .fragments :focus-visible{outline:3px solid var(--accent);outline-offset:3px;}
 .fragment-list-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:22px 0;font-size:13px;color:var(--muted);}
 .fragment-views{display:flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;}
@@ -21,7 +53,9 @@
 .fragment-tags{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);}
 .fragment-card-footer{display:block;margin-top:18px;padding-top:12px;border-top:1px solid var(--line);width:100%;font-size:12px;color:var(--accent);}
 .fragment-pages{display:flex;gap:5px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:28px;}
-.fragment-pages button,.fragment-graph-tools button{padding:9px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);}
+.fragment-pages button{padding:9px 12px;border:1px solid var(--line-strong);border-radius:8px;background:var(--surface);}
+.fragment-graph-buttons{display:flex;gap:8px;}
+.fragment-graph-buttons button{box-sizing:border-box;height:var(--control-h);min-width:var(--control-h);padding:0 14px;border:1px solid var(--line-strong);border-radius:9px;background:var(--surface);color:var(--ink);font:inherit;font-size:var(--control-font);}
 .fragment-pages [aria-current=page]{background:var(--accent);color:white;border-color:var(--accent);}
 .fragment-pages button:disabled{opacity:.35;cursor:default;}
 .fragment-empty{padding:64px 12px;text-align:center;color:var(--muted);}
@@ -39,11 +73,12 @@ body:has(#fragment-dialog[open]){overflow:hidden;}
 .fragment-relations h3{font-size:14px;}
 #fragment-dialog-relations{display:flex;gap:8px;flex-wrap:wrap;}
 #fragment-dialog-relations button,.fragment-graph-links button{padding:8px 12px;background:var(--accent-soft);color:var(--accent);border-radius:8px;font-size:13px;}
-.fragment-graph-tools{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;}
-#fragment-graph{height:480px;border:1px solid var(--line);border-radius:16px;background:var(--surface);}
+.fragment-graph-tools{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;}
+.fragment-focus{flex:0 1 340px;}
+#fragment-graph{height:clamp(480px,70dvh,820px);border:1px solid var(--line);border-radius:16px;background:var(--surface);}
 .fragment-graph-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;max-height:160px;overflow:auto;padding:4px;}
 #graph-status{font-size:13px;color:var(--muted);}
 #graph-empty-relations{padding:14px 16px;background:var(--accent-soft);border-radius:10px;line-height:1.7;}
 #graph-selection{min-height:2.6em;overflow-wrap:anywhere;}
 @media(max-width:900px){.fragment-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.fragment-head{align-items:flex-start;flex-direction:column;}}
-@media(max-width:560px){.fragments{padding-top:30px;}.fragment-toolbar{flex-direction:column;padding:16px;}.fragment-grid{grid-template-columns:1fr;}.fragment-list-head{align-items:flex-start;flex-direction:column;}#fragment-dialog{padding:20px;}#fragment-graph{height:380px;}}
+@media(max-width:560px){.fragments{padding-top:30px;}.fragment-toolbar{flex-direction:column;padding:16px;}.fragment-grid{grid-template-columns:1fr;}.fragment-list-head{align-items:flex-start;flex-direction:column;}#fragment-dialog{padding:20px;}#fragment-graph{height:clamp(380px,60dvh,560px);}.fragment-focus{flex:1 1 100%;}.fragment-graph-tools>label{flex:1;}}

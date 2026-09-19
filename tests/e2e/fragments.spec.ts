@@ -10,6 +10,11 @@ test('C01–D05: navigate, search aliases, filter and restore URL', async ({ pag
   await expect(page.getByRole('searchbox', { name: '개념 검색' })).toHaveValue('extended page tables');
   await page.getByRole('searchbox', { name: '개념 검색' }).fill('없는 개념');
   await expect(page.getByText('조건에 맞는 개념이 없습니다.')).toBeVisible();
+  await page.getByRole('button', { name: '검색어 지우기' }).click();
+  await expect(page.getByRole('searchbox', { name: '개념 검색' })).toHaveValue('');
+  await expect(page.getByText('조건에 맞는 개념이 없습니다.')).toBeHidden();
+  await expect(page.getByRole('button', { name: '검색어 지우기' })).toBeHidden();
+  await expect(page).not.toHaveURL(/[?&]q=/);
 });
 
 test('E01–E04: modal, related card, keyboard, direct links', async ({ page }) => {
