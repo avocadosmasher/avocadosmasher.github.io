@@ -73,12 +73,14 @@ test('failed or partial reads retain previous cards; retry accepts an empty coll
     ? route.fulfill({ status: 403, json: {} })
     : route.fulfill({ json: { truncated: mode === 'partial', tree: [] } }));
   await page.goto('/fragments/');
+  // The build's own cards are the fallback here; authors add and remove them from the web, so read the count.
+  const built = await page.evaluate(() => JSON.parse(document.getElementById('fragment-data')!.textContent!).length);
   await expect(page.locator('#fragment-sync-status')).toContainText('이전 내용일 수 있습니다');
-  await expect(page.locator('[data-fragment-card]')).toHaveCount(3);
+  await expect(page.locator('[data-fragment-card]')).toHaveCount(built);
   mode = 'partial';
   await page.locator('#fragment-sync-retry').click();
   await expect(page.locator('#fragment-sync-retry')).toBeVisible();
-  await expect(page.locator('[data-fragment-card]')).toHaveCount(3);
+  await expect(page.locator('[data-fragment-card]')).toHaveCount(built);
   mode = 'empty';
   await page.locator('#fragment-sync-retry').click();
   await expect(page.locator('#fragment-sync-status')).toHaveText('최신 카드를 불러왔습니다.');

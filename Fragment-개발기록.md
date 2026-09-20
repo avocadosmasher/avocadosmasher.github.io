@@ -1,5 +1,35 @@
 # Fragment 개발 기록
 
+## H05-FIX — 작성자의 웹 편집이 배포를 막던 결함 (2026-09-21, 수동 판정 대기)
+
+- 증상: 운영 사이트에서 HPA 카드를 삭제하자 이후 모든 배포가 실패했다. 실패 job은 OAuth E2E이고 오류는 `ENOENT: src/content/fragments/hpa.md`였다. 빌드와 나머지 검사는 통과했다.
+- 원인(실제 사용자 결함): 테스트가 운영 카드 파일과 그 내용을 fixture로 쓰고 있었다. 웹 작성 기능은 작성자가 이 카드를 자유롭게 고치고 지우게 하는 기능이므로, 편집할수록 배포가 막히는 구조였다. 발견된 의존은 네 곳이다.
+  - `tests/oauth/edit.spec.ts`: 관계 대상 blob 내용을 `gpa.md`·`hpa.md`에서 읽음
+  - `tests/oauth/sync.spec.ts`: 빌드 카드 수를 3으로 고정
+  - `tests/e2e/fragments.spec.ts`: `extended page tables` 검색 결과 1개, `EPT`·`GPA` 제목, `?card=ept` 전제
+  - `tests/e2e/fragment-editor.spec.ts`(`q=EPT` 결과 1개), `tests/e2e/admin-disabled.spec.ts`(`ept` 존재 전제)
+- 사용자 결정: 미리보기 E2E는 배포될 산출물을 그대로 검사하되, 카드 이름을 박아 넣지 않고 페이지의 `#fragment-data`에서 제목·별칭·관계를 읽어 검사한다(씨앗 카드 삭제 금지안은 채택하지 않음).
+- 수정
+  - `tests/e2e/fixtures.ts`에 `cardsOf(page)`를 추가하고, E2E 세 파일이 이 데이터로 검색어·관계·`?card=` 대상을 고른다. 별칭이 있는 카드가 있으면 별칭으로 검색해 D02 별칭 검색 범위를 유지한다. 카드가 없거나 관계가 없으면 해당 검사는 건너뛴다.
+  - `tests/oauth/edit.spec.ts`의 관계 대상 두 개를 테스트 안의 고정 문자열로 바꾸고 파일 읽기를 없앴다. `tests/oauth/sync.spec.ts`는 빌드 카드 수를 페이지에서 읽는다.
+  - `admin-disabled.spec.ts`는 "테스트용 카드가 운영 산출물에 섞이지 않는다"는 원래 목적만 남기고, 카드가 1개 이상이라는 전제는 뺐다. 카드를 모두 지운 상태도 정상이다.
+- 재현·검증: 세 가지 콘텐츠 상태로 미리보기 E2E를 돌렸다. `main`의 현재 카드 3개 8/8 통과, 씨앗 카드가 전혀 없는 카드 1개 8/8 통과, 카드 0개 4개 통과·카드 관련 4개 건너뜀. OAuth 34개도 씨앗 카드가 없는 상태와 있는 상태 모두 통과했다. 수정 전에는 각각 실패함을 먼저 확인했다.
+- 자동 검사: `npm run check` 오류 0, `npm test` 77개, `npm run build` 12페이지, `npm run test:e2e:preview` 8개, `npm run test:e2e` 8개, `npm run test:h01` 4개, `npm run test:h02` 3개, `npm run test:oauth` 34개, `npm run test:admin` 4개 통과, `git diff --check` 통과.
+- 로컬 브랜치를 `origin/main`으로 fast-forward해, 운영에서 저장된 카드(vLLM 추가, HPA 삭제, EPT·GPA 관계 변경)를 반영한 상태에서 검사했다.
+- 미확인: 이 수정이 배포를 풀어 주는지는 main 반영 후 Actions에서 확인한다. 현재 운영 사이트는 `993bc03` 시점이라 HPA가 남아 있고 vLLM이 없다.
+- 관련 파일만 스테이징하고 판정을 기다린다. 승인 명령·커밋·push는 실행하지 않았다.
+
+## H05 — 실제 배포와 전체 사용자 흐름 인수 (2026-09-20, 진행 중 — 결함 발견)
+
+- 시작 기준: P02 `64b74c2`를 사용자 통과 후 커밋·push했고, 그 CI(run 35464647796)가 성공했다. 사용자가 PR 방식과 Merge commit을 선택했다.
+- PR #1(`feat/fragments` → `main`, 커밋 29개, 105파일)을 만들었다. PR CI(run 35467037224)의 두 job이 모두 통과했고 상태는 MERGEABLE/CLEAN이었다. 사용자의 명시적 병합 지시 후 Merge commit으로 병합했다: `342997e`.
+- 배포 워크플로(run 35467410246): 검사 job 두 개, "Check production writer", deploy가 모두 성공했다. 운영 origin을 넣은 빌드가 E2E를 거쳐 그대로 배포된 첫 실행이다.
+- 운영 사이트 확인: `/`, `/fragments/`, `/blog/`, `/about/` HTTP 200. `/fragments/`에 "저장 대상: avocadosmasher/avocadosmasher.github.io / main"과 EPT·GPA·HPA가 들어 있다.
+- 사용자 수동 인수에서 실제 로그인·저장·수정·삭제가 모두 동작했고 사용자는 통과로 판정했다. 그러나 이후 커밋을 대조하니 마지막 두 배포가 실패해 결과가 사이트에 반영되지 않았다. 아래 H05-FIX 기록의 결함이며, H05는 아직 완료가 아니다.
+- 운영에서 일어난 저장 5건은 모두 `main` 커밋으로 남았다: `993bc03`(hpa 수정), `d5237d0`·`50d83e1`(ept·gpa 관계 저장), `407c58b`(hpa 삭제), `066e440`(vLLM 카드 생성). 첫 커밋의 배포(run 35468864925)는 성공했고, 중간 두 건은 연속 저장으로 대기 중 취소됐다(`concurrency: pages`). 마지막 두 건(run 35468931559, 35468962118)이 실패했다.
+- 이전 남은 인수(사용자 수동): 운영 사이트 GitHub 로그인(실제 토큰 교환으로 Client Secret 확인) → 새 카드 저장 → `main` 커밋 → 배포 워크플로 성공 → 검색·팝업·관계 반영 → 기존 카드 수정. 판정 뒤 에이전트가 커밋과 Actions 결과를 대조한다.
+- 계획표의 "빌드 실패 시 이전 정상 배포 유지"는 H04 게이트 구조(verify 실패 시 deploy job 미실행)로 보장된다. 실제 실패 배포 재현은 이번 범위에서 하지 않았다.
+
 ## P02 — 운영 OAuth·배포 연결 (2026-09-20, 수동 판정 대기)
 
 - 시작 기준: P01 `38bc406`을 사용자 통과 후 커밋·push했고, 그 CI(run 35456596160)가 성공했다.

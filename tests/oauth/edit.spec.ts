@@ -1,9 +1,13 @@
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { oauthPopup } from '../../workers/fragment-oauth/worker';
-import { readFileSync } from 'node:fs';
 
 const repo = 'tester/fragment-cms-auth-test';
 const path = 'src/content/fragments/ept.md';
+// Relation targets are fixtures here: reading the blog's own cards let an author's web edit break this suite.
+const related: Record<string, string> = {
+  d: `---\nid: gpa\ntitle: GPA\nsummary: 게스트가 보는 물리 주소.\ncategory: Infra\naliases: []\ntags: []\nrelations: []\n---\n`,
+  e: `---\nid: hpa\ntitle: HPA\nsummary: 호스트의 실제 물리 주소.\ncategory: Infra\naliases: []\ntags: []\nrelations: []\n---\n`,
+};
 const original = '---\nid: ept\ntitle: 최신 EPT\nsummary: 원격 요약\ncategory: Infra\naliases: [Extended Page Tables]\ntags: [메모리]\nrelations:\n  - target: gpa\n    type: prerequisite\n---\n**원격 본문**\n';
 async function mock(context: BrowserContext, mode = 'normal') {
   let source = original;
@@ -22,7 +26,7 @@ async function mock(context: BrowserContext, mode = 'normal') {
     ] } });
     if (request.url().includes('/git/blobs/')) {
       const blobSha = new URL(request.url()).pathname.split('/').at(-1)!;
-      const content = blobSha === sha ? source : readFileSync(`src/content/fragments/${blobSha[0] === 'd' ? 'gpa' : 'hpa'}.md`, 'utf8');
+      const content = blobSha === sha ? source : related[blobSha[0]];
       return route.fulfill({ json: { sha: blobSha, encoding: 'base64', content: Buffer.from(content).toString('base64') } });
     }
     if (!request.url().includes('/contents/')) return route.fulfill({ json: { full_name: repo, private: false, permissions: { push: true } } });
