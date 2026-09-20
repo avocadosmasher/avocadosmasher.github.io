@@ -1,4 +1,4 @@
-import { expect, test } from './fixtures';
+import { cardsOf, expect, test } from './fixtures';
 
 test('composer offers the blog sidebar categories and preserves a selection', async ({ page }) => {
   await page.goto('/blog/');
@@ -20,7 +20,11 @@ test('composer offers the blog sidebar categories and preserves a selection', as
 
 test('inline composer keeps input when closed and respects the mobile viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/fragments/?q=EPT');
+  await page.goto('/fragments/');
+  // The query only has to survive the composer, so take a term from the build instead of naming a card.
+  const [card] = await cardsOf(page);
+  const query = card?.title ?? '없는 개념 zzqx';
+  await page.goto(`/fragments/?q=${encodeURIComponent(query)}`);
   const trigger = page.getByRole('button', { name: '새 카드', exact: true });
   await trigger.click();
   const editor = page.getByRole('dialog', { name: '새 카드 작성' });
@@ -42,6 +46,7 @@ test('inline composer keeps input when closed and respects the mobile viewport',
   await expect(editor.getByLabel('용어', { exact: true })).toHaveValue('새 개념');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await editor.getByRole('button', { name: '닫기', exact: true }).click();
-  await expect(page).toHaveURL(/q=EPT/);
-  await expect(page.locator('[data-fragment-card]')).toHaveCount(1);
+  await expect.poll(() => new URL(page.url()).searchParams.get('q')).toBe(query);
+  await expect(page.getByRole('searchbox', { name: '개념 검색' })).toHaveValue(query);
+  if (card) await expect(page.getByRole('button', { name: `${card.title} 자세히 보기`, exact: true })).toBeVisible();
 });

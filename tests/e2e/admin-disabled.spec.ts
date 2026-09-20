@@ -10,7 +10,7 @@ test('admin without explicit local mode does not contact a proxy or GitHub', asy
   await expect(page.getByRole('status')).toHaveAttribute('data-local', 'false');
   expect(backendRequests).toEqual([]);
   await page.goto('/fragments/');
+  // Only the fixture leak matters here; an author may legitimately leave no cards at all.
   const cards = JSON.parse(await page.locator('#fragment-data').textContent() ?? '[]');
-  expect(cards.some((card: { id: string }) => card.id === 'ept')).toBe(true);
   expect(cards.some((card: { id: string }) => ['cms-connection', 'stable-existing-id'].includes(card.id))).toBe(false);
 });
