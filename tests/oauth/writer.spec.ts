@@ -60,6 +60,10 @@ test('native composer logs in, validates, saves once and links the commit', asyn
   await expect(dialog.getByLabel('카테고리', { exact: true })).toHaveValue('');
   await expect(dialog.getByLabel('카테고리', { exact: true })).toBeEnabled();
   await expect(dialog.getByRole('button', { name: '카드 저장', exact: true })).toBeEnabled();
+  // The session lives in this tab only: never in localStorage, and gone once the author logs out.
+  expect(await page.evaluate(() => JSON.stringify({ ...localStorage }))).not.toContain('writer_test_token');
+  expect(await page.evaluate(() => JSON.stringify({ ...sessionStorage }))).toContain('writer_test_token');
+  await page.locator('#composer-logout').click();
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('writer_test_token');
 });
 

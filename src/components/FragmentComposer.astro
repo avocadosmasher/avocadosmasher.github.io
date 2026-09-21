@@ -9,7 +9,7 @@ const { config: writerConfig, error: configError } = writerConfigFromEnv(process
   <div class="composer-heading"><p class="hero__eyebrow">기억하고 싶은 개념</p><button type="button" id="composer-close" aria-label="닫기">닫기 ×</button></div>
   <h2 id="composer-title">새 카드 작성</h2>
   <p id="composer-status" class="fragment-hint" role="status" aria-live="polite">{configError || (writerConfig ? 'GitHub에 로그인하면 카드를 저장할 수 있습니다.' : '작성 화면 미리보기입니다. 저장 기능은 테스트 환경에서 확인할 수 있습니다.')}</p>
-  <p class="fragment-hint">새로고침하거나 페이지를 떠나면 입력 내용과 로그인이 사라집니다.</p>
+  <p class="fragment-hint">로그인은 이 탭을 닫을 때까지 유지됩니다. 저장하지 않은 입력 내용은 새로고침하면 사라집니다.</p>
   {writerConfig && <div class="composer-session">
     <p class="fragment-hint">{writerConfig.production ? '저장 대상' : '테스트 저장 대상'}: {writerConfig.repo} / {writerConfig.branch}</p>
     <button type="button" class="btn btn--ghost" id="composer-login">GitHub 로그인</button>

@@ -1,5 +1,56 @@
 # Fragment 개발 기록
 
+## D03 — 배포 상태 표시 (2026-09-21, 수동 판정 대기)
+
+- 시작 기준: D05 `3050401`을 사용자 통과("지금이 딱 좋아") 후 커밋·push했다.
+- Red: `tests/unit/fragment-deploy.test.ts` 5개를 먼저 작성해 모듈 부재로 실패를 확인했다. 공개 브랜치의 `deploy.yml` 최신 실행을 읽고, 진행 중 상태들을 하나로 묶으며, 실패와 취소를 구분하고(연속 발행 시 대기 실행이 취소되는 것은 실패가 아니다), 실행이 없으면 `none`, 형식이 어긋나거나 요청이 실패하면 상태를 지어내지 않고 오류를 던져야 한다.
+- 구현
+  - `src/lib/fragment-deploy.ts`: `latestDeploy`가 `/actions/workflows/deploy.yml/runs?branch=main&per_page=1`을 읽어 `running`·`success`·`failure`·`cancelled`·`none`과 실행 링크를 돌려준다.
+  - `src/pages/fragments/index.astro`·`src/styles/fragments.css`: 발행 영역 아래 한 줄로 상태를 표시한다. 진행 중에는 점이 깜박이며(`prefers-reduced-motion`에서는 정지), 실행 링크를 함께 둔다.
+  - `src/scripts/fragments.ts`: 로그인 시와 발행 직후 상태를 읽고, 진행 중이면 15초 간격으로 완료까지 따라간다. 로그아웃하면 타이머를 끄고 숨긴다. 상태 조회 실패는 화면을 비우기만 하고 다른 기능을 막지 않는다.
+- 문구: 진행 중 "배포 중입니다. 끝나면 사이트에 반영됩니다.", 성공 "마지막 배포가 끝났습니다. 발행한 내용이 사이트에 반영되어 있습니다.", 실패 "마지막 배포가 실패했습니다. 사이트는 이전 내용 그대로입니다.", 취소 "마지막 배포가 취소되었습니다. 이어지는 배포 결과를 확인해주세요."
+- 검증: `tests/draft/publish.spec.ts`에 2개를 추가해 10개가 됐다. 진행 중 표시 → 폴링으로 성공 전환, 실패 시 문구를 확인한다.
+- 화면 확인: `.fragment-test/deploy-running-1280.png`, `deploy-success-1280.png`, `deploy-failure-1280.png`, `deploy-running-390.png`. 첫 배치에서 상태 줄이 버튼과 같은 줄에 붙어 비좁아, `.fragment-publish p` 규칙이 더 구체적이라 `flex-basis`가 무시된 것을 고쳐 한 줄 아래로 내렸다.
+- 자동 검사: `npm run check` 오류 0, `npm test` 99개, `npm run build` 12페이지, `npm run test:e2e:preview` 8개, `npm run test:e2e` 8개, `npm run test:h01` 4개, `npm run test:oauth` 34개, `npm run test:admin` 4개, `npm run test:draft` 10개 통과, `git diff --check` 통과. 그래프 변경이 없어 H02는 재실행하지 않았다.
+- 사용자 수정 요청(모바일 줄바꿈): 390px에서 한 어절이 다음 줄로 밀려 "발행 / 대기 카드", "반영 / 됩니다", "배포 기록 보 / 기"처럼 끊겼다. 글자 크기가 아니라 줄바꿈 규칙 문제였다.
+  - `word-break: keep-all`로 어절을 지키고, 링크·제거 버튼·변경 종류 표기는 `white-space: nowrap`으로 쪼개지지 않게 했다.
+  - 안내 문구를 문장 단위 `span`으로 나눠 문장 중간에서 줄이 바뀌지 않게 했다. 문장 사이 공백은 텍스트 노드로 두어, 줄바꿈 시 공백이 사라지고 다음 줄이 들여쓰기되지 않는다. 처음에는 공백을 span 안에 넣어 데스크톱에서 공백이 사라졌고, 그다음 `margin-left`로 바꾸자 모바일 둘째 줄이 들여쓰기돼 이 방식으로 고쳤다.
+  - 모바일 전용 글자 크기 축소안도 캡처로 비교했으나, 줄바꿈이 해결되자 필요하지 않아 채택하지 않았다(`.fragment-test/wrap-sentences-small.png`).
+- 최종 화면: `.fragment-test/wrap2-desktop.png`, `.fragment-test/wrap2-mobile.png`.
+- 미확인: 운영 사이트의 실제 배포 상태 표시. D04·D05와 함께 main에 반영한 뒤 인수한다.
+- 관련 파일만 스테이징하고 판정을 기다린다. 승인 명령·커밋·push는 실행하지 않았다.
+
+## D05 — 발행 대기 목록과 항목 제거 (2026-09-21, 수동 판정 대기)
+
+- 시작 기준: D04 `f11daea`, 절차 변경 `979867d`을 사용자 통과 후 커밋·push했다. `AGENTS.md`의 수동 판정 범위를 심미적 판단과 실제 기능 확인으로 좁혔다.
+- Red: `tests/unit/fragment-publish.test.ts`를 12개로 늘려 먼저 실패를 확인했다. 대기 목록이 파일 경로·카드 ID·변경 종류를 돌려주고, 항목 제거가 (1) 새 카드면 초안 브랜치에서 삭제, (2) 수정이면 공개본 내용으로 되돌리기, (3) 삭제면 공개본 카드를 되살리기로 동작하며, 카드 폴더 밖 경로와 발행 브랜치 없는 설정은 요청 전에 거부하고, 이미 같은 내용이면 아무 요청도 보내지 않아야 한다.
+- 구현
+  - `src/lib/fragment-publish.ts`: `countPendingDrafts`가 개수 대신 `{ path, id, status }` 목록을 돌려준다. `discardDraftChange`를 추가해 공개본과 초안본을 각각 읽고 위 세 경우로 갈라 처리한다. 커밋 메시지는 `revert(fragments): ...`이다.
+  - `src/pages/fragments/index.astro`·`src/styles/fragments.css`: 발행 영역에 "목록 보기/목록 접기" 토글(`aria-expanded`, `aria-controls`)과 대기 목록을 추가했다. 각 줄은 카드 제목, 변경 종류(새 카드·수정·삭제), 제거 버튼으로 구성한다.
+  - `src/scripts/fragments.ts`: 목록을 그리고 제거를 처리한다. 제목은 현재 불러온 카드에서 찾고, 없으면 ID를 보여 준다. 제거 후 목록과 카드 목록을 다시 불러온다. 실패하면 버튼을 되살리고 사유를 표시한다. 로그아웃하면 목록을 비우고 접는다.
+- 검증: `tests/draft/publish.spec.ts`에 1개를 추가해 8개가 됐다. 목록을 펼쳐 제목·종류를 확인하고, 제거가 초안 브랜치 DELETE 한 번으로 끝나며 발행(merge)은 일어나지 않음을 확인한다.
+- 화면 확인: `.fragment-test/list-desktop.png`, `.fragment-test/list-mobile.png`. 1280px에서는 안내·발행·목록 토글이 한 줄, 목록이 아래로 쌓인다. 390px에서는 토글이 다음 줄로 내려가고 각 줄의 제목·종류·제거가 한 줄에 유지된다.
+- 자동 검사: `npm run check` 오류 0, `npm test` 94개, `npm run build` 12페이지, `npm run test:e2e:preview` 8개, `npm run test:e2e` 8개, `npm run test:h01` 4개, `npm run test:h02` 3개, `npm run test:oauth` 34개, `npm run test:admin` 4개, `npm run test:draft` 8개 통과, `git diff --check` 통과.
+- 미확인: 운영 사이트에서의 실제 목록·제거. 이번 판정 후 D03까지 함께 배포하거나 먼저 배포해 인수한다.
+- 관련 파일만 스테이징하고 판정을 기다린다. 승인 명령·커밋·push는 실행하지 않았다.
+
+## D04 — 로그인 유지 (2026-09-21, 수동 판정 대기)
+
+- 시작 기준: D02 `013554d`을 사용자 통과 후 커밋·push하고, PR #3을 Merge commit `ed109ab`으로 병합했다. 배포(run: deploy.yml)가 성공해 운영 사이트에 초안 저장과 발행 버튼이 반영됐다. 운영 확인: 발행 영역·버튼 존재, 저장 대상 `fragments-draft` 표시. 초안 브랜치는 배포된 `main`에 맞춰 두었다.
+- 사용자 피드백 3건: (1) 새로고침하면 발행 대기가 사라진 것처럼 보임, (2) 새로고침하면 로그인이 풀림, (3) 발행 대기 개수만 보이고 목록을 볼 수 없음(접었다 펴는 목록과 항목 제거 요청).
+  - (1)은 (2)의 결과다. 초안은 `fragments-draft` 브랜치에 남아 있고, 로그인이 풀리면서 목록이 공개본으로 돌아가 발행 영역이 숨겨진 것이다. 저장 전 입력 폼 내용은 실제로 사라진다.
+- 사용자 결정: 로그인은 탭을 닫을 때까지 유지(sessionStorage). 작업 순서는 D04 로그인 유지 → D05 대기 목록·항목 제거 → D03 배포 상태 표시.
+- Red: `tests/unit/fragment-session.test.ts` 5개를 먼저 작성해 모듈 부재로 실패를 확인했다. 같은 설정에서만 토큰을 돌려주고, 다른 저장소·브랜치에는 주지 않으며, 로그아웃 시 지우고, 형식이 맞지 않는 값은 무시하고, 저장소를 쓸 수 없어도 동작해야 한다. 테스트 환경에 DOM이 없어 저장소를 주입받는 형태로 설계했다(의존성 추가 없음).
+- 구현
+  - `src/lib/fragment-session.ts`: 저장소 키는 `fragment-writer:<repo>:<branch>`이고 값은 토큰 형식일 때만 쓰고 읽는다. 모든 접근을 try/catch로 감싸 사생활 보호 모드에서도 로그인 자체는 막히지 않는다.
+  - `src/scripts/fragment-composer.ts`: 로그인 성공 시 저장하고, 로그아웃·인증 실패·권한 실패 시 지운다. 페이지가 열리면 저장된 토큰을 `verifyWriter`로 한 번 확인한 뒤에만 로그인 상태로 복원하고 `fragment-session`을 보낸다. 실패하면 조용히 로그아웃 상태로 두고 "이전 로그인이 만료되었습니다."를 표시한다.
+  - 작성 창 안내를 "로그인은 이 탭을 닫을 때까지 유지됩니다. 저장하지 않은 입력 내용은 새로고침하면 사라집니다."로 바꿨다.
+- 기존 검사 변경: `tests/oauth/writer.spec.ts`는 토큰이 어떤 저장소에도 남지 않는지 검사했다. 이번 결정으로 바뀐 부분이라, localStorage에는 절대 남지 않고 sessionStorage에만 있으며 로그아웃하면 사라지는지로 의도를 유지했다.
+- 검증: `tests/draft/publish.spec.ts`에 2개를 추가해 7개가 됐다. 새로고침 후에도 초안 목록·발행 버튼·로그아웃 버튼이 유지되고, 로그아웃하면 다음 방문에서 공개본만 보인다.
+- 자동 검사: `npm run check` 오류 0, `npm test` 89개, `npm run build` 12페이지, `npm run test:e2e:preview` 8개, `npm run test:e2e` 8개, `npm run test:h01` 4개, `npm run test:oauth` 34개, `npm run test:admin` 4개, `npm run test:draft` 7개 통과, `git diff --check` 통과. 그래프 변경이 없어 H02는 재실행하지 않았다.
+- 남은 위험: 토큰이 탭 세션 동안 브라우저 저장소에 존재한다. 공개 저장소 쓰기 권한(`public_repo`) 범위이며, 로그아웃·탭 종료·인증 실패 시 삭제된다. 공용 PC에서는 로그아웃을 권한다. 운영 가이드(I01)에 적는다.
+- 관련 파일만 스테이징하고 판정을 기다린다. 승인 명령·커밋·push는 실행하지 않았다.
+
 ## D02 — 발행 버튼 (2026-09-21, 수동 판정 대기)
 
 - 시작 기준: D01 `ca01bf3`을 사용자 통과 후 커밋·push했다. 원격 `fragments-draft` 브랜치는 push 훅에 막혀 GitHub API로 `main`과 같은 `2052c61`에 만들었다(새 커밋 없음, 훅 비활성화하지 않음).

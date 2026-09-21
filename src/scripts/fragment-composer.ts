@@ -1,5 +1,6 @@
 import { createWriterConfig, deleteFragment, draftFromFields, loadFragment, saveExistingFragment, saveNewFragment, saveRelationChanges, verifyWriter, WriterError, type WriterDraft, type ExistingFragment } from '../lib/fragment-writer';
 import { loginWriter } from '../lib/fragment-writer-login';
+import { clearSession, loadSession, storeSession } from '../lib/fragment-session';
 import { recoveryPlan, reloginMessage, type RecoveryContext } from '../lib/fragment-recovery';
 import { liveFragment } from '../lib/fragment-live';
 import { relationEditor } from './fragment-relations';
@@ -40,7 +41,7 @@ const success = document.getElementById('composer-success')!;
 const closers = ['composer-close', 'composer-later'].map(id => document.getElementById(id) as HTMLButtonElement);
 const fields = [...form.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input[name],textarea[name],select[name]')];
 const config = dialog.dataset.writer ? createWriterConfig(JSON.parse(dialog.dataset.writer)) : undefined;
-let token = '';
+let token = config ? loadSession(config) : '';
 let busy = false;
 let pending: WriterDraft | undefined;
 let existing: ExistingFragment | undefined;
@@ -114,7 +115,7 @@ edit.addEventListener('click', async () => {
   busy = true; render(); status.textContent = '최신 카드 내용을 불러오고 있습니다.';
   try { await fetchExisting(); }
   catch (error) {
-    if (error instanceof WriterError && ['auth', 'permission'].includes(error.code)) token = '';
+    if (error instanceof WriterError && ['auth', 'permission'].includes(error.code)) { token = ''; if (config) clearSession(config); }
     status.textContent = error instanceof Error ? error.message : '카드를 불러오지 못했습니다. 닫은 뒤 다시 시도해주세요.';
   }
   finally { busy = false; render(); }
@@ -145,6 +146,7 @@ async function authenticate(resume?: RecoveryContext) {
     const candidate = await loginWriter(config);
     await verifyWriter(config, candidate);
     token = candidate;
+    storeSession(config, token);
     if (resume) showPanel('다시 로그인했습니다', reloginMessage(resume), false);
     else { hideFailure(); status.textContent = '로그인되었습니다. 카드를 저장할 수 있습니다.'; }
     // The list shows the published branch until now; an author works on the drafts instead.
@@ -153,6 +155,7 @@ async function authenticate(resume?: RecoveryContext) {
     await fetchExisting();
   } catch (error) {
     token = '';
+    if (config) clearSession(config);
     const message = error instanceof Error ? error.message : '로그인을 완료하지 못했습니다.';
     if (resume) showPanel('다시 로그인하지 못했습니다', `${message} 입력은 그대로 유지했습니다.`, true);
     else status.textContent = message;
@@ -166,6 +169,7 @@ reloginButton.addEventListener('click', () => { void authenticate(interrupted); 
 logout?.addEventListener('click', () => {
   if (busy) return;
   token = '';
+  if (config) clearSession(config);
   status.textContent = '로그아웃했습니다. 입력 내용은 이 페이지에 유지됩니다.';
   window.dispatchEvent(new CustomEvent('fragment-session', { detail: '' }));
   render();
@@ -224,10 +228,23 @@ form.addEventListener('submit', async event => {
     editPaths[savedCard.id] = savedPath;
     window.dispatchEvent(new CustomEvent('fragment-saved', { detail: { card: savedCard, path: savedPath } }));
   } catch (error) {
-    if (error instanceof WriterError && ['auth', 'permission'].includes(error.code)) token = '';
+    if (error instanceof WriterError && ['auth', 'permission'].includes(error.code)) { token = ''; if (config) clearSession(config); }
     if (error instanceof WriterError && ['snapshot', 'rate-limit', 'relation'].includes(error.code)) pending = undefined;
     showFailure(error, { action: 'save', retryLabel: saveLabel() });
   } finally { busy = false; render(); }
 });
-// Deliberately no token persistence or logging. Full refresh starts a new login.
+// The token lives in this tab's session storage only; it is never logged or sent anywhere else.
+async function resumeSession() {
+  if (!config || !token) return;
+  try {
+    await verifyWriter(config, token);
+    window.dispatchEvent(new CustomEvent('fragment-session', { detail: token }));
+  } catch {
+    token = '';
+    clearSession(config);
+    status.textContent = '이전 로그인이 만료되었습니다. 다시 로그인해주세요.';
+  }
+  render();
+}
 render();
+void resumeSession();
