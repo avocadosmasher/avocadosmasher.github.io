@@ -2,10 +2,11 @@ name: CI
 
 # PR 과 개발 브랜치 push 에서 배포와 같은 검사를 실행한다.
 # main push 는 deploy.yml 이 같은 검사를 실행하므로 여기서 제외한다.
+# fragments-draft 는 웹에서 저장할 때마다 커밋이 쌓이는 초안 브랜치라 발행 시점의 검사로 충분하다.
 on:
   pull_request:
   push:
-    branches-ignore: [main]
+    branches-ignore: [main, fragments-draft]
 
 concurrency:
   group: ci-${{ github.ref }}

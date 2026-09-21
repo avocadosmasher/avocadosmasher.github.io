@@ -11,13 +11,17 @@ describe('G02-UI: isolated GitHub new-card writes', () => {
     expect(() => createWriterConfig({ ...config, branch: 'main' })).toThrow();
     expect(() => draftFromFields({ title: ' ', summary: 'x', category: 'x' })).toThrow();
   });
-  it('accepts production writes only for the blog repository main branch when explicitly requested', () => {
-    const production = { repo: 'avocadosmasher/avocadosmasher.github.io', branch: 'main', origin: 'https://oauth.example', production: true as const };
+  it('accepts production writes only on the draft branch of the blog repository', () => {
+    const production = { repo: 'avocadosmasher/avocadosmasher.github.io', branch: 'fragments-draft', publish: 'main', origin: 'https://oauth.example', production: true as const };
     expect(createWriterConfig(production)).toEqual(production);
     expect(createWriterConfig(createWriterConfig(production))).toEqual(production);
     expect(() => createWriterConfig({ ...production, repo: 'tester/fragment-cms-auth-test' })).toThrow();
     expect(() => createWriterConfig({ ...production, repo: 'Avocadosmasher/avocadosmasher.github.io' })).toThrow();
     expect(() => createWriterConfig({ ...production, branch: 'cms-test' })).toThrow();
+    // Saving straight onto the published branch would put every draft on the live site.
+    expect(() => createWriterConfig({ ...production, branch: 'main' })).toThrow();
+    expect(() => createWriterConfig({ ...production, publish: 'fragments-draft' })).toThrow();
+    expect(() => createWriterConfig({ ...production, publish: undefined })).toThrow();
     expect(() => createWriterConfig({ ...production, origin: 'http://oauth.example' })).toThrow();
     expect(() => createWriterConfig({ ...production, origin: 'https://oauth.example/auth' })).toThrow();
     expect(createWriterConfig(config)).not.toHaveProperty('production');
@@ -27,7 +31,7 @@ describe('G02-UI: isolated GitHub new-card writes', () => {
     const production = { FRAGMENT_WRITER_OAUTH_ORIGIN: 'https://oauth.example' };
     expect(writerConfigFromEnv({})).toEqual({ error: '' });
     expect(writerConfigFromEnv(test)).toEqual({ error: '', config });
-    expect(writerConfigFromEnv(production)).toEqual({ error: '', config: { repo: 'avocadosmasher/avocadosmasher.github.io', branch: 'main', origin: 'https://oauth.example', production: true } });
+    expect(writerConfigFromEnv(production)).toEqual({ error: '', config: { repo: 'avocadosmasher/avocadosmasher.github.io', branch: 'fragments-draft', publish: 'main', origin: 'https://oauth.example', production: true } });
     expect(writerConfigFromEnv({ ...test, ...production }).config).toBeUndefined();
     expect(writerConfigFromEnv({ ...production, FRAGMENT_CMS_LOCAL: '1' }).config).toBeUndefined();
     expect(writerConfigFromEnv({ FRAGMENT_WRITER_OAUTH_ORIGIN: 'http://oauth.example' })).toEqual({ error: '저장 설정을 확인해주세요.' });

@@ -147,6 +147,8 @@ async function authenticate(resume?: RecoveryContext) {
     token = candidate;
     if (resume) showPanel('다시 로그인했습니다', reloginMessage(resume), false);
     else { hideFailure(); status.textContent = '로그인되었습니다. 카드를 저장할 수 있습니다.'; }
+    // The list shows the published branch until now; an author works on the drafts instead.
+    window.dispatchEvent(new Event('fragment-session'));
     // The draft stays untouched: a re-login only reloads the original when it was never read.
     await fetchExisting();
   } catch (error) {

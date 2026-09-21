@@ -119,6 +119,13 @@ function updateCollection(next: PublicFragment[]) {
   window.dispatchEvent(new CustomEvent('fragment-collection', { detail: cards }));
   render();
 }
+// Visitors see the published branch; a signed-in author sees the drafts waiting to be published.
+let reading = writerConfig?.publish ?? writerConfig?.branch;
+window.addEventListener('fragment-session', () => {
+  if (!writerConfig || reading === writerConfig.branch) return;
+  reading = writerConfig.branch;
+  void refreshCards();
+});
 async function refreshCards() {
   if (!writerConfig) return;
   const generation = ++snapshotGeneration;
@@ -126,13 +133,14 @@ async function refreshCards() {
   $('fragment-sync-status').textContent = '최신 카드를 불러오고 있습니다.';
   $('fragment-sync-retry').hidden = true;
   try {
-    const snapshot = await loadFragmentSnapshot(writerConfig);
+    const snapshot = await loadFragmentSnapshot(writerConfig, fetch, reading);
     if (generation !== snapshotGeneration) return;
     const next = snapshot.map(item => liveFragment(item.draft));
     authoritative = true;
     window.dispatchEvent(new CustomEvent('fragment-paths', { detail: Object.fromEntries(snapshot.map(item => [item.draft.id, item.path])) }));
     updateCollection(next);
-    $('fragment-sync-status').textContent = '최신 카드를 불러왔습니다.';
+    $('fragment-sync-status').textContent = writerConfig.publish && reading === writerConfig.branch
+      ? '발행 전 초안까지 불러왔습니다.' : '최신 카드를 불러왔습니다.';
   } catch {
     if (generation !== snapshotGeneration) return;
     $('fragment-sync-status').textContent = '최신 카드를 확인하지 못했습니다. 현재 목록은 이전 내용일 수 있습니다. 잠시 후 다시 불러와주세요.';
