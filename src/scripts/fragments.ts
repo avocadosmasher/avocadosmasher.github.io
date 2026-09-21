@@ -4,6 +4,7 @@ import type { Core, EdgeSingular, LayoutOptions, NodeSingular } from 'cytoscape'
 import { createWriterConfig } from '../lib/fragment-writer';
 import { loadFragmentSnapshot } from '../lib/fragment-snapshot';
 import { countPendingDrafts, discardDraftChange, publishDrafts } from '../lib/fragment-publish';
+import { latestDeploy } from '../lib/fragment-deploy';
 import { liveFragment } from '../lib/fragment-live';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -127,12 +128,39 @@ window.addEventListener('fragment-session', event => {
   session = (event as CustomEvent<string>).detail ?? '';
   if (!writerConfig?.publish) return;
   $('fragment-publish').hidden = !session;
-  if (!session) { expanded = false; renderPending([]); return; }
+  if (!session) { expanded = false; renderPending([]); window.clearTimeout(deployTimer); $('fragment-deploy').hidden = true; return; }
   void showPending();
+  void showDeploy(true);
   if (reading === writerConfig.branch) return;
   reading = writerConfig.branch;
   void refreshCards();
 });
+
+// The site only changes once the deploy of the published branch finishes, so the author can watch it here.
+let deployTimer = 0;
+async function showDeploy(watch = false) {
+  if (!writerConfig?.publish || !session) return;
+  const panel = $('fragment-deploy');
+  const text = $('fragment-deploy-text');
+  const link = $('fragment-deploy-link') as HTMLAnchorElement;
+  try {
+    const deploy = await latestDeploy(writerConfig, session);
+    if (deploy.state === 'none') { panel.hidden = true; return; }
+    panel.hidden = false;
+    panel.dataset.state = deploy.state;
+    link.hidden = !deploy.url;
+    if (deploy.url) link.href = deploy.url;
+    const lines = deploy.state === 'running' ? ['배포 중입니다.', '끝나면 사이트에 반영됩니다.']
+      : deploy.state === 'success' ? ['마지막 배포가 끝났습니다.', '발행한 내용이 사이트에 반영되어 있습니다.']
+      : deploy.state === 'failure' ? ['마지막 배포가 실패했습니다.', '사이트는 이전 내용 그대로입니다.']
+      : ['마지막 배포가 취소되었습니다.', '이어지는 배포 결과를 확인해주세요.'];
+    text.replaceChildren(...sentences(lines));
+    window.clearTimeout(deployTimer);
+    if (watch && deploy.state === 'running') deployTimer = window.setTimeout(() => void showDeploy(true), 15000);
+  } catch {
+    panel.hidden = true;
+  }
+}
 
 const kindLabel: Record<string, string> = { added: '새 카드', removed: '삭제', modified: '수정', renamed: '이름 변경', changed: '수정' };
 let expanded = false;
@@ -166,20 +194,20 @@ function renderPending(cards: { path: string; id: string; status: string }[]) {
 async function discard(card: { path: string; id: string; status: string }, button: HTMLButtonElement) {
   if (!writerConfig?.publish || !session) return;
   button.disabled = true;
-  $('fragment-publish-status').textContent = '발행 대기에서 제거하고 있습니다.';
+  setStatus('발행 대기에서 제거하고 있습니다.');
   try {
     await discardDraftChange(writerConfig, session, card.path);
     await refreshCards();
     await showPending('발행 대기에서 제거했습니다.');
   } catch (error) {
     button.disabled = false;
-    $('fragment-publish-status').textContent = error instanceof Error ? error.message : '제거하지 못했습니다.';
+    setStatus(error instanceof Error ? error.message : '제거하지 못했습니다.');
   }
 }
 
 $('fragment-publish-toggle').addEventListener('click', () => {
   expanded = !expanded;
-  void showPending($('fragment-publish-status').textContent ?? '');
+  void showPending();
 });
 
 async function showPending(message = '') {
@@ -190,14 +218,28 @@ async function showPending(message = '') {
     const waiting = cards.length || ahead;
     button.hidden = waiting === 0;
     renderPending(cards);
-    $('fragment-publish-status').textContent = message || (waiting
-      ? `발행하면 사이트에 반영됩니다. 발행 대기 ${cards.length ? `카드 ${cards.length}개` : `변경 ${ahead}건`}.`
-      : '발행할 변경이 없습니다. 저장한 내용이 모두 사이트에 반영되어 있습니다.');
+    if (message) setStatus(message);
+    else if (waiting) setStatus('발행하면 사이트에 반영됩니다.', cards.length ? `발행 대기 카드 ${cards.length}개.` : `발행 대기 변경 ${ahead}건.`);
+    else setStatus('발행할 변경이 없습니다.', '저장한 내용이 모두 사이트에 반영되어 있습니다.');
   } catch (error) {
     button.hidden = true;
     renderPending([]);
-    $('fragment-publish-status').textContent = message || (error instanceof Error ? error.message : '발행 대기 상태를 확인하지 못했습니다.');
+    setStatus(message || (error instanceof Error ? error.message : '발행 대기 상태를 확인하지 못했습니다.'));
   }
+}
+
+// Korean wraps by word, so each sentence stays whole instead of trailing one word onto the next line.
+function setStatus(...parts: string[]) {
+  $('fragment-publish-status').replaceChildren(...sentences(parts));
+}
+
+// The space between sentences is a text node: it collapses at a line break, so no line starts indented.
+function sentences(parts: string[]): Node[] {
+  return parts.filter(Boolean).flatMap((part, index) => {
+    const span = document.createElement('span');
+    span.textContent = part;
+    return index ? [document.createTextNode(' '), span] : [span];
+  });
 }
 
 $('fragment-publish-run').addEventListener('click', async () => {
@@ -205,16 +247,17 @@ $('fragment-publish-run').addEventListener('click', async () => {
   const button = $('fragment-publish-run') as HTMLButtonElement;
   const result = $('fragment-publish-result') as HTMLAnchorElement;
   button.disabled = true; result.hidden = true;
-  $('fragment-publish-status').textContent = '발행하고 있습니다.';
+  setStatus('발행하고 있습니다.');
   try {
     const published = await publishDrafts(writerConfig, session);
     if (published.url) { result.href = published.url; result.hidden = false; }
     await showPending(published.published
       ? '발행했습니다. 배포가 끝나면 사이트에 반영됩니다.'
       : '이미 모두 발행되어 있습니다.');
+    if (published.published) void showDeploy(true);
     (button as HTMLButtonElement).hidden = true;
   } catch (error) {
-    $('fragment-publish-status').textContent = error instanceof Error ? error.message : '발행하지 못했습니다.';
+    setStatus(error instanceof Error ? error.message : '발행하지 못했습니다.');
   } finally {
     button.disabled = false;
   }

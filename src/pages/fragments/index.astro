@@ -34,6 +34,7 @@ const editPaths = Object.fromEntries(entries.map(entry => [entry.data.id,
       <a id="fragment-publish-result" target="_blank" rel="noopener noreferrer" hidden>GitHub에서 발행 커밋 확인</a>
       <button id="fragment-publish-toggle" type="button" class="btn btn--ghost" aria-expanded="false" aria-controls="fragment-publish-list" hidden>목록 보기</button>
       <ul id="fragment-publish-list" aria-label="발행 대기 목록" hidden></ul>
+      <p id="fragment-deploy" class="fragment-deploy" role="status" aria-live="polite" hidden><span id="fragment-deploy-text"></span> <a id="fragment-deploy-link" target="_blank" rel="noopener noreferrer" hidden>배포 기록 보기</a></p>
     </div>
     <div id="fragment-sync" hidden><p id="fragment-sync-status" class="fragment-hint" role="status" aria-live="polite"></p><button id="fragment-sync-retry" type="button" class="btn btn--ghost" hidden>최신 카드 다시 불러오기</button></div>
     <section class="fragment-toolbar" aria-label="개념 찾기">

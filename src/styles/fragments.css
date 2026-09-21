@@ -113,3 +113,20 @@ body:has(#fragment-dialog[open]){overflow:hidden;}
 }
 .fragment-publish li button:hover{border-color:var(--accent);color:var(--accent);}
 .fragment-publish li button:disabled{opacity:.5;cursor:default;}
+
+
+.fragment-publish .fragment-deploy{flex:1 0 100%;margin:2px 0 0;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:center;}
+.fragment-publish .fragment-deploy[hidden]{display:none;}
+.fragment-deploy a{color:var(--accent);}
+.fragment-deploy[data-state="running"]::before{
+  content:'';width:9px;height:9px;border-radius:50%;background:var(--accent);
+  animation:fragment-deploy-pulse 1.2s ease-in-out infinite;
+}
+.fragment-deploy[data-state="failure"]{color:var(--ink);}
+@keyframes fragment-deploy-pulse{0%,100%{opacity:.25;}50%{opacity:1;}}
+@media (prefers-reduced-motion: reduce){.fragment-deploy[data-state="running"]::before{animation:none;opacity:.7;}}
+
+/* 한국어는 어절 단위로 끊어야 읽힌다. 링크·버튼 글자는 쪼개지지 않게 둔다. */
+.fragment-publish{word-break:keep-all;overflow-wrap:break-word;}
+.fragment-publish a,.fragment-publish li button,.fragment-publish .fragment-publish-kind{white-space:nowrap;}
+.fragment-publish p span,.fragment-deploy span span{display:inline-block;}

@@ -1,5 +1,25 @@
 # Fragment 개발 기록
 
+## D03 — 배포 상태 표시 (2026-09-21, 수동 판정 대기)
+
+- 시작 기준: D05 `3050401`을 사용자 통과("지금이 딱 좋아") 후 커밋·push했다.
+- Red: `tests/unit/fragment-deploy.test.ts` 5개를 먼저 작성해 모듈 부재로 실패를 확인했다. 공개 브랜치의 `deploy.yml` 최신 실행을 읽고, 진행 중 상태들을 하나로 묶으며, 실패와 취소를 구분하고(연속 발행 시 대기 실행이 취소되는 것은 실패가 아니다), 실행이 없으면 `none`, 형식이 어긋나거나 요청이 실패하면 상태를 지어내지 않고 오류를 던져야 한다.
+- 구현
+  - `src/lib/fragment-deploy.ts`: `latestDeploy`가 `/actions/workflows/deploy.yml/runs?branch=main&per_page=1`을 읽어 `running`·`success`·`failure`·`cancelled`·`none`과 실행 링크를 돌려준다.
+  - `src/pages/fragments/index.astro`·`src/styles/fragments.css`: 발행 영역 아래 한 줄로 상태를 표시한다. 진행 중에는 점이 깜박이며(`prefers-reduced-motion`에서는 정지), 실행 링크를 함께 둔다.
+  - `src/scripts/fragments.ts`: 로그인 시와 발행 직후 상태를 읽고, 진행 중이면 15초 간격으로 완료까지 따라간다. 로그아웃하면 타이머를 끄고 숨긴다. 상태 조회 실패는 화면을 비우기만 하고 다른 기능을 막지 않는다.
+- 문구: 진행 중 "배포 중입니다. 끝나면 사이트에 반영됩니다.", 성공 "마지막 배포가 끝났습니다. 발행한 내용이 사이트에 반영되어 있습니다.", 실패 "마지막 배포가 실패했습니다. 사이트는 이전 내용 그대로입니다.", 취소 "마지막 배포가 취소되었습니다. 이어지는 배포 결과를 확인해주세요."
+- 검증: `tests/draft/publish.spec.ts`에 2개를 추가해 10개가 됐다. 진행 중 표시 → 폴링으로 성공 전환, 실패 시 문구를 확인한다.
+- 화면 확인: `.fragment-test/deploy-running-1280.png`, `deploy-success-1280.png`, `deploy-failure-1280.png`, `deploy-running-390.png`. 첫 배치에서 상태 줄이 버튼과 같은 줄에 붙어 비좁아, `.fragment-publish p` 규칙이 더 구체적이라 `flex-basis`가 무시된 것을 고쳐 한 줄 아래로 내렸다.
+- 자동 검사: `npm run check` 오류 0, `npm test` 99개, `npm run build` 12페이지, `npm run test:e2e:preview` 8개, `npm run test:e2e` 8개, `npm run test:h01` 4개, `npm run test:oauth` 34개, `npm run test:admin` 4개, `npm run test:draft` 10개 통과, `git diff --check` 통과. 그래프 변경이 없어 H02는 재실행하지 않았다.
+- 사용자 수정 요청(모바일 줄바꿈): 390px에서 한 어절이 다음 줄로 밀려 "발행 / 대기 카드", "반영 / 됩니다", "배포 기록 보 / 기"처럼 끊겼다. 글자 크기가 아니라 줄바꿈 규칙 문제였다.
+  - `word-break: keep-all`로 어절을 지키고, 링크·제거 버튼·변경 종류 표기는 `white-space: nowrap`으로 쪼개지지 않게 했다.
+  - 안내 문구를 문장 단위 `span`으로 나눠 문장 중간에서 줄이 바뀌지 않게 했다. 문장 사이 공백은 텍스트 노드로 두어, 줄바꿈 시 공백이 사라지고 다음 줄이 들여쓰기되지 않는다. 처음에는 공백을 span 안에 넣어 데스크톱에서 공백이 사라졌고, 그다음 `margin-left`로 바꾸자 모바일 둘째 줄이 들여쓰기돼 이 방식으로 고쳤다.
+  - 모바일 전용 글자 크기 축소안도 캡처로 비교했으나, 줄바꿈이 해결되자 필요하지 않아 채택하지 않았다(`.fragment-test/wrap-sentences-small.png`).
+- 최종 화면: `.fragment-test/wrap2-desktop.png`, `.fragment-test/wrap2-mobile.png`.
+- 미확인: 운영 사이트의 실제 배포 상태 표시. D04·D05와 함께 main에 반영한 뒤 인수한다.
+- 관련 파일만 스테이징하고 판정을 기다린다. 승인 명령·커밋·push는 실행하지 않았다.
+
 ## D05 — 발행 대기 목록과 항목 제거 (2026-09-21, 수동 판정 대기)
 
 - 시작 기준: D04 `f11daea`, 절차 변경 `979867d`을 사용자 통과 후 커밋·push했다. `AGENTS.md`의 수동 판정 범위를 심미적 판단과 실제 기능 확인으로 좁혔다.
