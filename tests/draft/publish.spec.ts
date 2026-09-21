@@ -123,3 +123,32 @@ test('nothing to publish is stated plainly', async ({ page, context }) => {
   await page.keyboard.press('Escape');
   await expect(page.locator('#fragment-publish-run')).toBeHidden();
 });
+
+test('a refresh keeps the author signed in and the drafts in view', async ({ page, context }) => {
+  await mock(context);
+  await page.goto('/fragments/');
+  await page.locator('#fragment-compose').click();
+  await page.locator('#composer-login').click();
+  await expect(page.locator('[data-fragment-card="waiting"]')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await expect(page.locator('[data-fragment-card="waiting"]')).toHaveCount(1);
+  await expect(page.locator('#fragment-publish-run')).toBeVisible();
+  await page.locator('#fragment-compose').click();
+  await expect(page.locator('#composer-logout')).toBeVisible();
+  await expect(page.locator('#composer-login')).toBeHidden();
+});
+
+test('logging out ends the session for later visits too', async ({ page, context }) => {
+  await mock(context);
+  await page.goto('/fragments/');
+  await page.locator('#fragment-compose').click();
+  await page.locator('#composer-login').click();
+  await expect(page.locator('#fragment-publish-run')).toBeVisible();
+  await page.locator('#composer-logout').click();
+  await expect(page.locator('#fragment-publish')).toBeHidden();
+  await page.reload();
+  await expect(page.locator('[data-fragment-card="waiting"]')).toHaveCount(0);
+  await page.locator('#fragment-compose').click();
+  await expect(page.locator('#composer-login')).toBeVisible();
+});
