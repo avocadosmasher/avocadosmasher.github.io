@@ -28,6 +28,11 @@ const editPaths = Object.fromEntries(entries.map(entry => [entry.data.id,
       <p id="composer-success"></p>
       <a id="composer-result" target="_blank" rel="noopener noreferrer" hidden>GitHub에서 저장 결과 확인</a>
     </div>
+    <div id="fragment-publish" class="fragment-publish" hidden>
+      <p id="fragment-publish-status" role="status" aria-live="polite"></p>
+      <button id="fragment-publish-run" type="button" class="btn btn--primary" hidden>발행</button>
+      <a id="fragment-publish-result" target="_blank" rel="noopener noreferrer" hidden>GitHub에서 발행 커밋 확인</a>
+    </div>
     <div id="fragment-sync" hidden><p id="fragment-sync-status" class="fragment-hint" role="status" aria-live="polite"></p><button id="fragment-sync-retry" type="button" class="btn btn--ghost" hidden>최신 카드 다시 불러오기</button></div>
     <section class="fragment-toolbar" aria-label="개념 찾기">
       <div class="fragment-control fragment-search"><label for="fragment-search">개념 검색</label><span class="fragment-field"><input type="search" id="fragment-search" aria-label="개념 검색" placeholder="용어, 별칭, 설명으로 찾아보세요" autocomplete="off" /><button type="button" class="fragment-clear" data-clears="fragment-search" aria-label="검색어 지우기" hidden></button></span></div>

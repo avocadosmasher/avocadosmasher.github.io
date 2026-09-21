@@ -148,7 +148,7 @@ async function authenticate(resume?: RecoveryContext) {
     if (resume) showPanel('다시 로그인했습니다', reloginMessage(resume), false);
     else { hideFailure(); status.textContent = '로그인되었습니다. 카드를 저장할 수 있습니다.'; }
     // The list shows the published branch until now; an author works on the drafts instead.
-    window.dispatchEvent(new Event('fragment-session'));
+    window.dispatchEvent(new CustomEvent('fragment-session', { detail: token }));
     // The draft stays untouched: a re-login only reloads the original when it was never read.
     await fetchExisting();
   } catch (error) {
@@ -167,6 +167,7 @@ logout?.addEventListener('click', () => {
   if (busy) return;
   token = '';
   status.textContent = '로그아웃했습니다. 입력 내용은 이 페이지에 유지됩니다.';
+  window.dispatchEvent(new CustomEvent('fragment-session', { detail: '' }));
   render();
 });
 remove.addEventListener('click', async () => {

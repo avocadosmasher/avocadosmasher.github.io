@@ -211,7 +211,7 @@ function encode(value: string) {
   for (const byte of new TextEncoder().encode(value)) binary += String.fromCharCode(byte);
   return btoa(binary);
 }
-function api(config: WriterConfig, token: string, upstream: typeof fetch) {
+export function api(config: WriterConfig, token: string, upstream: typeof fetch) {
   createWriterConfig(config);
   if (!/^[A-Za-z0-9_]{1,4096}$/.test(token)) throw new WriterError('auth', '다시 로그인해주세요.');
   return async (path = '', init: RequestInit = {}) => {
@@ -224,7 +224,7 @@ function api(config: WriterConfig, token: string, upstream: typeof fetch) {
     } catch { throw new WriterError('network', '응답을 확인하지 못했습니다. 입력을 유지한 채 다시 저장을 눌러 결과를 확인해주세요.'); }
   };
 }
-function requireResponse(response: Response) {
+export function requireResponse(response: Response) {
   if (response.ok) return;
   if (response.status === 429 || (response.status === 403 && (response.headers.get('X-RateLimit-Remaining') === '0' || response.headers.has('Retry-After')))) {
     throw new WriterError('rate-limit', 'GitHub 요청 한도에 도달했습니다. 입력은 유지됩니다. 잠시 기다린 뒤 같은 작업을 다시 시도해주세요.');

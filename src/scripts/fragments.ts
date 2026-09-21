@@ -3,6 +3,7 @@ import { CATEGORIES } from '../consts';
 import type { Core, EdgeSingular, LayoutOptions, NodeSingular } from 'cytoscape';
 import { createWriterConfig } from '../lib/fragment-writer';
 import { loadFragmentSnapshot } from '../lib/fragment-snapshot';
+import { countPendingDrafts, publishDrafts } from '../lib/fragment-publish';
 import { liveFragment } from '../lib/fragment-live';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -121,11 +122,55 @@ function updateCollection(next: PublicFragment[]) {
 }
 // Visitors see the published branch; a signed-in author sees the drafts waiting to be published.
 let reading = writerConfig?.publish ?? writerConfig?.branch;
-window.addEventListener('fragment-session', () => {
-  if (!writerConfig || reading === writerConfig.branch) return;
+let session = '';
+window.addEventListener('fragment-session', event => {
+  session = (event as CustomEvent<string>).detail ?? '';
+  if (!writerConfig?.publish) return;
+  $('fragment-publish').hidden = !session;
+  if (!session) return;
+  void showPending();
+  if (reading === writerConfig.branch) return;
   reading = writerConfig.branch;
   void refreshCards();
 });
+
+async function showPending(message = '') {
+  if (!writerConfig?.publish || !session) return;
+  const button = $('fragment-publish-run') as HTMLButtonElement;
+  try {
+    const { cards, ahead } = await countPendingDrafts(writerConfig, session);
+    const waiting = cards || ahead;
+    button.hidden = waiting === 0;
+    $('fragment-publish-status').textContent = message || (waiting
+      ? `발행하면 사이트에 반영됩니다. 발행 대기 ${cards ? `카드 ${cards}개` : `변경 ${ahead}건`}.`
+      : '발행할 변경이 없습니다. 저장한 내용이 모두 사이트에 반영되어 있습니다.');
+  } catch (error) {
+    button.hidden = true;
+    $('fragment-publish-status').textContent = message || (error instanceof Error ? error.message : '발행 대기 상태를 확인하지 못했습니다.');
+  }
+}
+
+$('fragment-publish-run').addEventListener('click', async () => {
+  if (!writerConfig?.publish || !session) return;
+  const button = $('fragment-publish-run') as HTMLButtonElement;
+  const result = $('fragment-publish-result') as HTMLAnchorElement;
+  button.disabled = true; result.hidden = true;
+  $('fragment-publish-status').textContent = '발행하고 있습니다.';
+  try {
+    const published = await publishDrafts(writerConfig, session);
+    if (published.url) { result.href = published.url; result.hidden = false; }
+    await showPending(published.published
+      ? '발행했습니다. 배포가 끝나면 사이트에 반영됩니다.'
+      : '이미 모두 발행되어 있습니다.');
+    (button as HTMLButtonElement).hidden = true;
+  } catch (error) {
+    $('fragment-publish-status').textContent = error instanceof Error ? error.message : '발행하지 못했습니다.';
+  } finally {
+    button.disabled = false;
+  }
+});
+window.addEventListener('fragment-saved', () => void showPending());
+window.addEventListener('fragment-deleted', () => void showPending());
 async function refreshCards() {
   if (!writerConfig) return;
   const generation = ++snapshotGeneration;
