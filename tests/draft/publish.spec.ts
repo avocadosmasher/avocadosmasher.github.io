@@ -38,7 +38,7 @@ async function mock(context: BrowserContext, options: { ahead?: number; merge?: 
       const [base, head] = decodeURIComponent(url.pathname.split('/compare/')[1]).split('...');
       reads.push(`compare ${base}...${head}`);
       return route.fulfill({ json: { status: ahead ? 'ahead' : 'identical', ahead_by: ahead, behind_by: 0,
-        files: ahead ? [{ filename: 'src/content/fragments/waiting.md' }] : [] } });
+        files: ahead ? [{ filename: 'src/content/fragments/waiting.md', status: 'added' }] : [] } });
     }
     if (url.pathname.endsWith('/merges')) {
       merges.push(route.request().postDataJSON());
@@ -151,4 +151,40 @@ test('logging out ends the session for later visits too', async ({ page, context
   await expect(page.locator('[data-fragment-card="waiting"]')).toHaveCount(0);
   await page.locator('#fragment-compose').click();
   await expect(page.locator('#composer-login')).toBeVisible();
+});
+
+test('the waiting list can be opened and a card taken out of it', async ({ page, context }) => {
+  const remote = await mock(context);
+  const discards: { method: string; branch: string }[] = [];
+  await context.route('https://api.github.com/**/contents/**', async route => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const ref = url.searchParams.get('ref');
+    if (request.method() === 'GET') {
+      // The card exists only on the draft branch, so publishing it would add it to the site.
+      if (ref === 'main') return route.fulfill({ status: 404, json: {} });
+      return route.fulfill({ json: { type: 'file', path: 'src/content/fragments/waiting.md', sha: 'b'.repeat(40),
+        encoding: 'base64', content: Buffer.from(card('waiting', '발행 전 초안')).toString('base64') } });
+    }
+    discards.push({ method: request.method(), branch: request.postDataJSON().branch });
+    branches['fragments-draft'] = branches.main;
+    return route.fulfill({ json: { commit: { sha: 'e'.repeat(40) } } });
+  });
+  await page.goto('/fragments/');
+  await page.locator('#fragment-compose').click();
+  await page.locator('#composer-login').click();
+  await expect(page.locator('#fragment-publish-status')).toContainText('발행 대기 카드 1개');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#fragment-composer')).not.toBeVisible();
+  await expect(page.locator('#fragment-publish-list')).toBeHidden();
+  await page.getByRole('button', { name: '목록 보기' }).click();
+  const item = page.locator('#fragment-publish-list li');
+  await expect(item).toHaveCount(1);
+  await expect(item).toContainText('발행 전 초안');
+  await expect(item).toContainText('새 카드');
+  await item.getByRole('button', { name: /제거/ }).click();
+  await expect(page.locator('#fragment-publish-status')).toContainText('제거했습니다');
+  expect(discards).toEqual([{ method: 'DELETE', branch: 'fragments-draft' }]);
+  expect(remote.merges).toHaveLength(0);
+  branches['fragments-draft'] = cards;
 });
