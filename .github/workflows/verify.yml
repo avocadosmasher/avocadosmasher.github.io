@@ -81,6 +81,9 @@ jobs:
       # 실제 GitHub·Worker 로 나가지 않는 mock 환경변수 구성으로 실행된다.
       - name: OAuth E2E
         run: npm run test:oauth
+      # 초안 브랜치 저장과 발행 동작은 운영 모드 빌드에서만 나타난다.
+      - name: 초안·발행 E2E
+        run: npm run test:draft
       - name: Upload Playwright results
         if: failure()
         uses: actions/upload-artifact@v4

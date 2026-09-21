@@ -1,5 +1,37 @@
 # Fragment 개발 기록
 
+## D02 — 발행 버튼 (2026-09-21, 수동 판정 대기)
+
+- 시작 기준: D01 `ca01bf3`을 사용자 통과 후 커밋·push했다. 원격 `fragments-draft` 브랜치는 push 훅에 막혀 GitHub API로 `main`과 같은 `2052c61`에 만들었다(새 커밋 없음, 훅 비활성화하지 않음).
+- Red: `tests/unit/fragment-publish.test.ts` 7개를 먼저 작성해 모듈 부재로 실패함을 확인했다. 대기 건수 계산, 카드 파일만 세기, 병합 요청 형식, 이미 발행된 경우(204), 충돌·권한·인증·네트워크 오류, 발행 브랜치가 없는 설정 거부를 다룬다.
+- 구현
+  - `src/lib/fragment-publish.ts`: `countPendingDrafts`는 `compare/main...fragments-draft`로 앞선 커밋 수와 카드 파일 수를 읽는다. `publishDrafts`는 `POST /merges`로 초안을 `main`에 합친다. 발행 브랜치가 없거나 초안 브랜치와 같으면 요청 없이 거부한다. 응답 검증은 기존 `requireResponse`를 재사용하므로 오류 문구와 코드가 저장 경로와 같다.
+  - `src/pages/fragments/index.astro`·`src/styles/fragments.css`: 목록 위에 발행 영역(안내 문구, 발행 버튼, 결과 링크)을 한 줄로 배치했다. 로그인한 작성자에게만 보인다.
+  - `src/scripts/fragments.ts`: 로그인 이벤트로 토큰을 받아 대기 건수를 표시하고, 저장·삭제 후 다시 계산한다. 발행 성공 시 "발행했습니다. 배포가 끝나면 사이트에 반영됩니다."와 커밋 링크를 보여 주고 버튼을 감춘다. 실패하면 사유를 남기고 버튼을 유지한다. 로그아웃하면 영역을 감춘다.
+- 검증: `tests/draft/publish.spec.ts`에 3개를 추가해 5개가 됐다. 대기 카드 표시 → 버튼 한 번 → `base: main, head: fragments-draft` 병합 요청 한 건, 충돌(409) 시 버튼 유지와 사유 표시, 발행할 것이 없을 때의 문구를 확인한다.
+- 화면 확인: 발행 영역을 1280px와 390px에서 캡처해 한 줄 배치와 줄바꿈을 확인했다(`.fragment-test/bar-desktop.png`, `.fragment-test/bar-mobile.png`).
+- 중간 실패 기록: 로그인 직후 Escape가 빨라 작성 창이 열린 채로 남아 버튼 클릭이 막혔다(테스트 순서 수정). 발행 안내에 `fragment-hint` 클래스를 쓰자 H01 대비 검사가 숨겨진 이 요소를 먼저 집어 실패해, 자체 스타일로 분리했다.
+- 자동 검사: `npm run check` 오류 0, `npm test` 84개, `npm run build` 12페이지, `npm run test:e2e:preview` 8개, `npm run test:e2e` 8개, `npm run test:h01` 4개, `npm run test:h02` 3개, `npm run test:oauth` 34개, `npm run test:admin` 4개, `npm run test:draft` 5개 통과, `git diff --check` 통과.
+- 미확인: 운영 사이트의 실제 발행. D01과 함께 main에 반영해 배포한 뒤 인수한다. 발행 커밋이 배포를 한 번만 돌리는지도 그때 확인한다.
+- 관련 파일만 스테이징하고 판정을 기다린다. 승인 명령·커밋·push는 실행하지 않았다.
+
+## D01 — 초안 브랜치 저장 (2026-09-21, 수동 판정 대기)
+
+- 배경: 사용자가 "저장할 때마다 배포가 도는 대신, 작업을 모았다가 원하는 시점에 한 번 배포"와 "화면에서 배포 중인지 확인"을 요청했다. H05 마무리 인수는 이 기능 뒤로 미룬다.
+- 사용자 결정: 초안 브랜치 + 발행 버튼 방식. 저장은 `fragments-draft`에 쌓이고 공개 사이트는 `main` 그대로이며, 발행할 때 한 번만 배포한다. (main 직접 저장 + 수동 배포, 브라우저에 모았다 한 번에 커밋하는 방식은 채택하지 않았다.)
+- 작업 분할: D01 초안 브랜치 저장(이번), D02 발행 버튼, D03 배포 상태 표시.
+- Red: `tests/unit/fragment-writer.test.ts`에서 운영 설정이 `branch: fragments-draft` + `publish: main`이어야 하고, `branch: main`이나 `publish` 누락·뒤바뀜은 거부해야 한다고 먼저 작성해 실패를 확인했다.
+- 구현
+  - `src/lib/fragment-writer.ts`: `DRAFT_BRANCH` 상수와 `publish` 필드를 추가했다. 운영 설정은 블로그 저장소의 초안 브랜치에만 쓰기를 허용하고 발행 브랜치는 `main`이어야 한다. 저장·조회·로그인 경로가 모두 이 검증을 다시 통과한다.
+  - `src/scripts/fragments.ts`: 목록은 발행 브랜치를 읽는다. 로그인 성공 시 `fragment-session` 이벤트를 받아 초안 브랜치로 다시 읽고 "발행 전 초안까지 불러왔습니다."를 표시한다. 테스트 모드에는 발행 브랜치가 없으므로 기존 문구를 유지한다.
+  - `src/scripts/fragment-composer.ts`: 로그인 성공 시 위 이벤트를 보낸다.
+- 검증: 운영 모드 전용 설정 `playwright.draft.config.ts`와 `tests/draft/publish.spec.ts`(포트 4404)를 추가했다. 방문자는 `main`만 읽고 초안 카드가 보이지 않으며, 로그인 후 초안 브랜치를 읽어 초안 카드가 나타나고, 새 카드 저장의 커밋 대상이 `fragments-draft`임을 확인한다. `npm run test:draft`로 실행하고 `verify.yml`의 OAuth job에 추가했다.
+- `ci.yml`은 `fragments-draft` push를 무시한다. 웹 저장마다 전체 CI를 돌리지 않고 발행 시점 배포 검사로 확인한다.
+- 자동 검사: `npm run check` 오류 0, `npm test` 77개, `npm run build` 12페이지, `npm run test:e2e:preview` 8개, `npm run test:e2e` 8개, `npm run test:h01` 4개, `npm run test:oauth` 34개, `npm run test:admin` 4개, `npm run test:draft` 2개 통과, `git diff --check` 통과. 그래프 변경이 없어 H02는 재실행하지 않았다.
+- 중간 실패 기록: 테스트 mock의 blob SHA가 16진수가 아니어서 조회가 거부됐고, 새 카드 생성 응답을 201로 돌려주지 않아 저장 확인에 실패했다. 초안 문구를 발행 브랜치 유무와 무관하게 표시해 OAuth 4개가 깨졌던 것도 수정했다.
+- 미확인: 원격 `fragments-draft` 브랜치는 아직 만들지 않았다. push 훅(수동 승인 게이트)에 막혀 우회하지 않았고, 승인 후 커밋·push할 때 함께 만든다. 운영 사이트의 실제 초안 저장은 D02(발행 버튼)까지 끝난 뒤 인수한다. **D01만 main에 반영하면 저장이 초안에만 쌓이고 공개할 방법이 없으므로, D02 완료 전에는 main에 병합하지 않는다.**
+- 관련 파일만 스테이징하고 판정을 기다린다. 승인 명령·커밋·push는 실행하지 않았다.
+
 ## H05-FIX — 작성자의 웹 편집이 배포를 막던 결함 (2026-09-21, 수동 판정 대기)
 
 - 증상: 운영 사이트에서 HPA 카드를 삭제하자 이후 모든 배포가 실패했다. 실패 job은 OAuth E2E이고 오류는 `ENOENT: src/content/fragments/hpa.md`였다. 빌드와 나머지 검사는 통과했다.

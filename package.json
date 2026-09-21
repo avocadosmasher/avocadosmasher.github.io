@@ -19,7 +19,8 @@
     "test:e2e:preview": "node scripts/test-preview.mjs",
     "test": "vitest run",
     "test:h01": "playwright test --config playwright.h01.config.ts",
-    "test:h02": "playwright test --config playwright.h02.config.ts"
+    "test:h02": "playwright test --config playwright.h02.config.ts",
+    "test:draft": "playwright test --config playwright.draft.config.ts"
   },
   "dependencies": {
     "astro": "^5.6.0",

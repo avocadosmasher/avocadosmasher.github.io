@@ -82,3 +82,15 @@ body:has(#fragment-dialog[open]){overflow:hidden;}
 #graph-selection{min-height:2.6em;overflow-wrap:anywhere;}
 @media(max-width:900px){.fragment-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.fragment-head{align-items:flex-start;flex-direction:column;}}
 @media(max-width:560px){.fragments{padding-top:30px;}.fragment-toolbar{flex-direction:column;padding:16px;}.fragment-grid{grid-template-columns:1fr;}.fragment-list-head{align-items:flex-start;flex-direction:column;}#fragment-dialog{padding:20px;}#fragment-graph{height:clamp(380px,60dvh,560px);}.fragment-focus{flex:1 1 100%;}.fragment-graph-tools>label{flex:1;}}
+
+/* 발행 대기 안내: 저장과 공개 사이의 상태를 한 줄로 보여준다. */
+.fragment-publish{
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  margin:0 0 14px;padding:11px 15px;border-radius:14px;
+  background:color-mix(in srgb,var(--accent) 7%,var(--surface));
+  border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));
+}
+.fragment-publish[hidden]{display:none;}
+.fragment-publish p{margin:0;flex:1 1 220px;color:var(--ink);font-size:14px;}
+.fragment-publish .btn{flex-shrink:0;}
+.fragment-publish a{font-size:13px;color:var(--accent);}
