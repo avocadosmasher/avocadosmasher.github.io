@@ -41,7 +41,20 @@
 @media(forced-colors:active){.fragment-select select{appearance:auto;}.fragment-select::after{display:none;}.fragment-clear::before,.fragment-clear::after{background:ButtonText;}}
 .fragments :focus-visible{outline:3px solid var(--accent);outline-offset:3px;}
 .fragment-list-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:22px 0;font-size:13px;color:var(--muted);}
+.fragment-view-controls{display:flex;align-items:stretch;gap:8px;}
 .fragment-views{display:flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;}
+/* 같은 가족으로 보이도록 높이·모서리를 뷰 전환과 맞추고, 아이콘은 직접 그린다. */
+.fragment-refresh{
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 14px;font-size:14px;
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  color:var(--ink-soft);cursor:pointer;transition:border-color .15s,color .15s;
+}
+.fragment-refresh:hover{border-color:var(--accent);color:var(--accent);}
+.fragment-refresh:disabled{opacity:.55;cursor:default;}
+.fragment-refresh svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.fragment-refresh[data-busy="true"] svg{animation:fragment-refresh-spin 1s linear infinite;}
+@keyframes fragment-refresh-spin{to{transform:rotate(360deg);}}
+@media (prefers-reduced-motion: reduce){.fragment-refresh[data-busy="true"] svg{animation:none;}}
 .fragment-views button{padding:8px 12px;border-radius:7px;}
 .fragment-views button[aria-pressed=true]{background:var(--accent-soft);color:var(--accent);}
 .fragment-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;}

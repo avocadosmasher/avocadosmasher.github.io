@@ -36,12 +36,12 @@ const editPaths = Object.fromEntries(entries.map(entry => [entry.data.id,
       <ul id="fragment-publish-list" aria-label="발행 대기 목록" hidden></ul>
       <p id="fragment-deploy" class="fragment-deploy" role="status" aria-live="polite" hidden><span id="fragment-deploy-text"></span> <a id="fragment-deploy-link" target="_blank" rel="noopener noreferrer" hidden>배포 기록 보기</a></p>
     </div>
-    <div id="fragment-sync" hidden><p id="fragment-sync-status" class="fragment-hint" role="status" aria-live="polite"></p><button id="fragment-sync-retry" type="button" class="btn btn--ghost" hidden>최신 카드 다시 불러오기</button></div>
+    <div id="fragment-sync" hidden><p id="fragment-sync-status" class="fragment-hint" role="status" aria-live="polite"></p></div>
     <section class="fragment-toolbar" aria-label="개념 찾기">
       <div class="fragment-control fragment-search"><label for="fragment-search">개념 검색</label><span class="fragment-field"><input type="search" id="fragment-search" aria-label="개념 검색" placeholder="용어, 별칭, 설명으로 찾아보세요" autocomplete="off" /><button type="button" class="fragment-clear" data-clears="fragment-search" aria-label="검색어 지우기" hidden></button></span></div>
       <label>카테고리<span class="fragment-field fragment-select"><select id="fragment-category"><option value="">전체 ({cards.length})</option>{categories.map(category => <option value={category}>{category} ({cards.filter(c => c.category === category).length})</option>)}</select></span></label>
     </section>
-    <div class="fragment-list-head"><p id="fragment-count" role="status" aria-live="polite"></p><div class="fragment-views"><button id="cards-view" aria-pressed="true">카드 보기</button><button id="graph-view" aria-pressed="false">관계 그래프</button></div></div>
+    <div class="fragment-list-head"><p id="fragment-count" role="status" aria-live="polite"></p><div class="fragment-view-controls"><div class="fragment-views"><button id="cards-view" aria-pressed="true">카드 보기</button><button id="graph-view" aria-pressed="false">관계 그래프</button></div><button id="fragment-sync-retry" type="button" class="fragment-refresh" title="최신 카드 다시 불러오기"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg><span>새로고침</span></button></div></div>
     <p id="fragment-notice" role="status" hidden></p>
     <section id="fragment-list" aria-label="개념 카드 목록"><div id="fragment-grid" class="fragment-grid"></div><p id="fragment-empty" class="fragment-empty" hidden>조건에 맞는 개념이 없습니다.</p><nav id="fragment-pages" class="fragment-pages" aria-label="카드 페이지"></nav></section>
     <section id="fragment-graph-panel" aria-label="개념 관계 그래프" hidden>
