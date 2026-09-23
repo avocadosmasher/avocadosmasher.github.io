@@ -5,6 +5,7 @@ import { createWriterConfig } from '../lib/fragment-writer';
 import { loadFragmentSnapshot } from '../lib/fragment-snapshot';
 import { countPendingDrafts, discardDraftChange, publishDrafts } from '../lib/fragment-publish';
 import { latestDeploy } from '../lib/fragment-deploy';
+import { loadSession } from '../lib/fragment-session';
 import { liveFragment } from '../lib/fragment-live';
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -136,8 +137,22 @@ window.addEventListener('fragment-session', event => {
   void refreshCards();
 });
 
+// The stored session is read here too: the list must not depend on catching the composer's event.
+if (writerConfig?.publish) {
+  const stored = loadSession(writerConfig);
+  if (stored) {
+    session = stored;
+    $('fragment-publish').hidden = false;
+    reading = writerConfig.branch;
+    void showPending();
+    void showDeploy(true);
+  }
+}
+
 // The site only changes once the deploy of the published branch finishes, so the author can watch it here.
 let deployTimer = 0;
+// After publishing, the run for that commit takes a moment to appear; until then the old run is not the answer.
+let awaiting = '';
 async function showDeploy(watch = false) {
   if (!writerConfig?.publish || !session) return;
   const panel = $('fragment-deploy');
@@ -145,20 +160,36 @@ async function showDeploy(watch = false) {
   const link = $('fragment-deploy-link') as HTMLAnchorElement;
   try {
     const deploy = await latestDeploy(writerConfig, session);
-    if (deploy.state === 'none') { panel.hidden = true; return; }
+    const queued = awaiting !== '' && deploy.sha !== awaiting;
+    if (deploy.state === 'none' && !queued) {
+      panel.hidden = false;
+      panel.dataset.state = 'none';
+      link.hidden = true;
+      text.replaceChildren(...sentences(['아직 배포 기록이 없습니다.']));
+      return;
+    }
+    const state = queued ? 'running' : deploy.state;
+    if (!queued && deploy.state !== 'running') awaiting = '';
     panel.hidden = false;
-    panel.dataset.state = deploy.state;
-    link.hidden = !deploy.url;
+    panel.dataset.state = state;
+    link.hidden = queued || !deploy.url;
     if (deploy.url) link.href = deploy.url;
-    const lines = deploy.state === 'running' ? ['배포 중입니다.', '끝나면 사이트에 반영됩니다.']
-      : deploy.state === 'success' ? ['마지막 배포가 끝났습니다.', '발행한 내용이 사이트에 반영되어 있습니다.']
-      : deploy.state === 'failure' ? ['마지막 배포가 실패했습니다.', '사이트는 이전 내용 그대로입니다.']
+    const lines = state === 'running' ? ['배포 중입니다.', '끝나면 사이트에 반영됩니다.']
+      : state === 'success' ? ['마지막 배포가 끝났습니다.', '발행한 내용이 사이트에 반영되어 있습니다.']
+      : state === 'failure' ? ['마지막 배포가 실패했습니다.', '사이트는 이전 내용 그대로입니다.']
       : ['마지막 배포가 취소되었습니다.', '이어지는 배포 결과를 확인해주세요.'];
     text.replaceChildren(...sentences(lines));
     window.clearTimeout(deployTimer);
-    if (watch && deploy.state === 'running') deployTimer = window.setTimeout(() => void showDeploy(true), 15000);
-  } catch {
-    panel.hidden = true;
+    if (watch && state === 'running') deployTimer = window.setTimeout(() => void showDeploy(true), queued ? 5000 : 15000);
+    if (state === 'success' && !queued) { void showPending(); void refreshCards(); }
+  } catch (error) {
+    // Hiding the line would leave the author guessing; point at the history instead.
+    panel.hidden = false;
+    panel.dataset.state = 'unknown';
+    link.hidden = false;
+    link.href = `https://github.com/${writerConfig.repo}/actions/workflows/deploy.yml?query=branch%3A${encodeURIComponent(writerConfig.publish)}`;
+    text.replaceChildren(...sentences(['배포 상태를 확인하지 못했습니다.', error instanceof Error ? error.message : '']));
+    window.clearTimeout(deployTimer);
   }
 }
 
@@ -214,12 +245,12 @@ async function showPending(message = '') {
   if (!writerConfig?.publish || !session) return;
   const button = $('fragment-publish-run') as HTMLButtonElement;
   try {
-    const { cards, ahead } = await countPendingDrafts(writerConfig, session);
-    const waiting = cards.length || ahead;
-    button.hidden = waiting === 0;
+    // Only card changes matter: a card that was created and dropped again leaves commits but nothing to publish.
+    const { cards } = await countPendingDrafts(writerConfig, session);
+    button.hidden = cards.length === 0;
     renderPending(cards);
     if (message) setStatus(message);
-    else if (waiting) setStatus('발행하면 사이트에 반영됩니다.', cards.length ? `발행 대기 카드 ${cards.length}개.` : `발행 대기 변경 ${ahead}건.`);
+    else if (cards.length) setStatus('발행하면 사이트에 반영됩니다.', `발행 대기 카드 ${cards.length}개.`);
     else setStatus('발행할 변경이 없습니다.', '저장한 내용이 모두 사이트에 반영되어 있습니다.');
   } catch (error) {
     button.hidden = true;
@@ -254,7 +285,10 @@ $('fragment-publish-run').addEventListener('click', async () => {
     await showPending(published.published
       ? '발행했습니다. 배포가 끝나면 사이트에 반영됩니다.'
       : '이미 모두 발행되어 있습니다.');
-    if (published.published) void showDeploy(true);
+    if (published.published) {
+      awaiting = published.url?.split('/').pop() ?? '';
+      void showDeploy(true);
+    }
     (button as HTMLButtonElement).hidden = true;
   } catch (error) {
     setStatus(error instanceof Error ? error.message : '발행하지 못했습니다.');

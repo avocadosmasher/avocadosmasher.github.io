@@ -10,7 +10,7 @@ const cards = [
 ];
 const branches: Record<string, typeof cards> = { main: cards.slice(0, 1), 'fragments-draft': cards };
 
-async function mock(context: BrowserContext, options: { ahead?: number; merge?: number; deploy?: string[] } = {}) {
+async function mock(context: BrowserContext, options: { ahead?: number; merge?: number; deploy?: string[]; verifyDelay?: number; runSha?: string; noCardFiles?: boolean; deployStatus?: number } = {}) {
   const reads: string[] = [];
   const writes: string[] = [];
   const merges: { base: string; head: string }[] = [];
@@ -35,18 +35,19 @@ async function mock(context: BrowserContext, options: { ahead?: number; merge?: 
       return route.fulfill({ json: { sha: entry.sha, encoding: 'base64', content: Buffer.from(card(entry.id, entry.title)).toString('base64') } });
     }
     if (url.pathname.includes('/actions/workflows/')) {
+      if (options.deployStatus) return route.fulfill({ status: options.deployStatus, json: {} });
       const states = options.deploy ?? [];
       const state = states.length > 1 ? states.shift()! : states[0];
       if (!state) return route.fulfill({ json: { workflow_runs: [] } });
       const [status, conclusion] = state === 'running' ? ['in_progress', null] : ['completed', state];
-      return route.fulfill({ json: { workflow_runs: [{ id: 7, status, conclusion, head_sha: 'f'.repeat(40),
+      return route.fulfill({ json: { workflow_runs: [{ id: 7, status, conclusion, head_sha: options.runSha ?? 'f'.repeat(40),
         html_url: 'https://github.com/avocadosmasher/avocadosmasher.github.io/actions/runs/7', updated_at: '2026-09-21T10:00:00Z' }] } });
     }
     if (url.pathname.includes('/compare/')) {
       const [base, head] = decodeURIComponent(url.pathname.split('/compare/')[1]).split('...');
       reads.push(`compare ${base}...${head}`);
       return route.fulfill({ json: { status: ahead ? 'ahead' : 'identical', ahead_by: ahead, behind_by: 0,
-        files: ahead ? [{ filename: 'src/content/fragments/waiting.md', status: 'added' }] : [] } });
+        files: ahead && !options.noCardFiles ? [{ filename: 'src/content/fragments/waiting.md', status: 'added' }] : [] } });
     }
     if (url.pathname.endsWith('/merges')) {
       merges.push(route.request().postDataJSON());
@@ -61,7 +62,9 @@ async function mock(context: BrowserContext, options: { ahead?: number; merge?: 
       writes.push(request.postDataJSON().branch);
       return route.fulfill({ status: 201, json: { content: { path: url.pathname.split('/contents/')[1] }, commit: { sha: 'c'.repeat(40) } } });
     }
-    return route.fulfill({ json: { full_name: repo, private: false, permissions: { push: true } } });
+    const permission = () => route.fulfill({ json: { full_name: repo, private: false, permissions: { push: true } } });
+    if (options.verifyDelay) return void setTimeout(permission, options.verifyDelay);
+    return permission();
   });
   return { reads, writes, merges };
 }
@@ -218,4 +221,55 @@ test('a failed deploy says the site kept its previous content', async ({ page, c
   await page.locator('#composer-login').click();
   await page.keyboard.press('Escape');
   await expect(page.locator('#fragment-deploy-text')).toContainText('이전 내용 그대로');
+});
+
+test('a slow session check still shows the waiting list after a refresh', async ({ page, context }) => {
+  // The list must not depend on catching one event from the composer script.
+  await mock(context, { verifyDelay: 1500 });
+  await page.goto('/fragments/');
+  await page.locator('#fragment-compose').click();
+  await page.locator('#composer-login').click();
+  await expect(page.locator('#fragment-publish-run')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await expect(page.locator('#fragment-publish-status')).toContainText('발행 대기 카드 1개');
+  await expect(page.locator('#fragment-publish-run')).toBeVisible();
+});
+
+test('after publishing, the new deploy is followed instead of the previous one', async ({ page, context }) => {
+  test.setTimeout(60_000);
+  // The run for the merge commit only appears a moment later; the old run must not end the watch.
+  await mock(context, { deploy: ['success', 'running', 'success'], runSha: 'd'.repeat(40) });
+  await page.goto('/fragments/');
+  await page.locator('#fragment-compose').click();
+  await page.locator('#composer-login').click();
+  await expect(page.locator('#fragment-publish-run')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#fragment-composer')).not.toBeVisible();
+  await page.locator('#fragment-publish-run').click();
+  await expect(page.locator('#fragment-deploy-text')).toContainText('배포 중입니다');
+  await expect(page.locator('#fragment-deploy-text')).toContainText('반영되어 있습니다', { timeout: 40000 });
+});
+
+test('commits that change no card are not offered for publishing', async ({ page, context }) => {
+  // Creating a card and dropping it again leaves commits behind but nothing to publish.
+  await mock(context, { ahead: 2, noCardFiles: true });
+  await page.goto('/fragments/');
+  await page.locator('#fragment-compose').click();
+  await page.locator('#composer-login').click();
+  await expect(page.locator('#fragment-publish-status')).toContainText('발행할 변경이 없습니다');
+  await expect(page.locator('#fragment-publish-status')).not.toContainText('2건');
+  await expect(page.locator('#fragment-publish-run')).toBeHidden();
+  await expect(page.locator('#fragment-publish-toggle')).toBeHidden();
+});
+
+test('a deploy status that cannot be read says so and still links the history', async ({ page, context }) => {
+  await mock(context, { deployStatus: 403 });
+  await page.goto('/fragments/');
+  await page.locator('#fragment-compose').click();
+  await page.locator('#composer-login').click();
+  await expect(page.locator('#fragment-deploy-text')).toContainText('배포 상태를 확인하지 못했습니다');
+  const link = page.locator('#fragment-deploy-link');
+  await expect(link).toBeVisible();
+  await expect(link).toHaveAttribute('href', /actions\/workflows\/deploy\.yml/);
 });
