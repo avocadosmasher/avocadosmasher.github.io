@@ -10,7 +10,7 @@ const cards = [
 ];
 const branches: Record<string, typeof cards> = { main: cards.slice(0, 1), 'fragments-draft': cards };
 
-async function mock(context: BrowserContext, options: { ahead?: number; merge?: number; deploy?: string[]; verifyDelay?: number; runSha?: string; noCardFiles?: boolean; deployStatus?: number } = {}) {
+async function mock(context: BrowserContext, options: { ahead?: number; merge?: number; deploy?: string[]; verifyDelay?: number; runSha?: string; noCardFiles?: boolean; deployStatus?: number; anonymousLimit?: boolean } = {}) {
   const reads: string[] = [];
   const writes: string[] = [];
   const merges: { base: string; head: string }[] = [];
@@ -21,6 +21,10 @@ async function mock(context: BrowserContext, options: { ahead?: number; merge?: 
   });
   await context.route('https://api.github.com/**', route => {
     const url = new URL(route.request().url());
+    // An anonymous read runs into the shared hourly limit; a signed-in author has their own.
+    if (options.anonymousLimit && !route.request().headers()['authorization']) {
+      return route.fulfill({ status: 403, headers: { 'x-ratelimit-remaining': '0' }, json: { message: 'API rate limit exceeded' } });
+    }
     const tree = url.pathname.match(/\/git\/trees\/(.+)$/);
     if (tree) {
       const branch = decodeURIComponent(tree[1]);
@@ -272,4 +276,16 @@ test('a deploy status that cannot be read says so and still links the history', 
   const link = page.locator('#fragment-deploy-link');
   await expect(link).toBeVisible();
   await expect(link).toHaveAttribute('href', /actions\/workflows\/deploy\.yml/);
+});
+
+test('drafts stay in the card list after a refresh even when anonymous reads are rate limited', async ({ page, context }) => {
+  await mock(context, { anonymousLimit: true });
+  await page.goto('/fragments/');
+  await page.locator('#fragment-compose').click();
+  await page.locator('#composer-login').click();
+  await expect(page.locator('[data-fragment-card="waiting"]')).toHaveCount(1);
+  await page.keyboard.press('Escape');
+  await page.reload();
+  await expect(page.locator('#fragment-publish-status')).toContainText('발행 대기 카드 1개');
+  await expect(page.locator('[data-fragment-card="waiting"]')).toHaveCount(1);
 });

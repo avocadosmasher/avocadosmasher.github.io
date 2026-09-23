@@ -298,27 +298,43 @@ $('fragment-publish-run').addEventListener('click', async () => {
 });
 window.addEventListener('fragment-saved', () => void showPending());
 window.addEventListener('fragment-deleted', () => void showPending());
+// Anonymous reads share one hourly limit per address; a signed-in author reads with their own allowance.
+function reader(): typeof fetch {
+  if (!session) return fetch;
+  return (input, init = {}) => fetch(input, {
+    ...init, headers: { ...Object.fromEntries(new Headers(init.headers).entries()), Authorization: `Bearer ${session}` },
+  });
+}
+
 async function refreshCards() {
   if (!writerConfig) return;
   const generation = ++snapshotGeneration;
   $('fragment-sync').hidden = false;
   $('fragment-sync-status').textContent = '최신 카드를 불러오고 있습니다.';
-  $('fragment-sync-retry').hidden = true;
+  setRefreshing(true);
   try {
-    const snapshot = await loadFragmentSnapshot(writerConfig, fetch, reading);
+    const snapshot = await loadFragmentSnapshot(writerConfig, reader(), reading);
     if (generation !== snapshotGeneration) return;
     const next = snapshot.map(item => liveFragment(item.draft));
     authoritative = true;
     window.dispatchEvent(new CustomEvent('fragment-paths', { detail: Object.fromEntries(snapshot.map(item => [item.draft.id, item.path])) }));
     updateCollection(next);
+    setRefreshing(false);
     $('fragment-sync-status').textContent = writerConfig.publish && reading === writerConfig.branch
       ? '발행 전 초안까지 불러왔습니다.' : '최신 카드를 불러왔습니다.';
   } catch {
     if (generation !== snapshotGeneration) return;
-    $('fragment-sync-status').textContent = '최신 카드를 확인하지 못했습니다. 현재 목록은 이전 내용일 수 있습니다. 잠시 후 다시 불러와주세요.';
-    $('fragment-sync-retry').hidden = false;
+    setRefreshing(false);
+    $('fragment-sync-status').textContent = '최신 카드를 확인하지 못했습니다. 현재 목록은 이전 내용일 수 있습니다. 다시 불러오기를 눌러주세요.';
     if (!hasRendered) render();
   }
+}
+
+// The reload control sits with the view switch; it spins while reading and never disappears mid-work.
+function setRefreshing(busy: boolean) {
+  const button = $('fragment-sync-retry') as HTMLButtonElement;
+  button.dataset.busy = String(busy);
+  button.disabled = busy;
 }
 window.addEventListener('fragment-saved', event => {
   const { card } = (event as CustomEvent<{ card: PublicFragment; path: string }>).detail;
@@ -326,15 +342,14 @@ window.addEventListener('fragment-saved', event => {
   snapshotGeneration++;
   updateCollection([...cards.filter(item => item.id !== card.id), card]);
   $('fragment-sync-status').textContent = '저장한 카드를 현재 목록에 반영했습니다.';
-  $('fragment-sync-retry').hidden = true;
 });
 $('fragment-sync-retry').addEventListener('click', () => void refreshCards());
+if (!writerConfig) $('fragment-sync-retry').hidden = true;
 window.addEventListener('fragment-deleted', event => {
   snapshotGeneration++;
   authoritative = true;
   updateCollection((event as CustomEvent<PublicFragment[]>).detail);
   $('fragment-sync-status').textContent = '삭제 결과를 현재 목록에 반영했습니다.';
-  $('fragment-sync-retry').hidden = true;
 });
 
 function text(tag: string, value: string, className = '') {
