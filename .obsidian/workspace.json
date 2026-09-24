@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "src/content/blog/가상화 파헤치기-1장/index.md",
+                "file": "Fragment-운영가이드.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "index"
+              "title": "Fragment-운영가이드"
             }
           }
         ]
@@ -188,9 +188,9 @@
   },
   "active": "752b72efa0569d52",
   "lastOpenFiles": [
+    "src/content/blog/가상화 파헤치기-1장/index.md",
     "src/content/blog/가상화 파헤치기-1장/1세대_가상화_기술_반_가상화.png",
     "src/content/blog/가상화 파헤치기-1장/1세대_가상화_기술_전_가상화.png",
-    "src/content/blog/가상화 파헤치기-1장/index.md",
     "src/content/blog/가상화 파헤치기-1장/VM_Exit_사이클.png",
     "src/content/blog/가상화 파헤치기-인트로/index.md",
     "무제.md",
