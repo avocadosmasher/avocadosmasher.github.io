@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { handleOAuth, type OAuthEnv } from '../../workers/fragment-oauth/worker';
-import { createOAuthTestConfig } from '../../src/lib/fragment-admin-oauth';
+import { createWriterConfig } from '../../src/lib/fragment-writer';
 
 // Storage is tested independently in the actual Workers runtime integration suite.
 const sessions = new Map<string, { binding: string; verifier: string; expires: number }>();
@@ -102,14 +102,12 @@ describe('A04-1 OAuth server', () => {
   });
 });
 
-describe('test CMS isolation', () => {
+describe('test saving isolation', () => {
   const input = { repo: 'tester/fragment-cms-auth-test', branch: 'cms-test', origin: 'https://oauth.example' };
-  it('requires explicit test targets and preserves the CMS contract', () => {
-    const config = createOAuthTestConfig(input);
-    expect(config).toMatchObject({ local_backend: false, load_config_file: false, backend: { name: 'github', repo: input.repo, branch: 'cms-test', auth_scope: 'public_repo', base_url: input.origin, auth_endpoint: 'auth' } });
-    expect(config.collections[0].delete).toBe(false);
+  it('requires explicit test targets outside the blog repository', () => {
+    expect(createWriterConfig(input)).toEqual({ repo: input.repo, branch: 'cms-test', origin: input.origin });
     for (const patch of [{ repo: '' }, { repo: 'avocadosmasher/avocadosmasher.github.io' }, { repo: 'AVOCADOSMASHER/AVOCADOSMASHER.GITHUB.IO' }, { branch: '' }, { branch: 'main' }, { origin: 'http://oauth.example' }, { origin: 'https://oauth.example/path' }]) {
-      expect(() => createOAuthTestConfig({ ...input, ...patch })).toThrow();
+      expect(() => createWriterConfig({ ...input, ...patch })).toThrow();
     }
   });
 });

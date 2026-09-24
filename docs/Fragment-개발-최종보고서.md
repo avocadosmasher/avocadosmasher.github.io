@@ -81,7 +81,7 @@ AI 관계 추론, 별도 DB, 비공개 카드, 전역 블로그 검색 통합, �
 | `src/scripts/fragment-composer.ts`, `fragment-relations.ts` | 작성 폼과 관계 편집기 |
 | `workers/fragment-oauth/worker.ts` (153줄) | PKCE S256, HMAC 서명 state, HttpOnly 쿠키, Durable Object 10분 1회용 세션 |
 
-`/admin/`(Decap CMS)은 초기 연동 실험의 잔재다. 운영 빌드에서는 backend 설정이 비어 있어 초기화되지 않고 `noindex`다.
+초기 연동 실험에 쓰던 `/admin/`(Decap CMS)은 2026-09-24에 제거했다(K01). 저장 계약(`prepareFragmentSave`)은 `fragments.ts`로, 저장소·브랜치 상수와 테스트 저장 설정 검증은 `fragment-writer.ts`로 옮겼다. Worker의 핸드셰이크 규약은 전용 폼이 그대로 쓰므로 그대로다.
 
 ### 3.4 빌드와 배포
 
@@ -95,9 +95,9 @@ AI 관계 추론, 별도 DB, 비공개 카드, 전역 블로그 검색 통합, �
 
 | 영역 | 내용 |
 | --- | --- |
-| 기능 코드 | `src/lib/` 12개, `src/scripts/` 4개, `src/components/FragmentComposer.astro`, `src/pages/fragments/index.astro`, `src/pages/admin/` |
+| 기능 코드 | `src/lib/` 10개, `src/scripts/` 3개, `src/components/FragmentComposer.astro`, `src/pages/fragments/index.astro` |
 | 인증 | `workers/fragment-oauth/` (worker, wrangler 설정, README) |
-| 테스트 | `tests/unit` 14 · `tests/integration` 3 · `tests/e2e` 3 · `tests/oauth` 7 · `tests/draft` 1 · `tests/h01` 1 · `tests/h02` 1 · `tests/admin` 2 |
+| 테스트 | `tests/unit` 14 · `tests/integration` 3 · `tests/e2e` 2 · `tests/oauth` 7 · `tests/draft` 1 · `tests/h01` 1 · `tests/h02` 1 |
 | 자동화 | `.github/workflows/` 3개, `.githooks/`, `scripts/` 7개(fixture 생성, preview 검사, 로그 생성, 수동 검증 게이트 등) |
 | 문서 | `docs/` 아래 계획·결정·가이드·보관 + 작업 로그 52항목 |
 
@@ -117,9 +117,8 @@ AI 관계 추론, 별도 DB, 비공개 카드, 전역 블로그 검색 통합, �
 | `npm run test:h02` | 500카드·1,500간선 성능 | 3 passed |
 | `npm run test:oauth` | 로그인·저장·수정·삭제·관계·동기화 | 34 passed |
 | `npm run test:draft` | 초안 브랜치·발행·배포 상태 | 15 passed |
-| `npm run test:admin` | Decap 로컬 CMS 경로(CI 게이트 밖) | 4 passed |
 
-합계 167개 통과, 실패 0, 미실행 0. 요구사항별 대응표는 `log/52-I02.md` 2장에 있다.
+합계 167개 통과, 실패 0, 미실행 0. (K01에서 `/admin/`을 제거한 뒤에는 **159개**이며, 전부 CI 게이트 안에서 돈다.) 요구사항별 대응표는 `log/52-I02.md` 2장에 있다.
 
 성능 측정값(H02, 이 PC / Chromium / 로컬): 검색 p95 2.7~2.9ms(목표 200ms), 그래프 조작 가능까지 881~1,077ms(개발 PC 목표 2초). CI 러너는 더 느려 한도를 3초로 두었다(H02-CI).
 
@@ -144,8 +143,8 @@ Actions 실행 기록: <https://github.com/avocadosmasher/avocadosmasher.github.
 
 ## 6. 제약과 미해결 항목
 
-1. **`/admin/` Decap 번들 5.0MB**이 매 배포에 포함된다. 기능은 꺼져 있으나 불필요한 용량이다.
-2. **`npm run test:admin`은 CI 밖**이다(로컬 proxy 필요). Decap 경로 회귀는 로컬 실행으로만 잡힌다.
+1. ~~`/admin/` Decap 번들 5.0MB~~ → 2026-09-24 K01에서 제거(배포 산출물 7.4MB → 2.4MB).
+2. ~~`npm run test:admin`이 CI 밖~~ → K01에서 함께 정리. 남은 검사는 모두 CI 게이트 안에 있다.
 3. **실제 단말·스크린리더 미검증.** 에뮬레이션과 키보드 흐름까지만 자동화했다.
 4. **성능은 기기 의존.** 그래프 2초는 개발 PC 목표, CI 한도 3초.
 5. **로컬에서 운영 OAuth 로그인 불가**(Worker가 운영 도메인만 허용). 운영 인증 회귀는 배포 사이트에서 사람이 확인한다.
@@ -172,7 +171,7 @@ Actions 실행 기록: <https://github.com/avocadosmasher/avocadosmasher.github.
 
 | 우선순위 | 과제 | 이유 |
 | --- | --- | --- |
-| 높음 | `/admin/`(Decap) 경로 제거 | 5MB 사장 자산 + CI 밖 테스트 2개가 함께 정리된다 |
+| ~~높음~~ 완료 | `/admin/`(Decap) 경로 제거 | 2026-09-24 K01. 배포 산출물 7.4MB → 2.4MB, CI 밖 검사 소멸 |
 | 중간 | 실제 단말·스크린리더 접근성 점검 | 자동화가 덮지 못하는 범위 |
 | 중간 | 초안 비공개화 검토 | 공개 저장소 제약을 바꾸려면 저장 위치 자체를 바꿔야 한다 |
 | 낮음 | 카드가 수백 개로 늘 때의 조회 방식 | 현재는 전체 스냅샷을 한 번에 읽는다 |

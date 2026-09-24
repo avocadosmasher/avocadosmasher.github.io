@@ -110,7 +110,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     const port = flag('port', '4402');
     const dev = spawn(process.execPath, ['node_modules/astro/astro.js', 'dev', '--host', '127.0.0.1', '--port', port], {
       cwd: project, stdio: 'inherit', windowsHide: true,
-      env: { ...process.env, FRAGMENT_CMS_LOCAL: '0', FRAGMENT_CONTENT_DIR: contentDir },
+      env: { ...process.env, FRAGMENT_CONTENT_DIR: contentDir },
     });
     dev.on('exit', code => process.exit(code ?? 1));
   }

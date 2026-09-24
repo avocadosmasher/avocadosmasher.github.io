@@ -5,8 +5,8 @@ export default defineConfig({
   use: { baseURL: 'http://127.0.0.1:4401', ...devices['Desktop Chrome'], trace: 'off' },
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1 --port 4401',
-    url: 'http://127.0.0.1:4401/admin/', reuseExistingServer: false, timeout: 60_000,
-    env: { FRAGMENT_CMS_LOCAL: '0', FRAGMENT_CMS_OAUTH_TEST: '1',
+    url: 'http://127.0.0.1:4401/fragments/', reuseExistingServer: false, timeout: 60_000,
+    env: { FRAGMENT_CMS_OAUTH_TEST: '1',
       FRAGMENT_CMS_TEST_REPO: 'tester/fragment-cms-auth-test', FRAGMENT_CMS_TEST_BRANCH: 'cms-test',
       FRAGMENT_CMS_OAUTH_ORIGIN: 'https://oauth.example' },
   },

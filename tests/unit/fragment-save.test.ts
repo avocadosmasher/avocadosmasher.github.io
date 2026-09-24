@@ -1,23 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { cmsConfig, prepareFragmentSave } from '../../src/lib/fragment-admin';
-import { fragmentSchema, relationLabels } from '../../src/lib/fragments';
+import { fragmentSchema, prepareFragmentSave } from '../../src/lib/fragments';
 
 const draft = { title: '주소 변환', summary: '변환 설명', category: 'Infra', body: '**보충**' };
 
-describe('A03-1: CMS config and save contract', () => {
-  it('disables production local writes and matches content fields', () => {
-    expect(cmsConfig.local_backend).toBe(false);
-    const collection = cmsConfig.collections[0];
-    expect(collection).toMatchObject({ folder: 'src/content/fragments', delete: false, slug: '{{id}}', identifier_field: 'id' });
-    expect(collection.fields.map(field => field.name).sort()).toEqual([...Object.keys(fragmentSchema.shape), 'body'].sort());
-    expect(collection.fields.find(field => field.name === 'id')).toMatchObject({ widget: 'hidden' });
-    for (const name of ['title', 'summary', 'category']) {
-      expect(collection.fields.find(field => field.name === name)).toMatchObject({ required: true });
-    }
-    const relations = collection.fields.find(field => field.name === 'relations');
-    expect(relations?.fields?.find(field => field.name === 'type')?.options).toEqual(Object.keys(relationLabels));
-  });
-
+describe('B01/B02: save contract', () => {
   it('creates unique safe IDs independently of the title and preserves body', () => {
     const first = prepareFragmentSave(draft);
     const second = prepareFragmentSave(draft);

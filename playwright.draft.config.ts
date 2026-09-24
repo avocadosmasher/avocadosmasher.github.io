@@ -8,6 +8,6 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev -- --host 127.0.0.1 --port 4404',
     url: 'http://127.0.0.1:4404/fragments/', reuseExistingServer: false, timeout: 60_000,
-    env: { FRAGMENT_CMS_LOCAL: '0', FRAGMENT_WRITER_OAUTH_ORIGIN: 'https://oauth.example' },
+    env: { FRAGMENT_WRITER_OAUTH_ORIGIN: 'https://oauth.example' },
   },
 });

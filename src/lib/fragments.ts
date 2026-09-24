@@ -15,6 +15,14 @@ export const fragmentSchema = z.object({
 export type Fragment = z.infer<typeof fragmentSchema>;
 export type PublicFragment = Fragment & { html: string };
 
+const saveSchema = fragmentSchema.extend({ body: z.string().default('') });
+
+/** Pass the original persisted ID on edits; never trust a changed form ID. */
+export function prepareFragmentSave(input: Record<string, unknown>, existingId?: string) {
+  const id = existingId ?? input.id ?? `fragment-${globalThis.crypto.randomUUID()}`;
+  return saveSchema.parse({ ...input, id });
+}
+
 export function validateFragments(input: unknown[]): Fragment[] {
   const cards = input.map((item) => fragmentSchema.parse(item));
   const ids = new Set<string>();

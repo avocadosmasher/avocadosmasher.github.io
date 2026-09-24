@@ -33,7 +33,6 @@ describe('G02-UI: isolated GitHub new-card writes', () => {
     expect(writerConfigFromEnv(test)).toEqual({ error: '', config });
     expect(writerConfigFromEnv(production)).toEqual({ error: '', config: { repo: 'avocadosmasher/avocadosmasher.github.io', branch: 'fragments-draft', publish: 'main', origin: 'https://oauth.example', production: true } });
     expect(writerConfigFromEnv({ ...test, ...production }).config).toBeUndefined();
-    expect(writerConfigFromEnv({ ...production, FRAGMENT_CMS_LOCAL: '1' }).config).toBeUndefined();
     expect(writerConfigFromEnv({ FRAGMENT_WRITER_OAUTH_ORIGIN: 'http://oauth.example' })).toEqual({ error: '저장 설정을 확인해주세요.' });
     expect(writerConfigFromEnv({ ...test, FRAGMENT_CMS_TEST_BRANCH: 'main' })).toEqual({ error: '테스트 저장 설정을 확인해주세요.' });
   });

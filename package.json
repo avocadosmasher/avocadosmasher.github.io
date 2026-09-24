@@ -6,10 +6,8 @@
   "scripts": {
     "dev": "astro dev",
     "log:new": "node scripts/log-new.mjs",
-    "dev:admin": "node scripts/admin-local.mjs",
     "dev:oauth": "wrangler dev --config workers/fragment-oauth/wrangler.jsonc --local",
     "test:oauth": "playwright test --config playwright.oauth.config.ts",
-    "test:admin": "playwright test --config playwright.admin.config.ts",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
