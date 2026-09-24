@@ -37,9 +37,15 @@ test('E01–E04: modal, related card, keyboard, direct links', async ({ page }) 
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByRole('heading', { name: card.title, exact: true })).toBeVisible();
   if (linked) {
-    const target = cards.find(c => c.id === linked.relations.find(r => cards.some(t => t.id === r.target))!.target)!;
+    const relation = linked.relations.find(r => cards.some(t => t.id === r.target))!;
+    const target = cards.find(c => c.id === relation.target)!;
     await dialog.getByRole('button', { name: new RegExp(target.title) }).click();
     await expect(dialog.getByRole('heading', { name: target.title, exact: true })).toBeVisible();
+    // The relation is stored in one card but belongs to both, so it reads back from the target too.
+    const opposite = { related: '관련 개념', prerequisite: '후속 개념', 'part-of': '하위 개념', contrasts: '비교 개념' }[relation.type];
+    await expect(dialog.getByRole('button', { name: `${opposite} · ${linked.title}` })).toBeVisible();
+    await dialog.getByRole('button', { name: `${opposite} · ${linked.title}` }).click();
+    await expect(dialog.getByRole('heading', { name: linked.title, exact: true })).toBeVisible();
   }
   await page.keyboard.press('Escape');
   await expect(dialog).not.toBeVisible();
