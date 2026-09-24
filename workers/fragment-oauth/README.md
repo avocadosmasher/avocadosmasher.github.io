@@ -1,6 +1,6 @@
 # Fragment OAuth Worker (A04-1)
 
-GitHub OAuth code 교환과 Decap 3.16.2 팝업 연결을 구현했다. 로컬 Workers 런타임과 모의 GitHub 응답으로 검증했으며, 외부 계정·배포·실제 토큰·GitHub 커밋은 아직 연결하지 않았다. 계정 준비는 [외부 인증 안내](../../Fragment-외부-인증.md)를 참고한다.
+GitHub OAuth code 교환과 Decap 3.16.2 팝업 연결을 구현했다. 로컬 Workers 런타임과 모의 GitHub 응답으로 검증했으며, 외부 계정·배포·실제 토큰·GitHub 커밋은 아직 연결하지 않았다. 계정 준비는 [외부 인증 안내](../../docs/archive/Fragment-외부-인증.md)를 참고한다.
 
 ## 로컬 검증
 

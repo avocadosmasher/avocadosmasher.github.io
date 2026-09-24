@@ -32,7 +32,7 @@ if (process.argv.includes('--remote')) {
 }
 const build = spawnSync(process.execPath, ['node_modules/astro/astro.js', 'build', '--outDir', '.fragment-test/writer-site'], {
   cwd: project, stdio: 'inherit', windowsHide: true,
-  env: { ...process.env, FRAGMENT_CMS_LOCAL: '0', FRAGMENT_CMS_OAUTH_TEST: '1',
+  env: { ...process.env, FRAGMENT_CMS_OAUTH_TEST: '1',
     FRAGMENT_CMS_TEST_REPO: 'avocadosmasher/fragment-cms-auth-test', FRAGMENT_CMS_TEST_BRANCH: 'cms-test',
     FRAGMENT_CMS_OAUTH_ORIGIN: 'https://fragment-oauth-test.rdd0426.workers.dev',
     FRAGMENT_CONTENT_DIR: contentDir },

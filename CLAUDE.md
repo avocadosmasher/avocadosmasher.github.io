@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+**세션을 시작하면 `STATUS.md`부터 읽는다.** 현재 상태·다음 할 일·문서 위치가 거기 있다. 과거 작업 이력은 `docs/log/INDEX.md`(메뉴판)에서 필요한 항목만 골라 연다.
+
+문서 배치: `docs/guide/`(사람이 읽는 운영법) · `docs/plan/`(계획) · `docs/decision/`(결정 근거) · `docs/log/`(작업 이력, 항목당 1파일) · `docs/archive/`(끝난 단계의 기록).
+
 작업 완료 절차는 `AGENTS.md`를 따른다. 자동 검사 후 사용자에게 기능·방법·예상 결과를 포함한 수동 테스트 가이드를 제공하고, 명시적인 ‘통과’ 판정을 받은 뒤에만 커밋·푸시한다.
 
 ## Commands

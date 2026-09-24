@@ -1,8 +1,5 @@
-import { prepareFragmentSave } from './fragment-admin';
-import { cmsConfig } from './fragment-admin';
-import { createOAuthTestConfig } from './fragment-admin-oauth';
 import { parseDocument } from 'yaml';
-import { validateFragments } from './fragments';
+import { prepareFragmentSave, validateFragments } from './fragments';
 
 export interface WriterConfig { repo: string; branch: string; origin: string; production?: true; publish?: string }
 export type WriterDraft = ReturnType<typeof prepareFragmentSave>;
@@ -11,20 +8,37 @@ export class WriterError extends Error {
   constructor(public code: WriterErrorCode, message: string) { super(message); }
 }
 
+export const BLOG_REPO = 'avocadosmasher/avocadosmasher.github.io';
+export const PUBLISHED_BRANCH = 'main';
 export const DRAFT_BRANCH = 'fragments-draft';
 
-// Production writes need an explicit flag and may target only the blog repository's main branch.
-export function createWriterConfig(input: { repo?: string; branch?: string; origin?: string; production?: boolean; publish?: string }): WriterConfig {
-  if (input.production !== true) {
-    const { backend } = createOAuthTestConfig(input);
-    return { repo: backend.repo, branch: backend.branch, origin: backend.base_url };
-  }
+/** Test saving must name a repository and branch of its own, never the blog's. */
+function createTestWriterConfig(input: { repo?: string; branch?: string; origin?: string }): WriterConfig {
   const { repo = '', branch = '', origin = '' } = input;
+  requireHttpsOrigin(origin);
+  if (!/^[\w-]+\/[\w.-]+$/.test(repo) || repo.toLowerCase() === BLOG_REPO.toLowerCase()) {
+    throw new Error('운영 저장소와 다른 테스트 저장소를 설정하세요.');
+  }
+  if (!/^[\w/-]+$/.test(branch) || ['main', 'master'].includes(branch.toLowerCase()) ||
+      branch.startsWith('/') || branch.endsWith('/') || branch.includes('//')) {
+    throw new Error('별도 테스트 브랜치를 설정하세요.');
+  }
+  return { repo, branch, origin };
+}
+
+function requireHttpsOrigin(origin: string) {
   let url: URL;
   try { url = new URL(origin); } catch { throw new Error('OAuth 서버 주소를 설정하세요.'); }
   if (url.protocol !== 'https:' || url.origin !== origin) throw new Error('OAuth 서버의 HTTPS origin을 입력하세요.');
+}
+
+// Production writes need an explicit flag and may target only the blog repository's main branch.
+export function createWriterConfig(input: { repo?: string; branch?: string; origin?: string; production?: boolean; publish?: string }): WriterConfig {
+  if (input.production !== true) return createTestWriterConfig(input);
+  const { repo = '', branch = '', origin = '' } = input;
+  requireHttpsOrigin(origin);
   // Saves land on the draft branch; the published branch changes only when the author presses 발행.
-  if (repo !== cmsConfig.backend.repo || branch !== DRAFT_BRANCH || input.publish !== cmsConfig.backend.branch) {
+  if (repo !== BLOG_REPO || branch !== DRAFT_BRANCH || input.publish !== PUBLISHED_BRANCH) {
     throw new Error(`운영 저장은 블로그 저장소의 ${DRAFT_BRANCH} 브랜치에만 허용합니다.`);
   }
   return { repo, branch, origin, publish: input.publish, production: true };
@@ -35,10 +49,10 @@ export function writerConfigFromEnv(env: Record<string, string | undefined>): { 
   const test = env.FRAGMENT_CMS_OAUTH_TEST === '1', productionOrigin = env.FRAGMENT_WRITER_OAUTH_ORIGIN;
   if (!test && !productionOrigin) return { error: '' };
   try {
-    if (env.FRAGMENT_CMS_LOCAL === '1' || (test && productionOrigin)) throw new Error('Conflicting modes');
+    if (test && productionOrigin) throw new Error('Conflicting modes');
     return { error: '', config: test
       ? createWriterConfig({ repo: env.FRAGMENT_CMS_TEST_REPO, branch: env.FRAGMENT_CMS_TEST_BRANCH, origin: env.FRAGMENT_CMS_OAUTH_ORIGIN })
-      : createWriterConfig({ repo: cmsConfig.backend.repo, branch: DRAFT_BRANCH, publish: cmsConfig.backend.branch, origin: productionOrigin, production: true }) };
+      : createWriterConfig({ repo: BLOG_REPO, branch: DRAFT_BRANCH, publish: PUBLISHED_BRANCH, origin: productionOrigin, production: true }) };
   } catch { return { error: test ? '테스트 저장 설정을 확인해주세요.' : '저장 설정을 확인해주세요.' }; }
 }
 
