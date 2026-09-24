@@ -79,7 +79,7 @@
 
 **자동 검사 결과:** Vitest 47개, OAuth/작성/수정/삭제/그래프 Playwright 25개, 일반 Playwright 8개 통과. 타입 검사 오류 0·경고 0(기존 hint 4개). 일반·테스트 빌드 각 12페이지 성공. 배포 주소 HTTP 200, 최신 카드 7개, 390px 가로 넘침·페이지 오류 없음, 로그인 전 삭제 숨김 확인. 자동 쓰기는 mock이며 실제 계정 삭제·커밋 확인과 전체 preview E2E는 미검증이다.
 
-**문서 확인:** 이 절의 삭제 차단 정책·재시도 안내가 실제 동작과 맞는지 확인한다. `Fragment-TDD-개발계획.md`의 G08-UI는 수동 판정 대기이며, `Fragment-개발기록.md` 첫 항목에는 위 자동 검사와 실제 계정 미검증 범위가 구분되어 있어야 한다.
+**문서 확인:** 이 절의 삭제 차단 정책·재시도 안내가 실제 동작과 맞는지 확인한다. `../plan/Fragment-TDD-개발계획.md`의 G08-UI는 수동 판정 대기이며, 최신 작업 로그 항목(`../log/`)에는 위 자동 검사와 실제 계정 미검증 범위가 구분되어 있어야 한다.
 
 **판정 요청:** 직접 확인 후 ‘통과’ 또는 ‘수정: [문제와 재현 방법]’으로 알려주세요.
 
@@ -179,4 +179,4 @@ npx wrangler pages deploy .fragment-test/writer-site --project-name fragment-cms
 
 - [GitHub Contents API](https://docs.github.com/en/rest/repos/contents?apiVersion=2022-11-28): branch 지정, UTF-8 콘텐츠의 Base64 전달, 생성과 갱신 계약.
 - [GitHub Repository API](https://docs.github.com/en/rest/repos/repos): 대상 저장소의 쓰기 권한 확인. 최종 쓰기 권한과 브랜치 정책은 GitHub 서버가 적용한다.
-- 구현 및 실행 증거는 `Fragment-개발기록.md`의 G02-UI 기록을 따른다.
+- 구현 및 실행 증거는 작업 로그 `../log/19-G02-UI.md`를 따른다.

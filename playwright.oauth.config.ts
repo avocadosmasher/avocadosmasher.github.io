@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
-  testDir: './tests/oauth', workers: 1, retries: 0,
+  reporter: 'dot', testDir: './tests/oauth', workers: 1, retries: 0,
   outputDir: '.fragment-test/oauth-results',
   use: { baseURL: 'http://127.0.0.1:4401', ...devices['Desktop Chrome'], trace: 'off' },
   webServer: {

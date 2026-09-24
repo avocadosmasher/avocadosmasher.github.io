@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 // Draft branch behaviour only exists in a production-mode build, so this suite runs its own server.
 export default defineConfig({
-  testDir: './tests/draft', workers: 1, retries: 0,
+  reporter: 'dot', testDir: './tests/draft', workers: 1, retries: 0,
   outputDir: '.fragment-test/draft-results',
   use: { baseURL: 'http://127.0.0.1:4404', ...devices['Desktop Chrome'], trace: 'off' },
   webServer: {
