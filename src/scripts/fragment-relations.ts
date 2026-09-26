@@ -1,4 +1,4 @@
-import { relationLabels, searchFragments, type Fragment } from '../lib/fragments';
+import { inverseRelationLabels, relationLabels, searchFragments, type Fragment } from '../lib/fragments';
 
 export function relationEditor(currentId: () => string) {
   const root = document.querySelector<HTMLFieldSetElement>('#composer-relations')!;
@@ -10,10 +10,15 @@ export function relationEditor(currentId: () => string) {
   const list = document.getElementById('composer-relation-list')!;
   const notice = document.getElementById('composer-relation-notice')!;
   let cards: Fragment[] = JSON.parse(document.getElementById('fragment-data')!.textContent ?? '[]');
+  // Cards whose relation to this one the author removed here; applied to their files on save.
+  let detached: string[] = [];
   const relations = (): Fragment['relations'] => JSON.parse(value.value || '[]');
   const label = (id: string) => cards.find(card => card.id === id)?.title ?? `찾을 수 없는 카드 (${id})`;
+  // The same edge read from this side: it is stored in the other card, under the opposite name.
+  const incoming = () => cards.flatMap(card => card.id === currentId() || detached.includes(card.id) ? []
+    : card.relations.filter(relation => relation.target === currentId()).map(relation => ({ target: card.id, type: relation.type })));
   const connected = (id: string) => relations().some(relation => relation.target === id) ||
-    cards.some(card => card.id === id && card.relations.some(relation => relation.target === currentId()));
+    incoming().some(relation => relation.target === id);
   function choices() {
     const previous = target.value;
     const matches = searchFragments(cards, query.value, '').filter(card => card.id !== currentId());
@@ -24,24 +29,35 @@ export function relationEditor(currentId: () => string) {
     if (matches.some(card => card.id === previous && !connected(card.id))) target.value = previous;
     add.disabled = root.disabled || !target.value;
   }
+  function entry(name: string, targetId: string, remove: () => void, note?: string) {
+    const item = document.createElement('li');
+    const text = document.createElement('span');
+    text.textContent = `${name} · ${label(targetId)}`;
+    if (note) {
+      const hint = document.createElement('span');
+      hint.className = 'fragment-hint'; hint.textContent = note;
+      text.append(' ', hint);
+    }
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'btn btn--ghost'; button.textContent = '제거';
+    button.setAttribute('aria-label', `관계 제거: ${label(targetId)} (${name})`);
+    button.addEventListener('click', () => {
+      if (root.disabled) return;
+      remove();
+      notice.textContent = '관계를 제거했습니다. 카드 저장을 눌러 반영해주세요.';
+      render(); target.focus();
+    });
+    item.append(text, button); return item;
+  }
   function render(disabled = root.disabled) {
     root.disabled = disabled;
     choices();
-    list.replaceChildren(...relations().map((relation, index) => {
-      const item = document.createElement('li');
-      const text = document.createElement('span');
-      text.textContent = `${relationLabels[relation.type]} · ${label(relation.target)}`;
-      const remove = document.createElement('button');
-      remove.type = 'button'; remove.className = 'btn btn--ghost'; remove.textContent = '제거';
-      remove.setAttribute('aria-label', `관계 제거: ${label(relation.target)} (${relationLabels[relation.type]})`);
-      remove.addEventListener('click', () => {
-        if (root.disabled) return;
-        value.value = JSON.stringify(relations().filter((_, position) => position !== index));
-        notice.textContent = '관계를 제거했습니다. 카드 저장을 눌러 반영해주세요.';
-        render(); target.focus();
-      });
-      item.append(text, remove); return item;
-    }));
+    list.replaceChildren(
+      ...relations().map((relation, index) => entry(relationLabels[relation.type], relation.target,
+        () => { value.value = JSON.stringify(relations().filter((_, position) => position !== index)); })),
+      ...incoming().map(relation => entry(inverseRelationLabels[relation.type], relation.target,
+        () => { detached = [...detached, relation.target]; }, `· ${label(relation.target)} 카드에 저장됨`)),
+    );
   }
   query.addEventListener('input', choices);
   target.addEventListener('change', choices);
@@ -58,5 +74,6 @@ export function relationEditor(currentId: () => string) {
     render();
   });
   window.addEventListener('fragment-collection', event => { cards = (event as CustomEvent<Fragment[]>).detail; render(); });
-  return { render, reset: () => { query.value = ''; type.value = 'related'; target.value = ''; notice.textContent = ''; render(); } };
+  return { render, detached: () => detached,
+    reset: () => { query.value = ''; type.value = 'related'; target.value = ''; notice.textContent = ''; detached = []; render(); } };
 }

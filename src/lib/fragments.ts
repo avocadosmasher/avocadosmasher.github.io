@@ -3,6 +3,25 @@ import { z } from 'zod';
 export const relationLabels = {
   related: '관련 개념', prerequisite: '선행 개념', 'part-of': '상위 개념', contrasts: '비교 개념',
 } as const;
+// A relation is one edge between two cards, written in whichever card the author edited.
+// Read from the other end, a symmetric type keeps its name and a directed type takes its opposite.
+export const inverseRelationLabels = {
+  related: '관련 개념', prerequisite: '후속 개념', 'part-of': '하위 개념', contrasts: '비교 개념',
+} as const;
+export type RelationType = keyof typeof relationLabels;
+export interface CardRelation { target: string; type: RelationType; label: string; inbound: boolean }
+
+/** Every relation that touches this card: the ones it stores, plus the ones pointing at it. */
+export function cardRelations(cards: { id: string; relations: Fragment['relations'] }[], id: string): CardRelation[] {
+  const own = cards.find(card => card.id === id);
+  const outgoing = (own?.relations ?? []).map(relation =>
+    ({ target: relation.target, type: relation.type, label: relationLabels[relation.type], inbound: false }));
+  const taken = new Set(outgoing.map(relation => relation.target));
+  const inbound = cards.flatMap(card => card.id === id || taken.has(card.id) ? [] :
+    card.relations.filter(relation => relation.target === id).map(relation =>
+      ({ target: card.id, type: relation.type, label: inverseRelationLabels[relation.type], inbound: true })));
+  return [...outgoing, ...inbound];
+}
 export const fragmentSchema = z.object({
   id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'ID는 영문 소문자·숫자·하이픈으로 작성하세요.'),
   title: z.string().trim().min(1),

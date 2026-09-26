@@ -211,8 +211,9 @@ form.addEventListener('submit', async event => {
     // Render before writing so a display failure cannot be mistaken for a failed GitHub save.
     const savedCard = liveFragment(pending);
     const savedPath = existing?.path ?? `src/content/fragments/${pending.id}.md`;
-    const relationsChanged = JSON.stringify(pending.relations) !== JSON.stringify(existing?.draft.relations ?? []);
-    const response = relationsChanged ? await saveRelationChanges(config, token, pending, existing)
+    const detached = relations.detached();
+    const relationsChanged = detached.length > 0 || JSON.stringify(pending.relations) !== JSON.stringify(existing?.draft.relations ?? []);
+    const response = relationsChanged ? await saveRelationChanges(config, token, pending, existing, undefined, detached)
       : existing ? await saveExistingFragment(config, token, existing, pending) : await saveNewFragment(config, token, pending);
     result.href = response.url;
     result.hidden = false;
@@ -226,7 +227,7 @@ form.addEventListener('submit', async event => {
     }
     dialog.close();
     editPaths[savedCard.id] = savedPath;
-    window.dispatchEvent(new CustomEvent('fragment-saved', { detail: { card: savedCard, path: savedPath } }));
+    window.dispatchEvent(new CustomEvent('fragment-saved', { detail: { card: savedCard, path: savedPath, detached } }));
   } catch (error) {
     if (error instanceof WriterError && ['auth', 'permission'].includes(error.code)) { token = ''; if (config) clearSession(config); }
     if (error instanceof WriterError && ['snapshot', 'rate-limit', 'relation'].includes(error.code)) pending = undefined;

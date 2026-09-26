@@ -7,7 +7,7 @@ async function mock(context: BrowserContext, mode = '') {
   const files = new Map(Object.entries(paths).map(([id, path]) => [path, {
     sha: id.repeat(40), source: `---\nid: ${id}\ntitle: 카드 ${id.toUpperCase()}\nsummary: 설명\ncategory: Infra\naliases: [${id === 'b' ? '대상 별칭' : '출발'}]\n---\n본문\n`,
   }]));
-  const writes: any[] = []; let entry: any; let version = 1; let failures = mode === 'lost' ? 1 : 0;
+  const writes: any[] = []; let entry: any[] = []; let version = 1; let failures = mode === 'lost' ? 1 : 0;
   let snapshotFailure = ''; let mutation = false;
   await context.route('https://oauth.example/**', async route => {
     const response = oauthPopup('http://127.0.0.1:4401', { token: 'writer_test_token', provider: 'github' });
@@ -17,11 +17,14 @@ async function mock(context: BrowserContext, mode = '') {
     const request = route.request(); const url = new URL(request.url());
     if (request.method() !== 'GET') {
       const body = request.postDataJSON(); writes.push(body);
-      if (url.pathname.endsWith('/git/trees')) { entry = body.tree[0]; return route.fulfill({ json: { sha: 'd'.repeat(40) } }); }
+      if (url.pathname.endsWith('/git/trees')) { entry = body.tree; return route.fulfill({ json: { sha: 'd'.repeat(40) } }); }
       if (url.pathname.endsWith('/git/commits')) return route.fulfill({ json: { sha: 'e'.repeat(40) } });
       if (mode === 'race') return route.fulfill({ status: 422, json: {} });
-      if (entry.sha === null) files.delete(entry.path);
-      else files.set(entry.path, { source: entry.content, sha: (++version).toString(16).padStart(40, '0') });
+      // One commit may carry several cards, so every entry in the tree lands together.
+      for (const item of entry) {
+        if (item.sha === null) files.delete(item.path);
+        else files.set(item.path, { source: item.content, sha: (++version).toString(16).padStart(40, '0') });
+      }
       if (failures-- > 0) return route.abort('failed');
       return route.fulfill({ json: { ref: 'refs/heads/cms-test', object: { sha: 'e'.repeat(40) } } });
     }
@@ -165,4 +168,34 @@ test('new-card relations remain separate from an existing-card draft and are sto
   expect(markdownForDraft(created)).toContain(created.id);
   await page.locator('#fragment-compose').click();
   await expect(page.locator('#composer-relation-list li')).toHaveCount(0);
+});
+
+test('the target card shows the relation and can remove it, which rewrites the card that stored it', async ({ page, context }) => {
+  const remote = await mock(context);
+  await page.goto('/fragments/?card=a');
+  await page.locator('#fragment-edit').click(); await page.locator('#composer-login').click();
+  await page.getByLabel('관계 대상').selectOption('b');
+  await page.getByLabel('관계 유형').selectOption('part-of');
+  await page.getByRole('button', { name: '관계 추가', exact: true }).click();
+  await page.locator('#composer-save').click();
+  await expect(page.locator('#fragment-composer')).not.toBeVisible();
+  expect(parseFragmentSource(remote.files.get(remote.paths.a)!.source).relations).toEqual([{ target: 'b', type: 'part-of' }]);
+
+  // B stored nothing, yet the relation is B's too: it reads back under the opposite name.
+  await page.locator('[data-fragment-card="b"]').click();
+  await expect(page.locator('#fragment-dialog-relations')).toContainText('하위 개념 · 카드 A');
+  await page.locator('#fragment-edit').click();
+  await expect(page.locator('#composer-relation-list')).toContainText('하위 개념 · 카드 A');
+  await expect(page.locator('#composer-relation-list')).toContainText('카드 A 카드에 저장됨');
+  await page.getByRole('button', { name: '관계 제거: 카드 A (하위 개념)', exact: true }).click();
+  await page.locator('#composer-save').click();
+  await expect(page.locator('#fragment-composer')).not.toBeVisible();
+
+  // The removal lands in A's file, and B keeps its own content.
+  expect(parseFragmentSource(remote.files.get(remote.paths.a)!.source).relations).toEqual([]);
+  expect(parseFragmentSource(remote.files.get(remote.paths.b)!.source).title).toBe('카드 B');
+  await expect(page.locator('[data-fragment-card="b"]')).toContainText('0개의 연결');
+  await expect(page.locator('[data-fragment-card="a"]')).toContainText('0개의 연결');
+  await page.locator('[data-fragment-card="b"]').click();
+  await expect(page.locator('#fragment-dialog-relations')).toContainText('아직 연결된 개념이 없습니다');
 });

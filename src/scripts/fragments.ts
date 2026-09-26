@@ -1,4 +1,4 @@
-import { filterFocusOptions, focusOptions, graphData, graphNodeDiameter, resolveFocus, graphNodeSpacing, paginate, parseState, relationLabels, searchFragments, separateNodes, stateUrl, type PublicFragment } from '../lib/fragments';
+import { cardRelations, filterFocusOptions, focusOptions, graphData, graphNodeDiameter, resolveFocus, graphNodeSpacing, paginate, parseState, relationLabels, searchFragments, separateNodes, stateUrl, type PublicFragment } from '../lib/fragments';
 import { CATEGORIES } from '../consts';
 import type { Core, EdgeSingular, LayoutOptions, NodeSingular } from 'cytoscape';
 import { createWriterConfig } from '../lib/fragment-writer';
@@ -337,10 +337,13 @@ function setRefreshing(busy: boolean) {
   button.disabled = busy;
 }
 window.addEventListener('fragment-saved', event => {
-  const { card } = (event as CustomEvent<{ card: PublicFragment; path: string }>).detail;
+  const { card, detached = [] } = (event as CustomEvent<{ card: PublicFragment; path: string; detached?: string[] }>).detail;
   // An earlier GET must never overwrite the result of a completed save.
   snapshotGeneration++;
-  updateCollection([...cards.filter(item => item.id !== card.id), card]);
+  // The same commit removed this card's relation from the cards the author detached from.
+  const others = cards.filter(item => item.id !== card.id).map(item => !detached.includes(item.id) ? item
+    : { ...item, relations: item.relations.filter(relation => relation.target !== card.id) });
+  updateCollection([...others, card]);
   $('fragment-sync-status').textContent = '저장한 카드를 현재 목록에 반영했습니다.';
 });
 $('fragment-sync-retry').addEventListener('click', () => void refreshCards());
@@ -391,7 +394,8 @@ function renderDialog() {
   // Build HTML and live Markdown HTML are sanitized before reaching this boundary.
   $('fragment-dialog-body').innerHTML = card.html;
   $('fragment-dialog-tags').replaceChildren(...card.tags.map(tag => text('span', `#${tag}`)));
-  const links = card.relations.map(rel => button(`${relationLabels[rel.type]} · ${byId.get(rel.target)?.title ?? rel.target}`, () => openCard(rel.target, true)));
+  // Both cards show the same edge; the one that did not store it reads the opposite name.
+  const links = cardRelations(cards, card.id).map(rel => button(`${rel.label} · ${byId.get(rel.target)?.title ?? rel.target}`, () => openCard(rel.target, true)));
   $('fragment-dialog-relations').replaceChildren(...(links.length ? links : [text('p', '아직 연결된 개념이 없습니다.', 'fragment-hint')]));
   if (!dialog.open) dialog.showModal();
   $('fragment-close').focus();
@@ -400,6 +404,11 @@ function render() {
   hasRendered = true;
   input.value = state.q; category.value = state.category; syncClearButtons();
   const found = searchFragments(cards, state.q, state.category);
+  // One pass over every card, so a page of 12 does not rescan the collection 12 times.
+  // Partners, not entries: a pair that somehow points both ways still counts once, as the popup shows it.
+  const partners = new Map<string, Set<string>>();
+  const link = (from: string, to: string) => (partners.get(from) ?? partners.set(from, new Set()).get(from)!).add(to);
+  for (const card of cards) for (const relation of card.relations) { link(card.id, relation.target); link(relation.target, card.id); }
   const page = paginate(found, state.page);
   state.page = page.page; url();
   $('fragment-count').textContent = `${found.length}개의 개념 · ${page.page} / ${page.pages} 페이지`;
@@ -410,7 +419,7 @@ function render() {
     item.setAttribute('aria-label', `${card.title} 자세히 보기`);
     item.append(text('span', card.category, 'fragment-card-category'), text('h2', card.title), text('p', card.summary));
     const tags = text('div', '', 'fragment-tags'); tags.append(...card.tags.map(tag => text('span', `#${tag}`)));
-    item.append(tags, text('span', `${card.relations.length}개의 연결 ↗`, 'fragment-card-footer'));
+    item.append(tags, text('span', `${partners.get(card.id)?.size ?? 0}개의 연결 ↗`, 'fragment-card-footer'));
     return item;
   }));
   const previous = button('이전', () => { state.page--; url('push'); render(); }); previous.disabled = page.page <= 1;
