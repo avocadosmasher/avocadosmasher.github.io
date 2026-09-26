@@ -30,7 +30,7 @@ const { config: writerConfig, error: configError } = writerConfigFromEnv(process
     <fieldset id="composer-relations">
       <legend>연결된 개념</legend>
       <p class="fragment-hint">이 카드에서 연결할 카드를 선택하세요. 추가·제거한 관계는 카드를 저장해야 반영됩니다.</p>
-      <p class="fragment-hint">같은 두 카드 사이에는 방향·유형과 무관하게 관계 하나만 허용합니다. 이미 연결된 대상은 선택할 수 없습니다. 반대편 카드에서 만든 관계는 해당 카드를 수정해 제거해주세요.</p>
+      <p class="fragment-hint">같은 두 카드 사이에는 방향·유형과 무관하게 관계 하나만 허용합니다. 이미 연결된 대상은 선택할 수 없습니다. 상대 카드에 저장된 관계도 이 목록에서 제거할 수 있으며, 저장하면 그 카드가 함께 수정됩니다.</p>
       <input type="hidden" name="relations" id="composer-relation-value" value="[]" />
       <label>관계 카드 검색<input id="composer-relation-search" type="search" placeholder="용어 또는 별칭으로 검색" /></label>
       <label>관계 대상<select id="composer-relation-target"><option value="">카드를 선택해주세요</option></select></label>

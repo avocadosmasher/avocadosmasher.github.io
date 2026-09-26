@@ -337,10 +337,13 @@ function setRefreshing(busy: boolean) {
   button.disabled = busy;
 }
 window.addEventListener('fragment-saved', event => {
-  const { card } = (event as CustomEvent<{ card: PublicFragment; path: string }>).detail;
+  const { card, detached = [] } = (event as CustomEvent<{ card: PublicFragment; path: string; detached?: string[] }>).detail;
   // An earlier GET must never overwrite the result of a completed save.
   snapshotGeneration++;
-  updateCollection([...cards.filter(item => item.id !== card.id), card]);
+  // The same commit removed this card's relation from the cards the author detached from.
+  const others = cards.filter(item => item.id !== card.id).map(item => !detached.includes(item.id) ? item
+    : { ...item, relations: item.relations.filter(relation => relation.target !== card.id) });
+  updateCollection([...others, card]);
   $('fragment-sync-status').textContent = '저장한 카드를 현재 목록에 반영했습니다.';
 });
 $('fragment-sync-retry').addEventListener('click', () => void refreshCards());

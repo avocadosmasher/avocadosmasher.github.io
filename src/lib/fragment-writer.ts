@@ -138,6 +138,8 @@ export function markdownForDraft(draft: WriterDraft): string {
   return `---\n${Object.entries(metadata).map(([key, value]) => `${key}: ${quote(value)}`).join('\n')}\n---\n${body}${body.endsWith('\n') ? '' : '\n'}`;
 }
 
+type WriteEntry = { path: string; content: string } | { path: string; sha: null };
+
 /** Pin relation checks and branch writes to the same revision. */
 async function mutationSnapshot(config: WriterConfig, token: string, upstream: typeof fetch) {
   const sha = (value: unknown): string => {
@@ -174,8 +176,10 @@ async function mutationSnapshot(config: WriterConfig, token: string, upstream: t
     if (error instanceof WriterError && ['auth', 'permission', 'rate-limit'].includes(error.code)) throw error;
     throw new WriterError('snapshot', '최신 카드와 관계를 조회·검증하지 못해 저장·삭제 요청을 보내지 않았습니다. 입력은 유지됩니다. 잠시 후 다시 시도하고, 계속 실패하면 저장소의 카드 원문과 관계 대상을 확인해주세요.');
   }
-  const publish = async (entry: { path: string; content: string } | { path: string; sha: null }, message: string) => {
-    const tree = await json('/git/trees', 'POST', { base_tree: baseTree, tree: [{ ...entry, mode: '100644', type: 'blob' }] });
+  // One commit can carry several files, so a change that touches two cards cannot half-apply.
+  const publish = async (entry: WriteEntry | WriteEntry[], message: string) => {
+    const entries = Array.isArray(entry) ? entry : [entry];
+    const tree = await json('/git/trees', 'POST', { base_tree: baseTree, tree: entries.map(item => ({ ...item, mode: '100644', type: 'blob' })) });
     const commit = await json('/git/commits', 'POST', { message, tree: sha(tree.sha), parents: [head] });
     const committedSha = sha(commit.sha);
     const updated = await json(`/git/refs/heads/${branch}`, 'PATCH', { sha: committedSha, force: false });
@@ -185,8 +189,12 @@ async function mutationSnapshot(config: WriterConfig, token: string, upstream: t
   return { snapshot, head, publish };
 }
 
-/** Relation edits must not race with deletion of a selected target. */
-export async function saveRelationChanges(config: WriterConfig, token: string, draft: WriterDraft, existing?: ExistingFragment, upstream: typeof fetch = fetch) {
+/**
+ * Relation edits must not race with deletion of a selected target.
+ * `detach` names other cards whose relation to this one the author removed from this form;
+ * they travel in the same commit, so the pair never ends up half-removed.
+ */
+export async function saveRelationChanges(config: WriterConfig, token: string, draft: WriterDraft, existing?: ExistingFragment, upstream: typeof fetch = fetch, detach: string[] = []) {
   const path = filePath(existing?.path ?? `src/content/fragments/${draft.id}.md`);
   if (existing && (existing.draft.id !== draft.id || !/^[a-f0-9]{40}$/.test(existing.sha))) throw new WriterError('conflict', '원래 카드 ID와 버전을 유지해주세요.');
   const markdown = markdownForDraft(draft);
@@ -194,13 +202,33 @@ export async function saveRelationChanges(config: WriterConfig, token: string, d
   if (new Set(keys).size !== keys.length) throw new WriterError('relation', '같은 두 카드 사이에는 방향·유형과 무관하게 관계 하나만 허용합니다. 중복 관계를 제거해주세요.');
   const { snapshot, head, publish } = await mutationSnapshot(config, token, upstream);
   const current = snapshot.find(card => card.path === path);
-  if (current && markdownForDraft(current.draft) === markdown) return { recovered: true, url: `https://github.com/${config.repo}/commit/${head}` };
+  // Cards this form detached from: drop their relation to this card, in the same commit.
+  // A card that is already gone needs no write; its relation went with it.
+  const detached = [...new Set(detach)].flatMap(id => {
+    const card = snapshot.find(item => item.draft.id === id);
+    if (!card || card.path === path) return [];
+    return [{ path: card.path, draft: { ...card.draft, relations: card.draft.relations.filter(relation => relation.target !== draft.id) } }];
+  });
+  const detachedPaths = new Set(detached.map(card => card.path));
+  const entries = [{ path, content: markdown },
+    ...detached.map(card => ({ path: card.path, content: markdownForDraft(card.draft) }))];
+  // A lost response leaves the files already written; compare before asking for another commit.
+  const pending = entries.filter(entry => {
+    const stored = snapshot.find(card => card.path === entry.path);
+    return !stored || markdownForDraft(stored.draft) !== entry.content;
+  });
+  if (!pending.length) return { recovered: true, url: `https://github.com/${config.repo}/commit/${head}` };
   if (existing ? !current || current.sha !== existing.sha || current.draft.id !== draft.id : !!current) throw new WriterError('conflict', '다른 곳에서 카드가 변경되었습니다. 필요한 입력을 복사한 뒤 새로고침하고 다시 수정해주세요.');
-  const reverse = snapshot.find(card => keys.includes(card.draft.id) && card.draft.relations.some(relation => relation.target === draft.id));
-  if (reverse) throw new WriterError('relation', `“${reverse.draft.title}” 카드에서 이미 이 카드로 연결되어 있습니다. 같은 두 카드 사이에는 관계 하나만 허용합니다. 추가한 관계를 제거하거나 해당 카드에서 기존 관계를 제거·저장한 뒤 다시 시도해주세요.`);
-  try { validateFragments([...snapshot.filter(card => card.path !== path).map(card => card.draft), draft]); }
+  const reverse = snapshot.find(card => keys.includes(card.draft.id) && !detachedPaths.has(card.path) && card.draft.relations.some(relation => relation.target === draft.id));
+  if (reverse) throw new WriterError('relation', `“${reverse.draft.title}” 카드에서 이미 이 카드로 연결되어 있습니다. 같은 두 카드 사이에는 관계 하나만 허용합니다. 새로고침한 뒤 관계 목록에서 기존 관계를 제거하고 다시 저장해주세요.`);
+  try {
+    validateFragments([...snapshot.filter(card => card.path !== path && !detachedPaths.has(card.path)).map(card => card.draft), ...detached.map(card => card.draft), draft]);
+  }
   catch { throw new WriterError('conflict', '관계 대상이 없어졌거나 자기 자신을 참조합니다. 입력을 복사한 뒤 새로고침하여 관계 대상을 다시 확인해주세요.'); }
-  return { recovered: false, url: await publish({ path, content: markdown }, `feat(fragments): save relations for ${draft.id}`) };
+  const message = detached.length
+    ? `feat(fragments): save relations for ${draft.id} and ${detached.map(card => card.draft.id).join(', ')}`
+    : `feat(fragments): save relations for ${draft.id}`;
+  return { recovered: false, url: await publish(pending, message) };
 }
 
 /** Delete against one complete revision, then publish only as a fast-forward. */

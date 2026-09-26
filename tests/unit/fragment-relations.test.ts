@@ -101,3 +101,28 @@ it('preserves concurrent commits and recovers a lost successful response without
   expect((await saveRelationChanges(config, 'token', changed, existing, lost.fetcher)).recovered).toBe(true);
   expect(lost.writes).toHaveLength(3);
 });
+it('removes the other card\'s relation to this one in the same commit', async () => {
+  const { fetcher, writes } = remote('reverse');
+  await saveRelationChanges(config, 'token', a, existing, fetcher, ['b']);
+  // A is untouched, so only the card that held the relation is rewritten — in one commit.
+  expect(writes[0].body.tree).toEqual([{ path: 'src/content/fragments/b.md', mode: '100644', type: 'blob', content: markdownForDraft(b) }]);
+  expect(writes[1].body.message).toContain('b');
+  expect(writes.filter(write => write.endpoint === '/git/commits')).toHaveLength(1);
+});
+it('lets this card take over a relation the other card held', async () => {
+  const { fetcher, writes } = remote('reverse');
+  await saveRelationChanges(config, 'token', changed, existing, fetcher, ['b']);
+  expect(writes[0].body.tree).toEqual([
+    { path: existing.path, mode: '100644', type: 'blob', content: markdownForDraft(changed) },
+    { path: 'src/content/fragments/b.md', mode: '100644', type: 'blob', content: markdownForDraft(b) },
+  ]);
+});
+it('treats an already deleted card as detached and writes nothing more', async () => {
+  const { fetcher, writes } = remote('missing');
+  await expect(saveRelationChanges(config, 'token', a, existing, fetcher, ['b'])).resolves.toMatchObject({ recovered: true });
+  expect(writes).toEqual([]);
+});
+it('does not overwrite a concurrent change to the other card', async () => {
+  const { fetcher } = remote('race');
+  await expect(saveRelationChanges(config, 'token', changed, existing, fetcher, ['b'])).rejects.toMatchObject({ code: 'conflict' });
+});
