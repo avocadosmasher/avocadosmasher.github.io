@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fragment 최종 보고서</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root {
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --surface-2: #f1efea;
+  --text: #1f1e1c;
+  --muted: #6b675f;
+  --line: #e3e0d8;
+  --accent: #2f6f5e;
+  --accent-soft: #e2efe9;
+  --done: #2f6f5e;
+  --warn: #9a6a12;
+  --warn-soft: #f6ecd6;
+  --low: #6b675f;
+  --code-bg: #efece5;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171816;
+    --surface: #1f201e;
+    --surface-2: #262724;
+    --text: #ecebe6;
+    --muted: #a19d93;
+    --line: #34352f;
+    --accent: #7cc4ad;
+    --accent-soft: #22342e;
+    --done: #7cc4ad;
+    --warn: #e0b35a;
+    --warn-soft: #3a3020;
+    --low: #a19d93;
+    --code-bg: #2b2c28;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171816; --surface: #1f201e; --surface-2: #262724; --text: #ecebe6;
+  --muted: #a19d93; --line: #34352f; --accent: #7cc4ad; --accent-soft: #22342e;
+  --done: #7cc4ad; --warn: #e0b35a; --warn-soft: #3a3020; --low: #a19d93;
+  --code-bg: #2b2c28; --shadow: none;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+a { color: var(--accent); text-underline-offset: 3px; }
+code {
+  font-family: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: .86em;
+  background: var(--code-bg);
+  padding: .1em .38em;
+  border-radius: 4px;
+}
+del { color: var(--muted); }
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 48px;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 48px 32px 96px;
+}
+nav.toc { position: sticky; top: 32px; align-self: start; font-size: 14px; }
+nav.toc .label { font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+nav.toc li { counter-increment: toc; }
+nav.toc a {
+  display: block;
+  padding: 5px 10px;
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+  text-decoration: none;
+}
+nav.toc a::before { content: counter(toc) ". "; }
+nav.toc a:hover, nav.toc a.active { color: var(--text); border-left-color: var(--accent); }
+.theme-btn {
+  margin-top: 20px;
+  height: 32px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.theme-btn:hover { color: var(--text); }
+
+header.hero { margin-bottom: 40px; }
+.eyebrow { font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: .04em; }
+h1 { font-size: 36px; line-height: 1.25; margin: 6px 0 12px; letter-spacing: -.02em; }
+.meta { color: var(--muted); font-size: 14px; }
+.lead { font-size: 17px; margin: 20px 0 0; max-width: 68ch; }
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 32px 0 8px;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 18px;
+  box-shadow: var(--shadow);
+}
+.stat .num { font-size: 28px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat .num small { font-size: 15px; font-weight: 500; color: var(--muted); margin-left: 2px; }
+.stat .cap { font-size: 13px; color: var(--muted); }
+
+section { margin-top: 56px; }
+h2 {
+  font-size: 24px;
+  letter-spacing: -.01em;
+  margin: 0 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+h2 .n { color: var(--accent); margin-right: 8px; font-variant-numeric: tabular-nums; }
+h3 { font-size: 18px; margin: 32px 0 10px; }
+p { margin: 0 0 14px; max-width: 72ch; }
+
+.table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  margin: 12px 0 16px;
+}
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 11px 16px; border-bottom: 1px solid var(--line); }
+th { font-size: 13px; font-weight: 600; color: var(--muted); background: var(--surface-2); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.k { font-weight: 600; white-space: nowrap; }
+td.ref { color: var(--muted); font-size: 13px; white-space: nowrap; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.callout {
+  background: var(--accent-soft);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin: 16px 0;
+  max-width: 72ch;
+}
+.callout p:last-child { margin: 0; }
+
+.flow {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin: 12px 0 16px;
+}
+.flow-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.flow-row + .flow-row { margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--line); }
+.node {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.node.branch { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: 13px; border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.arrow { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.flow-label { font-size: 12px; font-weight: 600; color: var(--muted); width: 100%; margin-bottom: 2px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 0; padding: 0; list-style: none; }
+.chips li { font-size: 13.5px; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+
+.bar-row { display: grid; grid-template-columns: 110px minmax(0,1fr) 72px; align-items: center; gap: 12px; font-size: 14px; padding: 6px 0; }
+.bar-row code { background: none; padding: 0; }
+.bar { height: 10px; background: var(--surface-2); border-radius: 5px; overflow: hidden; }
+.bar span { display: block; height: 100%; background: var(--accent); border-radius: 5px; }
+.bar-row .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.limits { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 10px; }
+.limits li {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: 76px minmax(0,1fr);
+  gap: 14px;
+  align-items: start;
+}
+.tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-align: center;
+  white-space: nowrap;
+}
+.tag.done { color: var(--done); background: var(--accent-soft); }
+.tag.open { color: var(--warn); background: var(--warn-soft); }
+.tag.low { color: var(--low); background: var(--surface-2); }
+.limits li.resolved .body { color: var(--muted); }
+
+ol.steps { padding-left: 22px; max-width: 72ch; }
+ol.steps li { margin-bottom: 6px; }
+
+footer { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); padding: 32px 16px 64px; gap: 0; }
+  nav.toc { display: none; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  h1 { font-size: 28px; }
+}
+@media (max-width: 520px) {
+  .limits li { grid-template-columns: minmax(0,1fr); gap: 6px; }
+  .bar-row { grid-template-columns: 90px minmax(0,1fr) 56px; }
+  th, td { padding: 10px 12px; }
+}
+@media print {
+  nav.toc, .theme-btn { display: none; }
+  .layout { grid-template-columns: 1fr; padding: 0; }
+  section { break-inside: avoid-page; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="목차">
+  <div class="label">목차</div>
+  <ol>
+    <li><a href="#s1">결론</a></li>
+    <li><a href="#s2">구현 결과</a></li>
+    <li><a href="#s3">구조</a></li>
+    <li><a href="#s4">변경 규모</a></li>
+    <li><a href="#s5">검증 증거</a></li>
+    <li><a href="#s6">제약과 미해결 항목</a></li>
+    <li><a href="#s7">운영법</a></li>
+    <li><a href="#s8">후속 과제</a></li>
+  </ol>
+  <button class="theme-btn" type="button" id="themeBtn">테마 전환</button>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">최종 보고서</div>
+  <h1>Fragment 개발 최종 보고서</h1>
+  <div class="meta">작성일 2026-09-24 · 갱신 2026-09-27 · 대상 <code>avocadosmasher/avocadosmasher.github.io</code> · 작업 브랜치 <code>feat/fragments</code></div>
+  <p class="lead">이 문서는 계획의 요약이 아니라 <strong>실제로 무엇이 동작하는지와 그 근거</strong>를 적는다. 계획 자체는 <code>plan/Fragment-TDD-개발계획.md</code>, 작업별 경위는 <code>log/INDEX.md</code>, 사용법은 <code>guide/Fragment-운영가이드.md</code>에 있다.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="num">167</div><div class="cap">자동 테스트 전부 통과</div></div>
+    <div class="stat"><div class="num">14<small>일</small></div><div class="cap">09-11 계획 ~ 09-24</div></div>
+    <div class="stat"><div class="num">48</div><div class="cap">커밋 (기능 브랜치)</div></div>
+    <div class="stat"><div class="num">2.4<small>MB</small></div><div class="cap">배포 산출물 (7.4MB에서)</div></div>
+  </div>
+</header>
+
+<section id="s1">
+  <h2><span class="n">1</span>결론</h2>
+  <p>Astro 정적 블로그에 <strong>Fragments(용어 카드) 기능</strong>을 추가했다. 방문자는 카드를 검색·필터·팝업·관계 그래프로 탐색하고, 작성자는 <strong>브라우저에서 GitHub 로그인 후 카드를 만들고 고치고 지운 뒤 원하는 시점에 한 번 발행</strong>한다. 별도 서버나 DB 없이 GitHub 저장소와 Actions만 쓴다.</p>
+  <div class="callout">
+    <p>2026-09-24 운영 사이트에서 로그인 → 저장 → 수정 → 삭제 → 발행 → 배포 반영까지 전체 흐름을 사용자가 확인했다(H05). 따라서 이 보고서는 중간 보고서가 아니라 <strong>최종 보고서</strong>다. 다만 6장의 미해결 항목은 남아 있다.</p>
+  </div>
+  <p>공개 주소: <a href="https://avocadosmasher.github.io/fragments/">avocadosmasher.github.io/fragments</a> · 작업 로그 항목 53개</p>
+</section>
+
+<section id="s2">
+  <h2><span class="n">2</span>구현 결과</h2>
+
+  <h3>2.1 방문자가 쓰는 것</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>기능</th><th>실제 동작</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td class="k">카드 목록</td><td>용어·요약·카테고리 표시, 12개씩 페이지네이션, 빈 상태 안내</td><td class="ref">C02~C04, D03</td></tr>
+      <tr><td class="k">검색</td><td>용어·별칭·요약·카테고리·태그 5개 필드. 한글 정규화, 완전 일치 우선</td><td class="ref">D01, D02</td></tr>
+      <tr><td class="k">필터·URL</td><td>카테고리 AND 결합, <code>q</code>/<code>category</code>/<code>page</code>/<code>card</code>/<code>view</code>를 URL에 저장하고 새로고침·뒤로가기로 복원</td><td class="ref">D04, D05</td></tr>
+      <tr><td class="k">카드 팝업</td><td>카드 클릭 또는 직접 링크로 dialog 열기, Escape·포커스 복원, 관련 카드로 이동</td><td class="ref">E01~E04</td></tr>
+      <tr><td class="k">관계 그래프</td><td>그래프 전환 시에만 청크 로딩. 중심 카드와 이웃 강조, 확대/초기화, 노드 클릭 시 같은 팝업</td><td class="ref">F01~F05</td></tr>
+      <tr><td class="k">관계 양방향</td><td>팝업·푸터가 들어오는 관계를 역 이름으로 함께 표시</td><td class="ref">R01</td></tr>
+      <tr><td class="k">접근성·반응형</td><td>390px/1280px, 밝은·어두운 테마, 키보드만으로 검색→카드→팝업→그래프 이동. 실제 모바일 단말 확인 완료</td><td class="ref">H01, 로그 57</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>2.2 작성자가 쓰는 것</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>기능</th><th>실제 동작</th><th>근거</th></tr></thead>
+    <tbody>
+      <tr><td class="k">로그인</td><td>블로그 화면 안에서 GitHub OAuth 팝업. 토큰은 탭 세션에만, 열 때 쓰기 권한 재확인</td><td class="ref">G02-UI, D04</td></tr>
+      <tr><td class="k">작성·수정</td><td>블로그 디자인 안의 전용 폼. 제목이 바뀌어도 ID·파일명 유지</td><td class="ref">G01~G03-UI</td></tr>
+      <tr><td class="k">관계 편집</td><td>카드 검색 → 유형 선택 → 추가/제거. 자기 참조와 중복 금지. 반대편 카드에서도 제거 가능하며 두 파일이 한 커밋으로 수정된다</td><td class="ref">G04-UI, R02</td></tr>
+      <tr><td class="k">삭제</td><td>확인 후 삭제. <strong>다른 카드가 참조하면 차단</strong>하고 참조 카드 제목을 알려 준다</td><td class="ref">G08-UI</td></tr>
+      <tr><td class="k">실패 복구</td><td>응답 유실 시 같은 파일을 다시 확인해 중복 쓰기 없이 복구. 동시 변경은 덮어쓰지 않고 충돌로 알린다</td><td class="ref">G06</td></tr>
+      <tr><td class="k">재로그인</td><td>만료·권한 실패는 실패 안내 안에서 바로 재로그인하고, 입력한 초안 그대로 같은 버튼으로 이어서 마무리</td><td class="ref">G05/G06-UI</td></tr>
+      <tr><td class="k">발행</td><td>저장은 <code>fragments-draft</code>에만. 대기 목록을 펼쳐 보고 항목별로 빼낼 수 있으며, 발행 버튼 한 번이 <code>main</code> 병합 한 번 = 배포 한 번</td><td class="ref">D01~D05</td></tr>
+      <tr><td class="k">배포 추적</td><td>발행한 커밋의 Actions 실행을 지목해 진행·성공·실패·취소를 화면에 표시. 실패해도 이전 배포가 유지됨을 안내</td><td class="ref">D03, D06, D07</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>2.3 범위에서 제외한 것 (계획대로 미구현)</h3>
+  <ul class="chips">
+    <li>AI 관계 추론</li><li>별도 DB</li><li>비공개 카드</li><li>전역 블로그 검색 통합</li><li>이미지 업로드</li>
+  </ul>
+</section>
+
+<section id="s3">
+  <h2><span class="n">3</span>구조</h2>
+
+  <h3>3.1 데이터</h3>
+  <p>카드 하나 = <code>src/content/fragments/&lt;id&gt;.md</code> 한 파일. 프론트매터는 <code>src/lib/fragments.ts</code>의 zod 스키마가 계약이다: 필수 <code>id</code>·<code>title</code>·<code>summary</code>·<code>category</code>, 선택 <code>aliases</code>·<code>tags</code>·<code>relations</code>. ID는 제목과 무관하게 고정되고, 관계는 ID로만 저장한다. 없는 대상·자기 참조·모르는 관계 유형은 빌드에서 거부된다.</p>
+
+  <h3>3.2 브랜치 두 개</h3>
+  <div class="flow" role="img" aria-label="작성자 저장은 fragments-draft로 가고, 발행 버튼이 main에 병합하면 Actions가 GitHub Pages에 배포한다. 방문자는 main을, 로그인한 작성자는 fragments-draft를 읽는다.">
+    <div class="flow-row">
+      <div class="flow-label">쓰기</div>
+      <span class="node">작성자 저장</span><span class="arrow">→</span>
+      <span class="node branch">fragments-draft</span><span class="arrow">→ 발행 버튼 = 병합 1회 →</span>
+      <span class="node branch">main</span><span class="arrow">→</span>
+      <span class="node">Actions</span><span class="arrow">→</span>
+      <span class="node">GitHub Pages</span>
+    </div>
+    <div class="flow-row">
+      <div class="flow-label">읽기</div>
+      <span class="node">방문자</span><span class="arrow">←</span><span class="node branch">main</span><span class="arrow">(빌드 산출물)</span>
+      <span class="arrow" style="margin-left:16px">·</span>
+      <span class="node">로그인한 작성자</span><span class="arrow">←</span><span class="node branch">fragments-draft</span>
+    </div>
+  </div>
+  <p>저장할 때마다 배포가 돌던 문제를 이 구조로 해결했다(D01, 3안 비교는 로그 42).</p>
+
+  <h3>3.3 모듈 지도</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>파일</th><th>역할</th></tr></thead>
+    <tbody>
+      <tr><td><code>src/lib/fragments.ts</code></td><td>스키마, 검색·정렬·페이지 계산, URL 상태, 그래프 데이터</td></tr>
+      <tr><td><code>src/lib/fragment-writer.ts</code></td><td>GitHub 저장·수정·삭제, 권한 확인, 빌드 변수로 저장 대상 결정(운영은 <code>production: true</code> 명시 필요)</td></tr>
+      <tr><td><code>src/lib/fragment-publish.ts</code></td><td>대기 카드 계산(커밋이 아니라 <strong>카드 파일 변경</strong> 기준), 병합 발행, 대기 항목 되돌리기</td></tr>
+      <tr><td><code>src/lib/fragment-deploy.ts</code></td><td>발행 커밋의 워크플로 실행을 찾아 진행/성공/실패/취소 판정</td></tr>
+      <tr><td><code>src/lib/fragment-snapshot.ts</code></td><td>같은 리비전의 전체 카드를 blob ID로 한 번에 읽기(부분 로딩 거부)</td></tr>
+      <tr><td><code>src/lib/fragment-session.ts</code></td><td>탭 세션 토큰 보관·폐기. 저장소·브랜치가 다르면 토큰을 내주지 않음</td></tr>
+      <tr><td><code>src/lib/fragment-recovery.ts</code></td><td>실패 원인별 안내와 재로그인 필요 여부 판정</td></tr>
+      <tr><td><code>src/lib/fragment-writer-login.ts</code></td><td>Worker 핸드셰이크. 자격 정보는 현재 페이지 메모리에만</td></tr>
+      <tr><td><code>src/scripts/fragments.ts</code></td><td>목록·검색·팝업·그래프·발행 UI의 클라이언트 동작</td></tr>
+      <tr><td><code>src/scripts/fragment-composer.ts</code><br><code>fragment-relations.ts</code></td><td>작성 폼과 관계 편집기</td></tr>
+      <tr><td><code>workers/fragment-oauth/worker.ts</code></td><td>PKCE S256, HMAC 서명 state, HttpOnly 쿠키, Durable Object 10분 1회용 세션</td></tr>
+    </tbody>
+  </table></div>
+  <p>초기 연동 실험에 쓰던 <code>/admin/</code>(Decap CMS)은 2026-09-24에 제거했다(K01). 저장 계약(<code>prepareFragmentSave</code>)은 <code>fragments.ts</code>로, 저장소·브랜치 상수와 테스트 저장 설정 검증은 <code>fragment-writer.ts</code>로 옮겼다.</p>
+
+  <h3>3.4 빌드와 배포</h3>
+  <p><code>verify.yml</code>(재사용 워크플로)을 <code>ci.yml</code>(PR·개발 브랜치)과 <code>deploy.yml</code>(main)이 공유한다. 검사가 실패하면 배포 job은 실행되지 않고, 배포에는 검사를 통과한 그 <code>dist/</code>를 그대로 쓴다. 운영 origin을 넘긴 빌드에는 <code>grep -q '"production":true'</code> 게이트가 걸려, 저장 설정이 빠진 산출물이 배포되지 못한다.</p>
+</section>
+
+<section id="s4">
+  <h2><span class="n">4</span>변경 규모</h2>
+  <p>기능 시작 지점 <code>01e7892</code> 기준: <strong>178개 파일, +15,323 / −2,066줄</strong>.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>영역</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td class="k">기능 코드</td><td><code>src/lib/</code> 10개, <code>src/scripts/</code> 3개, <code>FragmentComposer.astro</code>, <code>pages/fragments/index.astro</code></td></tr>
+      <tr><td class="k">인증</td><td><code>workers/fragment-oauth/</code> (worker, wrangler 설정, README)</td></tr>
+      <tr><td class="k">테스트</td><td>unit 14 · integration 3 · e2e 2 · oauth 7 · draft 1 · h01 1 · h02 1</td></tr>
+      <tr><td class="k">자동화</td><td><code>.github/workflows/</code> 3개, <code>.githooks/</code>, <code>scripts/</code> 7개(fixture 생성, preview 검사, 로그 생성, 수동 검증 게이트 등)</td></tr>
+      <tr><td class="k">문서</td><td><code>docs/</code> 아래 계획·결정·가이드·보관 + 작업 로그</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s5">
+  <h2><span class="n">5</span>검증 증거</h2>
+
+  <h3>5.1 자동 검사</h3>
+  <p class="meta">2026-09-24 재실행 · Windows 11 / Node v24.14.0 / Astro 5.18.2 / Playwright 1.63.0 / Chromium</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>명령</th><th>범위</th><th>결과</th></tr></thead>
+    <tbody>
+      <tr><td><code>npm run check</code></td><td>astro check 88파일</td><td class="num">0 errors · 4 hints</td></tr>
+      <tr><td><code>npm test</code></td><td>단위 14 + 통합 3파일</td><td class="num">99 passed</td></tr>
+      <tr><td><code>npm run build</code></td><td>정적 빌드</td><td class="num">12 pages</td></tr>
+      <tr><td><code>npm run test:e2e:preview</code></td><td>빌드 산출물 preview E2E</td><td class="num">8 passed</td></tr>
+      <tr><td><code>npm run test:h01</code></td><td>25카드 fixture, 모바일·테마·접근성</td><td class="num">4 passed</td></tr>
+      <tr><td><code>npm run test:h02</code></td><td>500카드·1,500간선 성능</td><td class="num">3 passed</td></tr>
+      <tr><td><code>npm run test:oauth</code></td><td>로그인·저장·수정·삭제·관계·동기화</td><td class="num">34 passed</td></tr>
+      <tr><td><code>npm run test:draft</code></td><td>초안 브랜치·발행·배포 상태</td><td class="num">15 passed</td></tr>
+    </tbody>
+  </table></div>
+  <p>합계 167개 통과, 실패 0, 미실행 0. K01에서 <code>/admin/</code>을 제거한 뒤에는 <strong>159개</strong>이며, 전부 CI 게이트 안에서 돈다. 요구사항별 대응표는 <code>log/52-I02.md</code> 2장에 있다.</p>
+
+  <h3>성능 (H02, 개발 PC / Chromium / 로컬)</h3>
+  <div class="table-wrap" style="padding:14px 18px">
+    <div class="bar-row"><span>검색 p95</span><div class="bar"><span style="width:1.5%"></span></div><span class="v">2.9ms</span></div>
+    <div class="meta" style="margin:-2px 0 10px">목표 200ms 대비 약 1.5%</div>
+    <div class="bar-row"><span>그래프 준비</span><div class="bar"><span style="width:54%"></span></div><span class="v">1,077ms</span></div>
+    <div class="meta" style="margin:-2px 0 0">목표 2초 대비 약 54% · 측정 범위 881~1,077ms · CI 러너 한도는 3초(H02-CI)</div>
+  </div>
+
+  <h3>5.2 운영 반영 이력</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>PR</th><th>병합 커밋</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td class="k">#1</td><td><code>342997e</code></td><td>Fragments 탭과 웹 작성·수정 기능의 첫 운영 반영</td></tr>
+      <tr><td class="k">#2</td><td><code>2052c61</code></td><td>작성자의 웹 편집이 배포를 막던 결함 수정(H05-FIX)</td></tr>
+      <tr><td class="k">#3</td><td><code>ed109ab</code></td><td>초안 브랜치 저장과 발행 버튼</td></tr>
+      <tr><td class="k">#4</td><td><code>24cbc41</code></td><td>로그인 유지, 발행 대기 목록, 배포 상태 표시</td></tr>
+      <tr><td class="k">#5</td><td><code>366c6b2</code></td><td>발행 대기 표시 정정과 배포 상태 실패 노출</td></tr>
+      <tr><td class="k">#6</td><td><code>2c0711d</code></td><td>로그인한 작성자의 카드 조회에 토큰 사용, 새로고침 버튼 이동</td></tr>
+      <tr><td class="k">#8</td><td><code>0dd9dd6</code></td><td>관계 양방향 표시·편집(R01·R02)</td></tr>
+    </tbody>
+  </table></div>
+  <p>Actions 실행 기록: <a href="https://github.com/avocadosmasher/avocadosmasher.github.io/actions">github.com/avocadosmasher/avocadosmasher.github.io/actions</a></p>
+
+  <h3>5.3 사람이 확인한 것</h3>
+  <p>작업마다 자동 검사 후 사용자 수동 판정을 받았고, 승인 없이는 커밋되지 않도록 <code>.githooks</code>의 pre-commit·pre-push가 승인 트리를 검사한다(<code>scripts/manual-review.mjs</code>). 2026-09-24 운영 사이트에서 전체 흐름을, 2026-09-27 실제 모바일 단말에서의 동작을 확인했다(H05, 로그 57).</p>
+</section>
+
+<section id="s6">
+  <h2><span class="n">6</span>제약과 미해결 항목</h2>
+  <ul class="limits">
+    <li class="resolved"><span class="tag done">해결</span><div class="body"><del>/admin/ Decap 번들 5.0MB</del> → K01에서 제거. 배포 산출물 7.4MB → 2.4MB.</div></li>
+    <li class="resolved"><span class="tag done">해결</span><div class="body"><del>npm run test:admin이 CI 밖</del> → K01에서 함께 정리. 남은 검사는 모두 CI 게이트 안에 있다.</div></li>
+    <li><span class="tag open">남음</span><div class="body"><strong>스크린리더 미검증.</strong> 자동화는 에뮬레이션과 키보드 흐름까지다. 실제 모바일 단말은 2026-09-27 사용자가 확인했다.</div></li>
+    <li><span class="tag open">남음</span><div class="body"><strong>성능은 기기 의존.</strong> 그래프 2초는 개발 PC 목표, CI 한도 3초.</div></li>
+    <li><span class="tag open">남음</span><div class="body"><strong>로컬에서 운영 OAuth 로그인 불가</strong>(Worker가 운영 도메인만 허용). 운영 인증 회귀는 배포 사이트에서 사람이 확인한다.</div></li>
+    <li><span class="tag open">남음</span><div class="body"><strong>GitHub API 한도.</strong> 익명 조회 IP당 60회/시간(로그인 시 토큰 사용으로 완화), 배포 반영까지 3~4분, 연속 발행 시 이전 실행이 취소될 수 있다.</div></li>
+    <li><span class="tag low">수용</span><div class="body"><strong>초안은 공개 저장소의 <code>fragments-draft</code>에 있다.</strong> 발행 전 내용도 저장소에서 읽힌다. 2026-09-27 재검토 결과 초안은 숨길 글이 아니므로 그대로 두기로 했다.</div></li>
+  </ul>
+  <p class="meta">근거와 영향은 <code>log/52-I02.md</code> 4장에 있다.</p>
+</section>
+
+<section id="s7">
+  <h2><span class="n">7</span>운영법</h2>
+  <p>일상 작업 흐름, 동작 원리, 시행착오 15건, 설정 위치는 <code>guide/Fragment-운영가이드.md</code>에 있다. 요약하면:</p>
+  <ol class="steps">
+    <li><a href="https://avocadosmasher.github.io/fragments/">avocadosmasher.github.io/fragments</a>에서 GitHub 로그인</li>
+    <li>카드 작성·수정·삭제 → 저장은 초안 브랜치로 (배포 안 돎)</li>
+    <li>대기 목록 확인 → <strong>발행</strong> 한 번 → 배포 상태가 성공으로 바뀌면 3~4분 뒤 공개 반영</li>
+  </ol>
+  <div class="callout"><p>비밀값(<code>GITHUB_CLIENT_SECRET</code>, <code>OAUTH_STATE_SECRET</code>)은 Cloudflare Worker에만 둔다. 저장소·정적 산출물·문서에 넣지 않는다(I02에서 재확인).</p></div>
+</section>
+
+<section id="s8">
+  <h2><span class="n">8</span>후속 과제</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>상태</th><th>과제</th><th>내용</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag done">완료</span></td><td class="k">/admin/(Decap) 경로 제거</td><td>2026-09-24 K01. 배포 산출물 7.4MB → 2.4MB, CI 밖 검사 소멸</td></tr>
+      <tr><td><span class="tag done">완료</span></td><td class="k">관계의 양방향성</td><td>2026-09-24 R01·R02, PR #8로 배포. 관계를 양쪽 카드에서 보고 어느 쪽에서든 제거할 수 있다</td></tr>
+      <tr><td><span class="tag done">완료</span></td><td class="k">실제 모바일 단말 점검</td><td>2026-09-27 사용자가 운영 사이트에서 확인해 통과(로그 57)</td></tr>
+      <tr><td><span class="tag done">종결</span></td><td class="k">초안 비공개화 검토</td><td>2026-09-27 하지 않기로 결정. 초안은 숨길 글이 아니라 발행 전 글이다(로그 57)</td></tr>
+      <tr><td><span class="tag low">낮음</span></td><td class="k">스크린리더 접근성 점검</td><td>자동화가 덮지 못하는 범위. 사용 가능성이 낮아 보류</td></tr>
+      <tr><td><span class="tag low">낮음</span></td><td class="k">대량 카드 조회 방식</td><td>카드가 수백 개로 늘 때. 현재는 전체 스냅샷을 한 번에 읽는다</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>원본: <code>docs/Fragment-개발-최종보고서.md</code> · 이 HTML은 원본을 보기 좋게 옮긴 것이며, 내용이 다르면 원본이 기준이다.</footer>
+</main>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('themeBtn');
+  try { var saved = localStorage.getItem('report-theme'); if (saved) root.dataset.theme = saved; } catch (e) {}
+  btn.addEventListener('click', function () {
+    var dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('report-theme', root.dataset.theme); } catch (e) {}
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id); });
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  document.querySelectorAll('main section').forEach(function (s) { obs.observe(s); });
+})();
+</script>
+</body>
+</html>
