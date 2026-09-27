@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>게이트 TDD 개발법</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/static/pretendard.min.css">
+<style>
+:root {
+  --bg: #f7f6f3;
+  --surface: #ffffff;
+  --surface-2: #f1efea;
+  --text: #1f1e1c;
+  --muted: #6b675f;
+  --line: #e3e0d8;
+  --accent: #2f6f5e;
+  --accent-soft: #e2efe9;
+  --warn: #9a6a12;
+  --warn-soft: #f6ecd6;
+  --bad: #a4402f;
+  --bad-soft: #f6e2dc;
+  --code-bg: #efece5;
+  --pre-bg: #1f201e;
+  --pre-text: #e6e4dd;
+  --pre-muted: #8f8b80;
+  --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171816; --surface: #1f201e; --surface-2: #262724; --text: #ecebe6;
+    --muted: #a19d93; --line: #34352f; --accent: #7cc4ad; --accent-soft: #22342e;
+    --warn: #e0b35a; --warn-soft: #3a3020; --bad: #e98a76; --bad-soft: #3b2521;
+    --code-bg: #2b2c28; --pre-bg: #121311; --pre-text: #e6e4dd; --pre-muted: #8f8b80;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171816; --surface: #1f201e; --surface-2: #262724; --text: #ecebe6;
+  --muted: #a19d93; --line: #34352f; --accent: #7cc4ad; --accent-soft: #22342e;
+  --warn: #e0b35a; --warn-soft: #3a3020; --bad: #e98a76; --bad-soft: #3b2521;
+  --code-bg: #2b2c28; --pre-bg: #121311; --pre-text: #e6e4dd; --pre-muted: #8f8b80;
+  --shadow: none;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+a { color: var(--accent); text-underline-offset: 3px; }
+code {
+  font-family: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: .86em;
+  background: var(--code-bg);
+  padding: .1em .38em;
+  border-radius: 4px;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 48px;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 48px 32px 96px;
+}
+nav.toc { position: sticky; top: 32px; align-self: start; font-size: 14px; }
+nav.toc .label { font-size: 12px; font-weight: 600; letter-spacing: .06em; color: var(--muted); margin-bottom: 10px; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+nav.toc li { counter-increment: toc; }
+nav.toc a {
+  display: block;
+  padding: 5px 10px;
+  border-left: 2px solid var(--line);
+  color: var(--muted);
+  text-decoration: none;
+}
+nav.toc a::before { content: counter(toc) ". "; }
+nav.toc a:hover, nav.toc a.active { color: var(--text); border-left-color: var(--accent); }
+.btn {
+  height: 32px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn:hover { color: var(--text); }
+nav.toc .btn { margin-top: 20px; }
+
+header.hero { margin-bottom: 40px; }
+.eyebrow { font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: .04em; }
+h1 { font-size: 36px; line-height: 1.25; margin: 6px 0 12px; letter-spacing: -.02em; }
+.meta { color: var(--muted); font-size: 14px; }
+.lead { font-size: 17px; margin: 20px 0 0; max-width: 68ch; }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin: 32px 0 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; box-shadow: var(--shadow); }
+.stat .num { font-size: 28px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.stat .num small { font-size: 15px; font-weight: 500; color: var(--muted); margin-left: 2px; }
+.stat .cap { font-size: 13px; color: var(--muted); }
+
+section { margin-top: 56px; }
+h2 { font-size: 24px; letter-spacing: -.01em; margin: 0 0 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+h2 .n { color: var(--accent); margin-right: 8px; font-variant-numeric: tabular-nums; }
+h3 { font-size: 18px; margin: 32px 0 10px; }
+p { margin: 0 0 14px; max-width: 72ch; }
+ul.plain { max-width: 72ch; padding-left: 20px; margin: 0 0 14px; }
+ul.plain li { margin-bottom: 4px; }
+
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); margin: 12px 0 16px; }
+table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 11px 16px; border-bottom: 1px solid var(--line); }
+th { font-size: 13px; font-weight: 600; color: var(--muted); background: var(--surface-2); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.k { font-weight: 600; white-space: nowrap; }
+td.ref { color: var(--muted); font-size: 13px; }
+
+.callout { background: var(--accent-soft); border-radius: 10px; padding: 16px 20px; margin: 16px 0; max-width: 72ch; }
+.callout p:last-child { margin: 0; }
+.callout.warn { background: var(--warn-soft); }
+
+/* 사이클 */
+.cycle { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 16px 0; counter-reset: step; }
+.step {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px 16px 14px;
+  box-shadow: var(--shadow);
+  counter-increment: step;
+}
+.step::before {
+  content: counter(step);
+  display: inline-grid;
+  place-items: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  font-size: 12px; font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  margin-bottom: 6px;
+}
+.step .t { font-weight: 700; font-size: 15px; }
+.step .d { font-size: 13.5px; color: var(--muted); line-height: 1.55; margin-top: 2px; }
+.step.who-human { border-color: var(--warn); }
+.step.who-human::before { color: var(--warn); background: var(--warn-soft); }
+.step.gate { border-color: var(--accent); border-width: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: var(--muted); margin: 4px 0 14px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--line); background: var(--surface); }
+.legend .h::before { border-color: var(--warn); background: var(--warn-soft); }
+.legend .g::before { border: 2px solid var(--accent); }
+.loop-note { font-size: 14px; color: var(--muted); max-width: 72ch; }
+.loop-note strong { color: var(--bad); }
+
+/* 원칙 카드 */
+.principles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 16px 0; }
+.pr { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; box-shadow: var(--shadow); }
+.pr .no { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: .05em; }
+.pr h4 { margin: 2px 0 6px; font-size: 16px; }
+.pr p { font-size: 14.5px; margin: 0 0 8px; }
+.pr .why { font-size: 13px; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 8px; }
+.pr .why b { color: var(--text); font-weight: 600; }
+
+/* 파일 트리 */
+.tree {
+  font-family: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.8;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin: 12px 0 16px;
+  overflow-x: auto;
+  box-shadow: var(--shadow);
+}
+.tree .row { display: grid; grid-template-columns: minmax(220px, max-content) minmax(0, 1fr); gap: 16px; white-space: nowrap; }
+.tree .c { font-family: "Pretendard", sans-serif; color: var(--muted); font-size: 13.5px; white-space: normal; }
+
+/* 가이드 템플릿 */
+.template { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin: 12px 0 16px; box-shadow: var(--shadow); overflow: hidden; }
+.template .row { display: grid; grid-template-columns: 150px minmax(0, 1fr); border-bottom: 1px solid var(--line); }
+.template .row:last-child { border-bottom: 0; }
+.template .h { padding: 12px 16px; font-weight: 600; font-size: 14px; background: var(--surface-2); }
+.template .b { padding: 12px 16px; font-size: 14.5px; }
+
+.checklist { list-style: none; padding: 0; margin: 12px 0; max-width: 72ch; }
+.checklist li { padding: 8px 0 8px 30px; position: relative; border-bottom: 1px solid var(--line); }
+.checklist li:last-child { border-bottom: 0; }
+.checklist li::before {
+  content: ""; position: absolute; left: 2px; top: 12px;
+  width: 16px; height: 16px; border: 1.5px solid var(--accent); border-radius: 4px;
+}
+
+.do-dont { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 12px 0 16px; }
+.do-dont > div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; box-shadow: var(--shadow); }
+.do-dont .lbl { font-size: 12px; font-weight: 700; letter-spacing: .05em; margin-bottom: 6px; }
+.do-dont .yes .lbl { color: var(--accent); }
+.do-dont .no .lbl { color: var(--bad); }
+.do-dont ul { margin: 0; padding-left: 18px; font-size: 14.5px; }
+.do-dont li { margin-bottom: 4px; }
+
+/* SKILL */
+.skill-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 16px 0 0; }
+.skill-path { font-family: "JetBrains Mono", ui-monospace, Consolas, monospace; font-size: 13px; color: var(--muted); }
+.skill-actions { display: flex; gap: 8px; }
+pre.skill {
+  margin: 10px 0 16px;
+  background: var(--pre-bg);
+  color: var(--pre-text);
+  border-radius: 10px;
+  padding: 20px 22px;
+  font-family: "JetBrains Mono", ui-monospace, "Cascadia Code", Consolas, "Malgun Gothic", monospace;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-x: auto;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+  max-height: 720px;
+  overflow-y: auto;
+}
+pre.skill .fm { color: var(--pre-muted); }
+pre.skill .hd { color: #9fd8c5; font-weight: 700; }
+
+footer { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+
+@media (max-width: 900px) {
+  .layout { grid-template-columns: minmax(0, 1fr); padding: 32px 16px 64px; gap: 0; }
+  nav.toc { display: none; }
+  .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cycle { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .principles, .do-dont { grid-template-columns: minmax(0, 1fr); }
+  h1 { font-size: 28px; }
+}
+@media (max-width: 520px) {
+  .template .row { grid-template-columns: minmax(0, 1fr); }
+  .template .h { padding-bottom: 6px; }
+  th, td { padding: 10px 12px; }
+  .tree .row { grid-template-columns: minmax(0, 1fr); gap: 0; margin-bottom: 6px; }
+}
+@media print {
+  nav.toc, .skill-actions { display: none; }
+  .layout { grid-template-columns: 1fr; padding: 0; }
+  pre.skill { max-height: none; white-space: pre-wrap; }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="목차">
+  <div class="label">목차</div>
+  <ol>
+    <li><a href="#s1">한 태스크의 사이클</a></li>
+    <li><a href="#s2">원칙 10가지</a></li>
+    <li><a href="#s3">계획 세우기</a></li>
+    <li><a href="#s4">수동 테스트 가이드</a></li>
+    <li><a href="#s5">저장소 장치</a></li>
+    <li><a href="#s6">브랜치와 배포</a></li>
+    <li><a href="#s7">Fragments의 교훈</a></li>
+    <li><a href="#s8">도입 체크리스트</a></li>
+    <li><a href="#s9">SKILL</a></li>
+  </ol>
+  <button class="btn" type="button" id="themeBtn">테마 전환</button>
+</nav>
+
+<main>
+<header class="hero">
+  <div class="eyebrow">개발 방법론</div>
+  <h1>게이트 TDD 개발법</h1>
+  <div class="meta">정리일 2026-09-27 · 출처: Fragments 개발(2026-09-11 ~ 09-27) · <code>AGENTS.md</code>, <code>docs/decision/Fragment-커밋-전략.md</code>, 개발계획, 운영가이드 3장</div>
+  <p class="lead"><strong>작은 태스크 하나를 테스트 먼저 만들고, 사람이 “통과”라고 말해야만 커밋하는</strong> 개발 방식이다. 에이전트는 구현·자동 검사·기록을 맡고, 사람은 화면과 실제 동작을 판정한다. Git 훅은 승인 기록과 커밋할 내용의 일치를 검사한다. 실제 사용자 판정이 있었는지 확인하는 책임은 에이전트에게 있다.</p>
+
+  <div class="stats">
+    <div class="stat"><div class="num">57</div><div class="cap">M01 작성 전 로그 항목 (1항목 1파일)</div></div>
+    <div class="stat"><div class="num">167</div><div class="cap">2026-09-24 I02 검사, 전부 통과</div></div>
+    <div class="stat"><div class="num">8</div><div class="cap">운영 반영 PR</div></div>
+    <div class="stat"><div class="num">15</div><div class="cap">기록으로 남긴 시행착오</div></div>
+  </div>
+</header>
+
+<section id="s1">
+  <h2><span class="n">1</span>한 태스크의 사이클</h2>
+  <p><strong>판정 가능한 작은 작업 단위</strong>로 구현·테스트·기록을 묶는다. 가이드를 제시한 뒤 판정을 기다리며, 다음 작업으로 알아서 넘어가지 않는다. 작업 ID와 커밋 수가 항상 같은 것은 아니다(D06·D07은 함께 판정받고 같은 커밋으로 반영).</p>
+  <div class="legend"><span>에이전트</span><span class="h">사람</span><span class="g">게이트</span></div>
+  <div class="cycle">
+    <div class="step"><div class="t">Red</div><div class="d">기대 동작을 테스트로 먼저 쓰고 실패를 확인한다</div></div>
+    <div class="step"><div class="t">Green</div><div class="d">테스트를 통과시키는 최소 구현</div></div>
+    <div class="step"><div class="t">Refactor</div><div class="d">정리 후 해당 테스트와 영향받는 회귀 테스트 재실행</div></div>
+    <div class="step"><div class="t">자동 검사</div><div class="d">타입·단위·통합·빌드·E2E. 결과를 요약</div></div>
+    <div class="step"><div class="t">기록·스테이징</div><div class="d">로그 1항목 작성, 이 작업의 파일만 스테이징</div></div>
+    <div class="step"><div class="t">수동 테스트 가이드</div><div class="d">사람이 봐야 아는 것만, 조작과 예상 결과를 짝지어 제시</div></div>
+    <div class="step who-human gate"><div class="t">판정</div><div class="d">“통과” 또는 “수정: 문제와 재현 방법”</div></div>
+    <div class="step"><div class="t">승인 기록 → 커밋·push</div><div class="d"><code>manual-review.mjs approve</code> 후 개발 브랜치에 push</div></div>
+  </div>
+  <p class="loop-note"><strong>수정</strong> 판정이면 수정 → 자동 검사 → 새 가이드 → 판정을 반복한다. 승인 이후 변경한 내용은 다시 판정받는다. 훅은 승인받은 스테이징 트리와 다른 내용을 커밋하려 하면 차단한다. 미스테이징·미추적 파일의 변경까지 감지하는 장치는 아니다.</p>
+</section>
+
+<section id="s2">
+  <h2><span class="n">2</span>원칙 10가지</h2>
+  <div class="principles">
+    <div class="pr"><div class="no">01</div><h4>판정 가능한 작은 작업을 함께 커밋</h4>
+      <p>코드·테스트·작업 기록이 같은 커밋에 들어간다. 되돌리거나 추적할 단위가 곧 판정 단위다.</p>
+      <div class="why"><b>왜</b> 큰 덩어리는 판정도 어렵고, 어디서 틀렸는지 찾기도 어렵다.</div></div>
+    <div class="pr"><div class="no">02</div><h4>Red는 진짜 실패여야 한다</h4>
+      <p>의존성 설치 실패·서버 미실행은 Red가 아니다. 모듈이 없어서 난 실패와 assertion 실패를 구분해 기록한다. 설정 조사·문서 작업에는 억지 테스트를 만들지 않고 완료 기준으로 판정한다.</p>
+      <div class="why"><b>근거</b> 로그 13 “TDD 증거 기록” — 전체 E2E 통과를 엄격한 TDD의 증거로 쓰지 않는다.</div></div>
+    <div class="pr"><div class="no">03</div><h4>사람의 “통과”가 커밋 게이트</h4>
+      <p>승인 시점의 HEAD와 스테이징 트리를 기록하고, pre-commit·pre-push 훅이 대조한다. <code>--no-verify</code>, 훅 비활성화, 승인 파일 조작, 대신 “통과”라고 쓰기는 금지.</p>
+      <div class="why"><b>왜</b> 자동 테스트 통과는 “원하던 것”을 보장하지 않는다.</div></div>
+    <div class="pr"><div class="no">04</div><h4>사람은 사람만 아는 것만</h4>
+      <p>사람에게는 심미적 판단(배치·색·문구)과 실제 동작(외부 계정이 얽힌 흐름) 확인만 요청한다. 반복해도 같은 결과인 검사와 diff 확인은 에이전트가 하고 결과만 보고한다.</p>
+      <div class="why"><b>근거</b> 2026-09-21 절차 조정(운영가이드 3-15).</div></div>
+    <div class="pr"><div class="no">05</div><h4>시각 결정은 캡처 비교가 먼저</h4>
+      <p>말로 설명하기 어려운 결정은 코드를 고치기 전에 2~8개 시안을 같은 조건에서 캡처해 고르게 한다.</p>
+      <div class="why"><b>근거</b> 그래프 배치 8종·관계 선 모양 4종·새로고침 버튼 3종을 캡처로 결정. 설명만으로는 몇 차례 돌았던 것이 한 번에 정해졌다.</div></div>
+    <div class="pr"><div class="no">06</div><h4>추측하지 말고 잰다</h4>
+      <p>“느려서 그렇겠지”를 측정으로 확인한다. 측정하면 문제의 정의가 바뀌기도 한다.</p>
+      <div class="why"><b>근거</b> 그래프가 원형이던 이유를 재 보니 “느림”이 아니라 “화면 멈춤”이 핵심이었다(설계 결정기록 1).</div></div>
+    <div class="pr"><div class="no">07</div><h4>결정은 선택지와 함께 남긴다</h4>
+      <p><code>docs/decision/</code>에 검토한 선택지, 고른 것, 근거를 적는다. 틀렸던 가정과 방향을 바꾼 지점도 그대로 남긴다.</p>
+      <div class="why"><b>왜</b> 나중에 “왜 이렇게 했지?”를 다시 조사하지 않기 위해.</div></div>
+    <div class="pr"><div class="no">08</div><h4>기록은 다시 시작하기 좋게</h4>
+      <p><code>STATUS.md</code>(지금·다음 할 일) → 메뉴판(항목당 결론 한 줄) → 항목 파일 하나. 세션은 STATUS만 읽고 시작한다. 결론 한 줄에는 “무엇이 문제였고 어떻게 정했는지”를 적는다.</p>
+      <div class="why"><b>근거</b> J01: 76,519자 1파일 로그를 나눠 세션 시작 비용을 줄였다.</div></div>
+    <div class="pr"><div class="no">09</div><h4>운영은 구조로 보호한다</h4>
+      <p>테스트는 운영 데이터를 고정값으로 쓰지 않는다. 운영 쓰기는 명시적 opt-in(<code>production: true</code>)이 있어야만 열린다. 사람에게 규칙을 지키라고 하지 말고, 깨질 수 없게 만든다.</p>
+      <div class="why"><b>근거</b> 운영 카드 하나를 지우자 모든 배포가 실패한 사고(운영가이드 3-7).</div></div>
+    <div class="pr"><div class="no">10</div><h4>실패는 숨기지 않는다</h4>
+      <p>조회 실패 시 화면을 비우지 말고 사유와 링크를 남긴다. 비밀값 생성처럼 중요한 단계는 실패하면 즉시 멈춘다. 규칙이 바뀌면 테스트도 새 의도에 맞게 고치고 기록한다.</p>
+      <div class="why"><b>근거</b> 배포 상태가 안 보이던 문제(3-11), 서명 키 생성 실패(3-4), 로그인 유지 범위 변경(3-9).</div></div>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="n">3</span>계획 세우기</h2>
+  <p>계획 문서(<code>docs/plan/&lt;기능&gt;-개발계획.md</code>)는 구현 전에 사용자와 합의한다. 네 가지가 들어가야 한다.</p>
+
+  <h3>3.1 끝의 정의와 제외 범위</h3>
+  <p>“구현·테스트·운영 배포 검증·운영 가이드·최종 보고서까지 끝나야 종료”처럼 끝을 먼저 정한다. 중간 버전에서 핵심 기능을 빼고 완료로 처리하지 않는다. 이번에 하지 않는 것도 명시한다(Fragments: AI 관계 추론, 별도 DB, 비공개 카드, 이미지 업로드).</p>
+
+  <h3>3.2 작업 표</h3>
+  <p>한 행은 혼자서 통과/실패를 판단할 수 있는 크기다. 행마다 <strong>먼저 작성할 실패 테스트</strong>를 적는다.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>ID</th><th>작업</th><th>선행</th><th>먼저 작성할 실패 테스트 / 완료 기준</th></tr></thead>
+    <tbody>
+      <tr><td class="k">B01</td><td>필수·선택 필드 정의</td><td>A02</td><td>id/title/summary/category 누락·공백을 거부하고 aliases/tags/relations 기본값 적용</td></tr>
+      <tr><td class="k">B02</td><td>안정적인 ID와 고유성</td><td>B01</td><td>제목이 바뀌어도 ID 유지, 중복 ID와 URL에 부적합한 ID 거부</td></tr>
+      <tr><td class="k">B04</td><td>관계 참조 검증</td><td>B03</td><td>없는 대상·자기 참조·모르는 관계 유형을 파일/ID가 포함된 오류로 거부</td></tr>
+    </tbody>
+  </table></div>
+  <p class="meta">Fragments 개발계획에서 발췌. 영역별 알파벳(A 기준선, B 데이터, C 화면 …) + 번호로 ID를 붙이면 로그·커밋·보고서가 같은 이름으로 서로를 가리킨다.</p>
+
+  <h3>3.3 테스트 계층</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>계층</th><th>도구 예</th><th>책임</th></tr></thead>
+    <tbody>
+      <tr><td class="k">단위</td><td>Vitest</td><td>스키마, 검증 규칙, 검색·정렬·페이지 계산, URL 상태</td></tr>
+      <tr><td class="k">통합</td><td>Vitest + 격리 fixture + 실제 빌드</td><td>실제 파일 수집·렌더링, 잘못된 콘텐츠 차단</td></tr>
+      <tr><td class="k">브라우저</td><td>Playwright</td><td>탐색·팝업·키보드·반응형. 최종 검증은 개발 서버가 아닌 <strong>빌드 산출물 preview</strong>로</td></tr>
+      <tr><td class="k">실제 연동</td><td>테스트 저장소 + 수동 인수</td><td>OAuth, 실제 커밋, Actions, 여러 세션</td></tr>
+      <tr><td class="k">배포 인수</td><td>운영 사이트</td><td>정적 산출물·경로·전체 흐름을 사람이 확인</td></tr>
+    </tbody>
+  </table></div>
+  <p>테스트는 구현 코드의 내부 호출 순서나 CSS 클래스 문자열을 복제하지 말고, <strong>사용자가 보는 결과와 데이터 계약</strong>을 검증한다. fixture는 실제 콘텐츠 밖에 두고 경계값(0·1·12·13·25개, 한글 조합형/분해형, HTML처럼 보이는 문자열)을 포함한다.</p>
+
+  <h3>3.4 위험한 것부터</h3>
+  <p>외부 연동처럼 실패하면 계획 전체가 흔들리는 작업은 앞쪽에 “최소 실험”으로 둔다(Fragments A04: 로그인 → 샘플 커밋 → 다른 세션에서 읽기). 실패하면 원인을 분류하고 대안을 먼저 제시한다.</p>
+</section>
+
+<section id="s4">
+  <h2><span class="n">4</span>수동 테스트 가이드</h2>
+  <p>매 태스크 끝에 이 형식으로 제시하고 멈춘다.</p>
+  <div class="template">
+    <div class="row"><div class="h">테스트 대상</div><div class="b">기능 이름과 이번에 바뀐 동작</div></div>
+    <div class="row"><div class="h">준비</div><div class="b">실행 명령, 접속 주소, 필요한 데이터·계정. 에이전트가 할 수 있는 준비는 미리 해 둔다</div></div>
+    <div class="row"><div class="h">방법 / 예상 결과</div><div class="b">번호별로 “무엇을 누르면 → 무엇이 보여야 한다”를 짝지어 쓴다</div></div>
+    <div class="row"><div class="h">자동 검사 결과</div><div class="b">실행한 검사와 통과/실패 요약, 확인하지 못한 범위</div></div>
+    <div class="row"><div class="h">판정 요청</div><div class="b">“직접 확인 후 ‘통과’ 또는 ‘수정: [문제와 재현 방법]’으로 알려주세요.”</div></div>
+  </div>
+  <div class="do-dont">
+    <div class="yes"><div class="lbl">요청한다</div><ul>
+      <li>화면의 배치·색·크기·문구 판단 (변화가 있으면 캡처를 함께)</li>
+      <li>실제 앱에서 눌러 보는 기능 확인</li>
+      <li>외부 계정·서비스가 얽힌 실제 흐름</li>
+    </ul></div>
+    <div class="no"><div class="lbl">요청하지 않는다</div><ul>
+      <li><code>npm test</code>·빌드·타입 검사 실행</li>
+      <li><code>git diff</code>로 코드·문서 내용 확인</li>
+      <li>사람이 볼 것이 없는 변경을 억지로 확인 — 그 사실을 밝히고 판정만 요청</li>
+    </ul></div>
+  </div>
+  <div class="callout warn"><p>사용자가 직접 실행할 수 없는 환경(운영 전용 OAuth 등)이면 그 이유와 <strong>언제 어디서 확인할지</strong>를 명시한다. 확인하지 못한 것을 완료로 표시하지 않는다.</p></div>
+</section>
+
+<section id="s5">
+  <h2><span class="n">5</span>저장소 장치</h2>
+  <div class="tree">
+    <div class="row"><span>AGENTS.md</span><span class="c">작업 절차·판정 규칙·문서 읽기 규칙</span></div>
+    <div class="row"><span>CLAUDE.md</span><span class="c">프로젝트 구조·명령. 첫 줄에 “STATUS.md부터 읽는다”</span></div>
+    <div class="row"><span>STATUS.md</span><span class="c">지금·판정 대기·다음 할 일·최근 3건. 세션 시작에 이것만 읽는다</span></div>
+    <div class="row"><span>docs/plan/</span><span class="c">개발계획 (끝의 정의, 작업 표, 테스트 계층)</span></div>
+    <div class="row"><span>docs/decision/</span><span class="c">선택지·근거·틀린 가정</span></div>
+    <div class="row"><span>docs/log/INDEX.md</span><span class="c">메뉴판. 항목당 결론 한 줄과 상태(판정 대기/통과 해시/기록/사고)</span></div>
+    <div class="row"><span>docs/log/NN-&lt;ID&gt;.md</span><span class="c">항목 1파일: 시작 기준·요청·Red·수정·자동 검사·남은 제약</span></div>
+    <div class="row"><span>docs/guide/</span><span class="c">사람이 읽는 운영법, 시행착오</span></div>
+    <div class="row"><span>docs/archive/</span><span class="c">끝난 단계의 기록</span></div>
+    <div class="row"><span>scripts/log-new.mjs</span><span class="c">항목 파일 생성 + 메뉴판 한 줄 + STATUS 날짜를 한 번에</span></div>
+    <div class="row"><span>scripts/manual-review.mjs</span><span class="c">approve: HEAD·스테이징 트리 기록 / check-commit·check-push: 대조</span></div>
+    <div class="row"><span>.githooks/pre-commit, pre-push</span><span class="c">위 스크립트를 호출. <code>git config core.hooksPath .githooks</code></span></div>
+    <div class="row"><span>.github/workflows/verify.yml</span><span class="c">재사용 워크플로. ci.yml(PR)과 deploy.yml(main)이 같은 검사를 쓴다</span></div>
+  </div>
+  <p>로그 상태 표기: 판정 전에는 <strong>판정 대기</strong>로 둔다. 통과 후에는 승인받은 파일 그대로 커밋하고, 상태·해시 갱신은 다음 작업의 검토 범위에 포함한다. 다음 세션에서 판정 대기 문구가 남아 있더라도 실제 사용자 판정 기록과 해당 커밋을 확인해 갱신 지연인지 구분한다. 같은 변경의 재승인을 요구하지 않으며, 증거가 없으면 통과로 추정하지 않는다. 자기 해시를 넣으려고 amend를 반복하지 않는다.</p>
+  <p>코드 탐색에는 이 저장소의 <code>graft</code> 그래프를 먼저 사용했다. 위치·설명은 <code>graft ask "작업" --source</code>, 전체 출현 위치는 <code>graft grep "식별자"</code>, 변경 전 호출 영향은 <code>graft callers 식별자 --depth all</code>로 확인한다. 필요한 소스 범위만 읽고, 큰 코드 변경 후 그래프를 갱신한다. 다른 저장소에서는 도구와 인덱스가 있을 때 적용한다.</p>
+  <p class="meta">상단 실적은 당시 기록이다. I02의 167개는 2026-09-24 검사 결과이며, K01에서 Decap을 제거한 뒤 보고된 수는 159개다. 현재 테스트 개수를 뜻하지 않는다. 로그 57건에는 M01과 이후 보완 기록을 포함하지 않는다.</p>
+</section>
+
+<section id="s6">
+  <h2><span class="n">6</span>브랜치와 배포</h2>
+  <ul class="plain">
+    <li><strong>개발 브랜치</strong>(<code>feat/&lt;기능&gt;</code>)에서 태스크마다 커밋·push. <code>main</code> push가 곧 배포이므로 개발은 거기서 하지 않는다.</li>
+    <li><strong>개발 브랜치 push ≠ 배포.</strong> <code>main</code> 병합은 그 배포 범위의 인수 조건, build·preview 검증, 사용자 판정을 모두 거친 뒤 PR로.</li>
+    <li>CI와 배포는 <strong>같은 검사</strong>를 쓰고, 배포에는 <strong>검사를 통과한 그 산출물</strong>을 그대로 올린다. 운영 설정이 빠진 산출물은 게이트로 막는다.</li>
+    <li>반쪽짜리를 <code>main</code>에 넣지 않는다. Fragments D01(초안 저장)은 D02(발행 버튼)가 끝날 때까지 병합하지 않았다 — 저장만 되고 공개할 방법이 없기 때문.</li>
+    <li>push가 실패하면 로컬 커밋을 보존하고 원인을 기록한다. 성공을 확인하기 전에는 원격 백업 완료라고 쓰지 않는다.</li>
+  </ul>
+  <p class="meta">커밋 메시지 예: <code>feat(fragments): let either card remove the relation between them</code> · <code>docs(log): mark the relation work as passed</code></p>
+</section>
+
+<section id="s7">
+  <h2><span class="n">7</span>Fragments의 교훈</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>일어난 일</th><th>배운 것</th><th>출처</th></tr></thead>
+    <tbody>
+      <tr><td>운영 카드 하나를 지우자 모든 배포 실패. 테스트가 운영 카드를 고정 데이터로 쓰고 있었다</td><td>사람을 규칙으로 묶지 말고 테스트가 데이터를 <strong>읽어서</strong> 검사하게 한다</td><td class="ref">가이드 3-7</td></tr>
+      <tr><td>“발행 대기 2건”인데 목록은 비어 있음. 커밋 수로 세고 있었다</td><td>사용자에게 의미 있는 단위(카드)로 센다</td><td class="ref">3-10</td></tr>
+      <tr><td>배포 상태 조회 실패 시 줄을 숨겨 원인 파악 불가</td><td>실패에는 흔적(사유·링크)을 남긴다</td><td class="ref">3-11</td></tr>
+      <tr><td>CI에서 그래프 2.2초. 빠른 옵션은 캡처 비교에서 품질 저하</td><td>품질을 지키고 병목만 최적화, 환경별 한도는 분리</td><td class="ref">3-5</td></tr>
+      <tr><td>“양쪽 파일에 쓰면 커밋 2개·부분 실패”라는 전제가 구현 중 틀렸음이 드러남</td><td>결정의 전제를 실제 코드에서 다시 확인한다. Tree API는 원래 다중 파일을 받았다</td><td class="ref">로그 56 R02</td></tr>
+      <tr><td>사용자가 매번 자동 검사까지 직접 돌림</td><td>사람의 시간은 심미·실동작에만. 절차도 개선 대상이다</td><td class="ref">3-15</td></tr>
+      <tr><td>한국어 줄바꿈을 두 번 헛짚음</td><td>공통 규칙(<code>keep-all</code>, 문장 단위 묶기)을 처음부터 적용</td><td class="ref">3-13</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="s8">
+  <h2><span class="n">8</span>도입 체크리스트</h2>
+  <ul class="checklist">
+    <li><code>AGENTS.md</code>에 필수 완료 순서와 판정 규칙을 적는다</li>
+    <li><code>CLAUDE.md</code> 첫 줄에 “세션 시작 시 STATUS.md부터”를 넣는다</li>
+    <li><code>STATUS.md</code>, <code>docs/{plan,decision,log,guide,archive}/</code>, <code>docs/log/INDEX.md</code>를 만든다</li>
+    <li><code>scripts/log-new.mjs</code>, <code>scripts/manual-review.mjs</code>와 그 테스트를 넣는다</li>
+    <li><code>.githooks/pre-commit</code>·<code>pre-push</code>를 만들고 <code>git config core.hooksPath .githooks</code></li>
+    <li>테스트 도구를 설치하고 “고의 실패 시 명령이 비정상 종료하는지”까지 확인한다</li>
+    <li>재사용 검사 워크플로를 PR과 배포 경로가 공유하게 한다</li>
+    <li>개발계획을 쓰고 사용자와 합의한다 (끝의 정의, 제외 범위, 작업 표)</li>
+    <li>개발 브랜치를 만든다. <code>main</code>에서 작업하지 않는다</li>
+  </ul>
+</section>
+
+<section id="s9">
+  <h2><span class="n">9</span>SKILL로 적용하기</h2>
+  <p>아래 내용을 <code>~/.claude/skills/gated-tdd/SKILL.md</code>로 저장하면 어느 저장소에서든 이 방법론을 불러 쓸 수 있다. 저장소에 장치가 없으면 도입부터, 있으면 바로 사이클을 돈다.</p>
+  <div class="skill-head">
+    <span class="skill-path">~/.claude/skills/gated-tdd/SKILL.md</span>
+    <span class="skill-actions">
+      <button class="btn" type="button" id="copyBtn">복사</button>
+      <button class="btn" type="button" id="dlBtn">SKILL.md 내려받기</button>
+    </span>
+  </div>
+  <pre class="skill" id="skillView"></pre>
+  <noscript><p class="meta">SKILL 본문은 JavaScript로 표시됩니다. 페이지 소스의 <code>skill-src</code> 블록에도 있습니다.</p></noscript>
+</section>
+
+<footer>근거 문서: <code>AGENTS.md</code> · <code>docs/decision/Fragment-커밋-전략.md</code> · <code>docs/plan/Fragment-TDD-개발계획.md</code> · <code>docs/guide/Fragment-운영가이드.md</code> 3장 · <code>docs/decision/Fragment-설계-결정기록.md</code> · <code>docs/log/INDEX.md</code></footer>
+</main>
+</div>
+
+<script type="text/plain" id="skill-src">---
+name: gated-tdd
+description: 작은 작업 단위 TDD와 명시적 사용자 판정 후 커밋하는 개발 절차. 사용자가 게이트 TDD 적용을 요청하거나 저장소 규칙이 이 방법론을 채택한 경우에 사용한다. 일반적인 기능 요청이나 AGENTS.md·STATUS.md 파일의 존재만으로 적용하지 않는다.
+---
+
+# 게이트 TDD 개발 절차
+
+작은 태스크 하나를 테스트 먼저 만들고, 사용자가 "통과"라고 말해야만 커밋한다.
+에이전트는 구현·자동 검사·기록을 맡고, 사용자는 화면과 실제 동작만 판정한다.
+사용자 대상 문서와 응답은 사용자의 언어로 쓴다.
+
+## 0. 세션 시작
+
+1. `STATUS.md`만 읽는다. 없으면 "1. 도입"부터 한다.
+2. 과거 경위가 필요하면 `docs/log/INDEX.md`에서 한 줄을 고르고 그 항목 파일 하나만 연다.
+   로그 전체를 통독하지 않는다.
+3. 저장소의 작업 규칙과 현재 사용자 요청을 확인한다. STATUS의 "판정 대기"는
+   실제 사용자 판정 기록·해당 커밋과 대조한다. 동일 변경의 통과와 커밋이 확인되면
+   문서 갱신 지연으로 취급하고 재승인을 요구하지 않는다. 새 변경에는 별도 판정이 필요하다.
+   증거가 없으면 미확인으로 두고 판정을 요청한다. 현재 작업의 검토·수정 요청은 먼저 수행한다.
+4. 코드 탐색은 도구와 인덱스가 있으면 Graft를 먼저 쓴다.
+   위치·설명은 `graft ask "작업" --source`, 전체 출현은 `graft grep "식별자"`,
+   변경 전 호출 영향은 `graft callers 식별자 --depth all`로 확인한다.
+   필요한 소스 범위만 읽고 큰 코드 변경 후 `graft build`로 갱신한다.
+
+## 1. 도입 (장치가 없는 저장소)
+
+사용자가 도입을 요청한 범위에서 준비한다. 기존 규칙·훅은 보존하고 통합한다.
+이미 승인된 도입을 다시 묻지 않는다. 단순 기능 작업을 저장소 전체 절차 도입으로 확대하지 않는다.
+
+- `AGENTS.md`: 이 파일의 2~6절을 저장소 규칙으로 옮긴다.
+- `CLAUDE.md` 첫 줄: "세션을 시작하면 STATUS.md부터 읽는다."
+- `STATUS.md`: 지금(작업 브랜치·마지막 통과·판정 대기·다음 할 일), 최근 3건, 문서 위치 표.
+- `docs/plan/` 계획 · `docs/decision/` 결정 근거 · `docs/log/` 작업 이력(항목당 1파일)
+  · `docs/guide/` 사람이 읽는 운영법 · `docs/archive/` 끝난 단계.
+- `docs/log/INDEX.md`: 표 `| 항목 | 날짜 | 결론 | 상태 | 파일 |`, 최신이 위.
+- `scripts/log-new.mjs "<제목>" [--id X01] [--summary ..] [--status ..]`:
+  `docs/log/NN-<slug>.md` 생성(시작 기준·문제·요청·Red·수정·자동 검사·남은 제약 틀),
+  INDEX 표 머리 바로 아래에 한 줄 추가, STATUS의 "최종 갱신" 날짜 갱신을 한 번에 한다.
+- `scripts/manual-review.mjs` + `.githooks/pre-commit`·`pre-push` (부록 A),
+  `git config core.hooksPath .githooks` (기존 훅 경로가 있으면 통합).
+   격리된 임시 저장소에서 최초 커밋과 일반 커밋의 승인·push가 가능하고,
+   승인 없음·승인 후 스테이징 변경·추가 커밋 push·ref 삭제는 막히는지 테스트한다.
+- 테스트 도구 설치 후 고의 실패 시 명령이 0이 아닌 코드로 끝나는지 확인한다.
+- CI: 검사를 재사용 워크플로 하나로 두고 PR 경로와 배포 경로가 같이 쓴다.
+  배포에는 검사를 통과한 그 산출물을 올린다.
+
+## 2. 계획 — 구현 전에 사용자와 합의
+
+`docs/plan/<기능>-개발계획.md`에 다음을 쓴다.
+
+- 끝의 정의: 요청한 범위와 규모에 맞춰 합의한다. 작은 수정은 관련 검사·기록·사용자 판정으로 마감할 수 있다.
+  배포가 범위에 있으면 배포 인수, 운영 기능이면 필요한 운영 안내를 포함한다.
+  Fragments 전체 개발에서는 운영 배포 검증·운영 가이드·최종 보고서까지 합의했다.
+  이미 합의한 핵심을 빼고 완료로 치지 않는다.
+- 제외 범위: 이번에 하지 않는 것을 명시한다.
+- 작업 표: `| ID | 작업 | 선행 | 먼저 작성할 실패 테스트 / 완료 기준 |`.
+  한 행은 혼자서 통과/실패를 판단할 수 있는 크기. ID는 영역 알파벳 + 번호(A01, B02 …).
+- 테스트 계층: 단위 / 통합(격리 fixture + 실제 빌드) / 브라우저(최종은 빌드 산출물 preview) / 실제 연동 / 배포 인수.
+- 위험한 외부 연동은 앞쪽에 최소 실험으로 둔다. 실패하면 원인을 분류하고 대안을 먼저 제시한다.
+
+## 3. 사이클 — 판정 가능한 작은 작업 단위
+
+1. **Red**: 기대 동작을 테스트로 먼저 쓰고 실행해 실패를 확인한다.
+   - 설치 실패·서버 미실행은 Red가 아니다. 모듈 부재 실패와 assertion 실패를 구분해 기록한다.
+   - 사례가 여럿이면 한 사례씩 Red → Green.
+   - 설정 조사·외부 연결·문서 작업에는 억지 테스트를 만들지 않고 완료 기준으로 판정한다.
+   - 내부 호출 순서나 CSS 클래스 문자열이 아니라 사용자가 보는 결과와 데이터 계약을 검증한다.
+2. **Green**: 통과시키는 최소 구현.
+3. **Refactor**: 정리 후 해당 테스트와 영향받는 회귀 테스트를 다시 돌린다.
+4. **자동 검사**: 변경 영향과 저장소 필수 게이트에 맞춰 타입·단위·통합·빌드·E2E 중 필요한 검사를 수행한다.
+   출력은 요약 리포터로, 실패했을 때만 상세를 본다.
+5. **기록**: `node scripts/log-new.mjs "<ID> — <제목>"`로 항목을 만들고 채운다.
+   INDEX의 결론 한 줄에는 제목이 아니라 "무엇이 문제였고 어떻게 정했는지"를 적는다.
+   STATUS의 "지금"과 "최근 3건"을 갱신한다.
+6. **스테이징**: 이 작업의 파일만 `git add`한다.
+7. **수동 테스트 가이드**를 제시하고(4절) **멈춘다.** 다음 작업으로 넘어가지 않는다.
+
+## 4. 수동 테스트 가이드 형식
+
+- **테스트 대상**: 기능 이름과 이번에 바뀐 동작.
+- **준비**: 실행 명령, 접속 주소, 필요한 데이터·계정. 할 수 있는 준비는 미리 해 둔다.
+- **테스트 방법 / 예상 결과**: 번호별로 조작과 관찰할 결과를 짝지어 쓴다.
+- **자동 검사 결과**: 실행한 검사와 통과/실패, 확인하지 못한 범위.
+- **판정 요청**: "직접 확인 후 '통과' 또는 '수정: [문제와 재현 방법]'으로 알려주세요."
+
+사용자에게는 사람이 봐야 아는 것만 요청한다.
+- 요청한다: 배치·색·크기·문구 같은 심미 판단(화면이 바뀌면 캡처를 함께), 실제 앱에서 눌러 보는 기능, 외부 계정·서비스가 얽힌 흐름.
+- 요청하지 않는다: 자동 검사 실행, `git diff`로 내용 확인. 에이전트가 하고 결과만 보고한다.
+- 사람이 볼 것이 없는 변경이면 그 사실과 근거를 밝히고 판정만 요청한다.
+- 사용자가 직접 실행할 수 없는 환경이면 이유와 확인 시점·장소를 명시한다.
+
+## 5. 판정 후
+
+- **통과**: `node scripts/manual-review.mjs approve` → `git commit` → 개발 브랜치 `git push`.
+  승인 이후에는 파일을 그대로 커밋한다. 로그·INDEX·STATUS의 상태·해시 갱신은
+  다음 작업의 검토 범위에 포함한다. 다음 작업이 없으면 상태 갱신만 별도 검토받을 수 있다.
+  다음 세션은 0절에 따라 실제 판정 기록·커밋을 확인하므로, 남아 있는 대기 문구만으로
+  완료한 작업의 재승인을 요구하지 않는다. 자기 해시를 넣으려고 amend를 반복하지 않는다.
+- **수정**: 고치고 → 자동 검사 → 새 가이드 → 판정 대기를 반복한다.
+- 승인 후 파일이 바뀌면 다시 판정받는다.
+- 금지: `--no-verify`, 훅 비활성화, 승인 파일 조작, 사용자 대신 '통과' 작성, 판정 전 approve 실행,
+  이전 작업의 승인·무응답·자동 테스트 성공을 승인으로 해석하기.
+- push가 실패하면 로컬 커밋을 보존하고 원인을 기록한다. 성공 확인 전에 완료라고 쓰지 않는다.
+
+## 6. 판단 규칙
+
+- **시각 결정**은 코드를 고치기 전에 2~8개 시안을 같은 조건에서 캡처해 비교 시트로 보여 주고 고르게 한다.
+- **추측하지 말고 잰다.** 성능·원인은 측정으로 확인하고, 측정 결과로 문제를 다시 정의한다.
+- **선택지가 있는 결정**은 `docs/decision/`에 검토한 선택지·선택·근거·틀렸던 가정을 남긴다.
+  구현 중 결정의 전제가 틀렸음이 드러나면 그 사실도 적는다.
+- **운영 보호는 구조로.** 테스트는 운영 데이터를 고정값으로 쓰지 않고 산출물에서 읽어 검사한다.
+  운영 쓰기는 명시적 opt-in이 있을 때만 열린다.
+- **실패는 숨기지 않는다.** 화면·로그에 사유와 링크를 남긴다. 비밀값 생성 같은 중요한 단계는 실패하면 즉시 멈춘다.
+- **규칙이 바뀌면** 테스트를 새 의도에 맞게 고치고 그 이유를 기록한다.
+- **사용자에게 의미 있는 단위로 센다** (커밋 수가 아니라 바뀐 항목 수).
+- **브랜치**: 개발은 `feat/<기능>`에서. 개발 브랜치 push ≠ 배포.
+  `main` 병합은 그 배포 범위의 인수 조건 + build·preview 검증 + 사용자 판정 후 PR로.
+  공개할 방법이 없는 반쪽 기능은 병합하지 않는다.
+
+## 7. 마감
+
+2절에서 합의한 산출물만 작성한다. 아래는 운영 기능 전체 개발의 예시다.
+
+- `docs/guide/<기능>-운영가이드.md`: 평소 작업 흐름, 동작 원리, 시행착오와 선택, 한계, 설정 위치.
+- 최종 보고서: 계획 요약이 아니라 실제로 무엇이 동작하는지와 근거(검사 결과·운영 반영 이력·사람이 확인한 것),
+  제약과 미해결 항목, 후속 과제 표(우선순위·이유).
+- 운영 배포까지 합의했다면 운영 사이트에서 해당 흐름을 확인한 뒤에 전체 완료로 표시한다.
+  배포가 없는 작업에는 운영 검증을 요구하지 않는다.
+
+## 부록 A. 승인 게이트
+
+`scripts/manual-review.mjs`
+
+```js
+import { execFileSync } from 'node:child_process';
+import { readFileSync, writeFileSync } from 'node:fs';
+
+const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+const approvalPath = git('rev-parse', '--git-path', 'manual-review.json');
+const mode = process.argv[2];
+const fail = (message) => { throw new Error(message); };
+const head = () => {
+  try { return git('rev-parse', '--verify', 'HEAD'); }
+  catch {
+    // 첫 커밋 전에는 HEAD가 브랜치 이름만 가리킨다.
+    const ref = git('symbolic-ref', 'HEAD');
+    if (git('for-each-ref', '--format=%(refname)', ref)) fail('Cannot resolve existing HEAD.');
+    return null;
+  }
+};
+
+try {
+  if (mode === 'approve') {
+    if (git('diff', '--name-only')) fail('Unstaged changes remain. Stage reviewed files first.');
+    const approval = { base: head(), tree: git('write-tree') };
+    writeFileSync(approvalPath, JSON.stringify(approval) + '\n');
+    console.log('User review recorded for the staged tree.');
+  } else if (mode === 'check-commit' || mode === 'check-push') {
+    const approval = JSON.parse(readFileSync(approvalPath, 'utf8'));
+    if (mode === 'check-commit') {
+      if (head() !== approval.base || git('write-tree') !== approval.tree) {
+        fail('The staged change does not match the approved review.');
+      }
+    } else {
+      const updates = readFileSync(0, 'utf8').trim();
+      for (const line of updates ? updates.split('\n') : []) {
+        const [, localOid] = line.trim().split(/\s+/);
+        if (/^0+$/.test(localOid)) fail('Ref deletion requires separate review.');
+        const tree = git('rev-parse', `${localOid}^{tree}`);
+        const parents = git('show', '-s', '--format=%P', localOid);
+        if (tree !== approval.tree || parents !== (approval.base ?? '')) {
+          fail('The outgoing commit does not match the approved review.');
+        }
+      }
+    }
+    console.log('Manual review gate passed.');
+  } else {
+    fail('Usage: node scripts/manual-review.mjs approve|check-commit|check-push');
+  }
+} catch (error) {
+  console.error(`Manual review gate blocked: ${error.message}`);
+  console.error('Provide the feature, test steps and expected results; wait for explicit user PASS before recording approval.');
+  process.exitCode = 1;
+}
+```
+
+`.githooks/pre-commit`
+
+```sh
+#!/bin/sh
+exec node scripts/manual-review.mjs check-commit
+```
+
+`.githooks/pre-push`
+
+```sh
+#!/bin/sh
+exec node scripts/manual-review.mjs check-push
+```
+
+승인 정보는 `.git/manual-review.json`에 저장되며 버전 관리하지 않는다.
+훅은 대화를 읽지 못하므로 실제 사용자 판정 확인은 에이전트의 책임이다.
+이 예제는 첫 커밋 전의 기준을 null로 기록해 최초 커밋도 검증한다.
+승인 트리와 다른 스테이징 내용은 차단하지만 미스테이징·미추적 변경은 검사하지 않는다.
+push 검사는 승인받은 단일 커밋의 트리와 부모를 확인한다. 병합 커밋·여러 커밋의 일괄 push는
+별도 승인 설계가 필요하며, 이 예제를 그대로 써서 지원한다고 간주하지 않는다.
+</script>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  try { var saved = localStorage.getItem('method-theme'); if (saved) root.dataset.theme = saved; } catch (e) {}
+  document.getElementById('themeBtn').addEventListener('click', function () {
+    var dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = dark ? 'light' : 'dark';
+    try { localStorage.setItem('method-theme', root.dataset.theme); } catch (e) {}
+  });
+
+  var src = document.getElementById('skill-src').textContent.replace(/^\n/, '');
+  var view = document.getElementById('skillView');
+  var inFm = false, fmCount = 0, inCode = false;
+  src.split('\n').forEach(function (line, i, all) {
+    var span = document.createElement('span');
+    if (line === '---' && fmCount < 2) { fmCount++; inFm = fmCount === 1; span.className = 'fm'; }
+    else if (inFm) span.className = 'fm';
+    else if (/^```/.test(line)) { inCode = !inCode; }
+    else if (!inCode && /^#{1,3} /.test(line)) span.className = 'hd';
+    span.textContent = line + (i < all.length - 1 ? '\n' : '');
+    view.appendChild(span);
+  });
+
+  var copyBtn = document.getElementById('copyBtn');
+  copyBtn.addEventListener('click', function () {
+    var done = function () { copyBtn.textContent = '복사됨'; setTimeout(function () { copyBtn.textContent = '복사'; }, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(src).then(done, function () {});
+  });
+  document.getElementById('dlBtn').addEventListener('click', function () {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([src], { type: 'text/markdown;charset=utf-8' }));
+    a.download = 'SKILL.md';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+
+  var links = Array.prototype.slice.call(document.querySelectorAll('nav.toc a'));
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      links.forEach(function (a) { a.classList.toggle('active', a.getAttribute('href') === '#' + en.target.id); });
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  document.querySelectorAll('main section').forEach(function (s) { obs.observe(s); });
+})();
+</script>
+</body>
+</html>
