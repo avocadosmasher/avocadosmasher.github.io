@@ -1,0 +1,9 @@
+{
+  "name": "{{PROJECT_NAME}}",
+  "period": "{{PERIOD}}",
+  "role": "{{ROLE}}",
+  "description": "{{PROJECT_DESCRIPTION}}",
+  "highlights": [],
+  "stack": [],
+  "link": "{{PROJECT_LINK}}"
+}
