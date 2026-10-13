@@ -12,18 +12,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm install      # 최초 1회
-npm run dev      # 개발 서버 → http://localhost:4321/ (base 설정에 따라 /devlog/ 등)
+npm run dev      # 개발 서버 → 현재 설정은 http://localhost:4321/
 npm run build    # 프로덕션 빌드 (dist/ 생성)
 npm run preview  # 빌드 결과 미리보기
 ```
 
-빌드 에러는 대부분 프론트매터 문제(필수 필드 누락, `category` 불일치, `pubDate` 형식 오류)이므로 push 전에 `npm run build`로 확인한다.
+push 전에 `npm run build`로 필수 필드·날짜·이미지 경로 등의 오류를 확인한다. 카테고리는 작성 정책상 `CATEGORIES`의 키를 사용하지만, 현재 스키마는 등록 여부를 검사하지 않는다. 빌드 성공과 카테고리 정책 준수를 별도로 확인한다.
 
 Node.js 18.20.8 이상 필요.
 
 ## Architecture
 
-**Astro 5 정적 블로그**. 글을 마크다운으로 작성하고 push 하면 GitHub Actions가 빌드해 GitHub Pages에 배포한다.
+**Astro 5 정적 블로그**. 글을 마크다운으로 작성하고 검증·사용자 판정 후 개발 브랜치에 커밋·push한다. 공개 반영은 별도 판정 범위이며, `main` push 시 GitHub Actions가 검사·빌드 후 GitHub Pages에 배포한다.
 
 ### 설정의 단일 진입점
 
@@ -44,7 +44,7 @@ estimateReadingTime(body)  // frontmatter readingTime 없을 때 fallback
 
 ### 블로그 글 구조
 
-`src/content.config.ts`가 프론트매터 스키마를 정의한다. 글은 **폴더/index.md** 방식으로 작성하며 폴더명이 slug가 된다.
+`src/content.config.ts`가 프론트매터 스키마를 정의한다. 글 로더는 `**/index.md`만 수집하므로 **폴더/index.md** 방식으로 작성한다. 사이트는 수집된 글 ID와 `postSlug()`로 URL을 생성한다. 기존 글 수정에서는 실제 폴더 경로를 유지한다.
 
 ```
 src/content/blog/
@@ -53,7 +53,9 @@ src/content/blog/
     image.png     ← 글 이미지는 같은 폴더에 두고 ./image.png 로 참조
 ```
 
-필수 frontmatter: `title`, `description`, `category`(CATEGORIES 키와 일치해야 함), `pubDate`(YYYY-MM-DD). `draft: true`면 빌드에서 제외된다.
+필수 frontmatter: `title`, `description`, `category`, `pubDate`. 작성 정책은 등록된 `CATEGORIES` 키와 확정한 `YYYY-MM-DD` 발행일을 요구한다. 현재 스키마는 카테고리 등록 여부를 검사하지 않는다.
+
+`draft: true`면 글은 컬렉션에서 읽히고 스키마 검증도 받지만 목록·검색·상세 페이지 생성에서는 제외된다. 로컬에서도 숨겨지며, 생략하면 `false`가 기본값이다. 기존 공개 템플릿 글을 자동으로 비공개 전환하지 않는다. AI용 새 템플릿·예시는 콘텐츠 수집 경로 밖에 둔다.
 
 ### 검색
 
