@@ -8,6 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 작업 완료 절차는 `AGENTS.md`를 따른다. 자동 검사 후 사용자에게 기능·방법·예상 결과를 포함한 수동 테스트 가이드를 제공하고, 명시적인 ‘통과’ 판정을 받은 뒤에만 커밋·푸시한다.
 
+글·Fragment·카테고리·프로젝트 이력·경력·프로필 작업의 공통 원문은 [AI 콘텐츠 작업 규약](./docs/guide/AI-콘텐츠-작업규약.md)이다. `STATUS.md`로 작업 범위를 확인한 뒤 이 규약을 읽고, 상세 콘텐츠 규칙은 이 파일에 복제하지 않는다. 이 파일은 프로젝트 구조와 명령을 설명한다.
+
+개발 계획과 브랜치는 현재 개발 건에 맞춰 선택한다. AI-BLOG는 `STATUS.md`가 가리키는 AI-BLOG 계획·결정 기록을 따르고, Fragment 전용 계획·커밋 전략은 해당 개발에 적용한다.
+
 ## Commands
 
 ```bash
