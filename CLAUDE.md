@@ -12,6 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 개발 계획과 브랜치는 현재 개발 건에 맞춰 선택한다. AI-BLOG는 `STATUS.md`가 가리키는 AI-BLOG 계획·결정 기록을 따르고, Fragment 전용 계획·커밋 전략은 해당 개발에 적용한다.
 
+평소 AI 위임의 시작점은 [AI 콘텐츠 운영 가이드](./docs/guide/AI-콘텐츠-운영가이드.md), 1차 검증 근거와 한계는 [AI-BLOG 최종 보고서](./docs/AI-블로그-작업-최종보고서.md)에서 확인한다.
+
 ## Commands
 
 ```bash
