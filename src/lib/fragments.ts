@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { fragmentSchema } from './content-schemas.mjs';
+export { fragmentSchema } from './content-schemas.mjs';
 
 export const relationLabels = {
   related: '관련 개념', prerequisite: '선행 개념', 'part-of': '상위 개념', contrasts: '비교 개념',
@@ -22,15 +24,6 @@ export function cardRelations(cards: { id: string; relations: Fragment['relation
       ({ target: card.id, type: relation.type, label: inverseRelationLabels[relation.type], inbound: true })));
   return [...outgoing, ...inbound];
 }
-export const fragmentSchema = z.object({
-  id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'ID는 영문 소문자·숫자·하이픈으로 작성하세요.'),
-  title: z.string().trim().min(1),
-  summary: z.string().trim().min(1),
-  category: z.string().trim().min(1),
-  aliases: z.array(z.string().trim().min(1)).default([]),
-  tags: z.array(z.string().trim().min(1)).default([]),
-  relations: z.array(z.object({ target: z.string().min(1), type: z.enum(['related', 'prerequisite', 'part-of', 'contrasts']) })).default([]),
-});
 export type Fragment = z.infer<typeof fragmentSchema>;
 export type PublicFragment = Fragment & { html: string };
 

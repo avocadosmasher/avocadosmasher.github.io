@@ -1,20 +1,13 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { fragmentSchema } from './lib/fragments';
+import { blogSchema } from './lib/content-schemas.mjs';
 
-// src/content/blog/*.md 파일을 블로그 글로 인식하고,
+// src/content/blog/**/index.md 파일을 블로그 글로 인식하고,
 // 프론트매터(상단 ---) 형식을 검증합니다.
 const blog = defineCollection({
   loader: glob({ pattern: '**/index.md', base: './src/content/blog' }),
-  schema: z.object({
-    title: z.string(),
-    description: z.string(),
-    category: z.string(),
-    tags: z.array(z.string()).default([]),
-    pubDate: z.coerce.date(),
-    readingTime: z.string().optional(),
-    draft: z.boolean().default(false),
-  }),
+  schema: blogSchema,
 });
 
 const fragments = defineCollection({
