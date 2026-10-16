@@ -1,6 +1,7 @@
 import { LineCounter, parseDocument } from 'yaml';
 import { lexer, walkTokens } from 'marked';
 import { blogSchema, fragmentSchema } from './content-schemas.mjs';
+import { splitFrontmatter } from './content-frontmatter.mjs';
 
 /**
  * @typedef {{path: string, rule: string, field: string, message: string, line?: number, column?: number}} ContentDiagnostic
@@ -21,15 +22,12 @@ export function validateContentSource(input) {
     add('content.kind', 'kind', '문서 종류는 blog 또는 fragment여야 합니다.');
     return finish();
   }
-  const opening = input.source.match(/^\uFEFF?---\r?\n/);
-  const remainder = opening ? input.source.slice(opening[0].length) : '';
-  const closing = remainder.match(/(?:^|\r?\n)---(?:\r?\n|$)/);
-  if (!opening || !closing || closing.index === undefined) {
+  const frontmatter = splitFrontmatter(input.source);
+  if (!frontmatter) {
     add('markdown.frontmatter', 'frontmatter', '문서 시작의 YAML frontmatter 구분자를 확인하세요.');
     return finish();
   }
-  const header = remainder.slice(0, closing.index);
-  const body = remainder.slice(closing.index + closing[0].length);
+  const { header, body } = frontmatter;
   const lineCounter = new LineCounter();
   const document = parseDocument(header, { uniqueKeys: true, lineCounter });
   if (document.errors.length) {

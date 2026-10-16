@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "exceptions": [
+    { "rule": "category.unregistered", "path": "src/content/blog/가상화 파헤치기 인트로/index.md", "value": "Infra" },
+    { "rule": "category.unregistered", "path": "src/content/blog/가상화 파헤치기-1장/index.md", "value": "Infra" },
+    { "rule": "category.unregistered", "path": "src/content/fragments/ept.md", "value": "Infra" },
+    { "rule": "category.unregistered", "path": "src/content/fragments/gpa.md", "value": "Infra" }
+  ]
+}
