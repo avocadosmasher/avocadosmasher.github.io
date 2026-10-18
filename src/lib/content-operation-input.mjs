@@ -69,3 +69,5 @@ export function inspectOperationRequest(root, input) {
   }
   return { status: 'ready', request_hash: canonicalHash(request), observed };
 }
+
+export { readBytes as readOperationBytes };

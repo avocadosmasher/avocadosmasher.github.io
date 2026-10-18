@@ -24,13 +24,14 @@ npm run dev      # 개발 서버 → 현재 설정은 http://localhost:4321/
 npm run build    # 프로덕션 빌드 (dist/ 생성)
 npm run preview  # 빌드 결과 미리보기
 npm run content:check # 읽기 전용 콘텐츠·카테고리·관계 검사
+npm run content:ops -- --help # 현재 글 신규 생성의 계획·로컬 적용 안내
 ```
 
 push 전에 `npm run build`로 필수 필드·날짜·이미지 경로 등의 오류를 확인한다. 카테고리는 작성 정책상 `CATEGORIES`의 키를 사용하지만, 현재 스키마는 등록 여부를 검사하지 않는다. 빌드 성공과 카테고리 정책 준수를 별도로 확인한다.
 
 `npm run content:check`는 실제 수집 대상과 CATEGORIES·기존 예외를 읽는 별도 검사다. 실행·JSON·종료 코드·지원 범위는 [검사 CLI 사용법](./docs/guide/AI-콘텐츠-검사-CLI-사용법.md)을 따른다. 현재 Hook·CI 저장 차단은 후속 작업이며 기존 승인 훅을 유지한다.
 
-ACTC02의 [도구 요청 계약](./docs/guide/AI-콘텐츠-요청-계약.md)은 확정 JSON·계획·최소 완료 기록·파일 기준 대조를 정한다. plan/apply는 인자 규격만 마련했으며 실제 적용 명령은 아직 제공하지 않는다.
+ACTC02의 [도구 요청 계약](./docs/guide/AI-콘텐츠-요청-계약.md)은 확정 JSON·계획·최소 완료 기록·파일 기준 대조를 정한다. ACTB01의 [글 생성 CLI](./docs/guide/AI-콘텐츠-글-생성-CLI.md)는 현재 글 신규 생성의 plan/apply만 지원한다. 기존 글 수정과 다른 대상은 후속 구현이며 Git 승인·저장은 기존 절차를 따른다.
 
 Node.js 18.20.8 이상 필요.
 

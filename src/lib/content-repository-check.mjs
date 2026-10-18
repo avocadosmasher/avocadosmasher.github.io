@@ -50,7 +50,7 @@ function readBaseline(text) {
 }
 
 /** @param {string} root */
-export function checkContentRepository(root) {
+function checkRepository(root, proposals) {
   const documents = [];
   const summary = () => ({ blogs: documents.filter(document => document.kind === 'blog').length,
     fragments: documents.filter(document => document.kind === 'fragment').length });
@@ -88,6 +88,19 @@ export function checkContentRepository(root) {
     };
     collect('src/content/blog', 'blog');
     collect('src/content/fragments', 'fragment');
+    const combined = new Map(documents.map(document => [document.path, document]));
+    const seen = new Set();
+    for (const proposal of proposals) {
+      const validPath = typeof proposal.path === 'string' && proposal.path.split('/').every(part => part && !part.startsWith('.') && !/[\\:\x00-\x1f]/.test(part));
+      const matches = proposal.kind === 'blog' ? /^src\/content\/blog\/(?:[^/]+\/)+index\.md$/.test(proposal.path)
+        : proposal.kind === 'fragment' && /^src\/content\/fragments\/.+\.md$/.test(proposal.path);
+      if (!validPath || !matches || typeof proposal.source !== 'string' || seen.has(proposal.path)) {
+        throw new RepositoryInputError({ path: proposal.path ?? '', rule: 'proposal.invalid', field: 'source', message: '제안 문서의 종류·수집 경로·원문·중복 경로를 확인하세요.' });
+      }
+      seen.add(proposal.path);
+      combined.set(proposal.path, proposal);
+    }
+    documents.splice(0, documents.length, ...combined.values());
     return { ...validateContentCollection({ documents, categories, baseline }),
       summary: summary(), collectionComplete: true };
   } catch (error) {
@@ -98,3 +111,8 @@ export function checkContentRepository(root) {
       graphChecked: false, collectionComplete: false, summary: summary() };
   }
 }
+
+export function checkContentRepository(root) { return checkRepository(root, []); }
+
+// 제안 원문을 메모리에서만 대조하며 실제 콘텐츠 파일은 수정하지 않음.
+export function checkContentProposal(root, proposals) { return checkRepository(root, proposals); }
