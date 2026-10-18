@@ -131,4 +131,4 @@ ABT01은 글·Fragment의 파일 틀과 사용 안내를 제공했고 YAML·필�
 
 ## 9. 자동화 도구용 요청 예시
 
-ACTC02의 [operation-request.example.json](./operation-request.example.json)은 인계용 YAML과 구별한 기계 입력 예시다. 콘텐츠 파일로 복사하거나 현행 frontmatter에 넣지 않는다. [요청 계약](../../docs/guide/AI-콘텐츠-요청-계약.md)에서 대응 필드·미지원 범위·계획/기록의 의미를 확인한다. 현재 ACTB01의 [글 신규 생성 CLI](../../docs/guide/AI-콘텐츠-글-생성-CLI.md)를 연결했으며 다른 대상·수정은 후속 구현이다.
+ACTC02의 [operation-request.example.json](./operation-request.example.json)은 인계용 YAML과 구별한 기계 입력 예시다. 콘텐츠 파일로 복사하거나 현행 frontmatter에 넣지 않는다. [요청 계약](../../docs/guide/AI-콘텐츠-요청-계약.md)에서 대응 필드·미지원 범위·계획/기록의 의미를 확인한다. 현재 ACTB01·ACTB02의 [글 생성·부분 수정 CLI](../../docs/guide/AI-콘텐츠-글-생성-CLI.md)를 연결했으며 다른 대상은 후속 구현이다. 기존 글 수정은 예시 생성 요청을 그대로 재사용하지 않고 실제 경로·원문 지문·changes를 확정한다.

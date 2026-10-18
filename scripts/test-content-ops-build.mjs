@@ -52,6 +52,17 @@ try {
   assert.deepEqual(snapshot(), before, '재실행에서 파일 목록·바이트·수정 시각 변경');
   assert.equal(readFileSync(join(root, request.target.path), 'utf8'), request.content.source);
   assert.equal(readFileSync(join(root, request.assets[0].target), 'utf8'), image);
+  const update = { version: 1, request_id: 'fixture-operation-update', resource: 'blog', operation: 'update',
+    target: request.target, baseline: { sha256: sha256(request.content.source) }, changes: { title: 'fixture-updated-title' } };
+  put('update.json', JSON.stringify(update));
+  const updatePlan = command(['plan', '--request', 'update.json', '--out', '.content-ops/local/update.json']);
+  const updateArgs = ['apply', '--request', 'update.json', '--plan', '.content-ops/local/update.json', '--expect-plan', updatePlan.plan.plan_hash];
+  assert.equal(command(updateArgs).status, 'applied');
+  const afterUpdate = snapshot();
+  assert.equal(command(updateArgs).status, 'unchanged');
+  assert.deepEqual(snapshot(), afterUpdate, '수정 재실행에서 파일 목록·바이트·수정 시각 변경');
+  assert.equal(readFileSync(join(root, request.target.path), 'utf8'), request.content.source.replace('title: fixture-operation-title', 'title: "fixture-updated-title"'));
+  assert.equal(readFileSync(join(root, request.assets[0].target), 'utf8'), image);
   const require = createRequire(import.meta.url);
   const astro = join(require.resolve('astro/package.json'), '..', 'astro.js');
   const env = { ...process.env, ASTRO_TELEMETRY_DISABLED: '1', NO_COLOR: '1' };
@@ -61,12 +72,13 @@ try {
   assert.equal(built.status, 0, `격리 빌드 실패: ${join(root, 'build.log')}`);
   const html = readFileSync(join(root, 'dist/blog/fixture-operation/index.html'), 'utf8');
   assert.match(html, /fixture-operation-body/);
+  assert.match(html, /fixture-updated-title/);
   const match = html.match(/<img[^>]+src="([^"]*fixture[^"]*)"/);
   assert.ok(match, '생성한 글의 이미지 참조 누락');
   assert.ok(existsSync(join(root, 'dist', decodeURIComponent(match[1]).replace(/^\//, ''))), '이미지 산출물 누락');
-  assert.match(readFileSync(join(root, 'dist/search.json'), 'utf8'), /fixture-operation/);
-  console.log('PASS created-blog: CLI plan/apply/replay + Astro page/image/search');
+  assert.match(readFileSync(join(root, 'dist/search.json'), 'utf8'), /fixture-updated-title/);
+  console.log('PASS blog-create-update: CLI plan/apply/replay + preserved body/image/date + Astro title/page/image/search');
 } catch (error) {
-  console.error(`FAIL created-blog: ${error.message}\n격리 작업 폴더: ${root}`);
+  console.error(`FAIL blog-create-update: ${error.message}\n격리 작업 폴더: ${root}`);
   process.exitCode = 1;
 }

@@ -104,7 +104,8 @@ export function applyBlogCreate(root, input, plan, expectedPlanHash) {
 }
 
 export function saveBlogPlan(root, input, planFile, value) {
-  const request = requireBlogCreate(input);
+  const request = parseOperationRequest(input);
+  if (request.resource !== 'blog') throw new OperationContractError('operation.unsupported', 'resource', '글 계획만 저장합니다.');
   if (typeof planFile !== 'string' || !planFile.startsWith('.content-ops/local/')) {
     throw new OperationContractError('path.invalid', 'plan_file', '계획 파일은 로컬 상태 폴더에만 저장합니다.');
   }
