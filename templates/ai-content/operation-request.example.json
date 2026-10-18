@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "request_id": "example-create-01",
+  "resource": "blog",
+  "operation": "create",
+  "target": { "path": "src/content/blog/example/index.md" },
+  "baseline": { "sha256": null },
+  "content": {
+    "source": "---\ntitle: Example\ndescription: Example description\ncategory: AI\npubDate: 2026-10-18\ndraft: true\n---\nExample body.\n"
+  },
+  "assets": [],
+  "related_targets": []
+}

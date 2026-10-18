@@ -1,0 +1,114 @@
+# AI 콘텐츠 요청·변경계획·완료 기록 계약
+
+- 개발 건: AI-CONTENT-TOOLS / ACTC02, 2026-10-18, 사용자 판정 대기.
+- 선행: ACTC01·C1 사용자 통과, `ee078d9` 커밋·개발 브랜치 push 완료.
+- 위치: [2차 개발계획](../plan/AI-콘텐츠-자동화-2차-개발계획.md)의 요청 계약 단계.
+
+## 이번에 정한 것
+
+다른 AI에게 같은 작업을 넘길 때 재사용할 입력과, 변경할 파일의 기준, 완료 후 비교할 기록을 프로그램이 읽는 JSON으로 고정했다. 요청 ID가 같아도 본문이 달라졌으면 이전 작업의 재실행으로 처리하지 않는다. 기록이 같아도 실제 파일이 달라졌으면 완료라고 보고하지 않는다.
+
+이번 구현은 계약 검사와 읽기 전용 입력 확인 모듈이다. 파일을 생성·수정하거나 완료 기록을 저장하는 기능은 아직 연결하지 않았다. 계획·적용 명령의 인자 규격은 고정했지만 실행 프로그램은 ACTB01부터 제공한다. 지금 실행 가능한 명령은 기존 [검사 CLI](./AI-콘텐츠-검사-CLI-사용법.md)다.
+
+개발자가 재사용할 API는 [계약 모듈](../../src/lib/content-operation-contract.mjs)의 parseOperationRequest·createOperationPlan·verifyOperationPlan·createOperationReceipt·checkOperationReceipt와 [읽기 전용 입력 모듈](../../src/lib/content-operation-input.mjs)의 inspectOperationRequest다. createOperationReceipt는 기록 객체를 반환할 뿐 파일에 저장하지 않는다.
+
+## 왜 세 가지를 나누는가
+
+| 자료 | 담는 내용 | 막으려는 오판 |
+| --- | --- | --- |
+| 확정 요청 | 요청 ID·대상·기준·확정 원문 또는 수정 필드·자산 | 다른 AI가 본문·날짜·ID를 다시 정한 뒤 같은 작업이라고 주장 |
+| 변경계획 | 요청 지문·대상 파일별 적용 전후 지문·계획 지문 | 확인한 뒤 바뀐 계획을 이전 계획처럼 적용 |
+| 완료 기록 | 요청/계획 지문·모든 대상의 전후 지문·완료 결과 | 기록만 보고 실제 파일 확인 없이 재실행 완료로 처리 |
+
+지문은 SHA-256으로 계산한 비교값이다. 파일 지문은 실제 바이트를 대상으로 하고, 요청 지문은 JSON 객체의 키 순서를 정규화한 입력을 대상으로 한다. 본문 줄바꿈·배열 순서·자산 바이트는 임의로 같다고 취급하지 않는다. Git 커밋 SHA·GitHub 파일 SHA와 섞지 않는다.
+
+## 확정 요청 JSON
+
+검사 가능한 [글 생성 예시](../../templates/ai-content/operation-request.example.json)를 제공한다. 예시 경로와 본문은 합성 데이터이며 운영 콘텐츠에 추가한 내역이 아니다.
+
+| 필드 | 계약 |
+| --- | --- |
+| `version` | 숫자 1, 다른 버전 자동 추정 없음 |
+| `request_id` | 소문자·숫자·하이픈, 최대 80자, 동일 작업에서 유지 |
+| `resource` | blog / fragment / category / project |
+| `operation` | create / update |
+| `target` | 아래 종류별 정확한 경로·ID·키·원래 항목 |
+| `baseline.sha256` | 실제 기준 파일 바이트의 64자리 SHA-256, 새 문서의 부재만 null |
+| `content` | 생성할 확정 내용, 수정 요청에는 사용하지 않음 |
+| `changes` | 수정할 필드만 지정, 생성 요청에는 사용하지 않음 |
+| `assets` | 글 폴더에 추가할 자산의 저장소 상대 source·target·확정 sha256 |
+| `related_targets` | Fragment 관계 수정에 포함할 관련 파일의 path·id·기준 sha256 |
+
+assets·related_targets 생략은 빈 목록으로 정규화한다. 수정 필드의 생략은 유지이며, `body: ""`·`tags: []` 같은 명시적 비우기와 구별한다. 필수값 삭제를 뜻하는 null이나 미지원 필드는 거절한다. 승인 문자열을 버리고 진행하는 것이 아니라 `approval`·`approved` 같은 미지원 입력도 오류로 처리한다.
+
+| 종류 | 대상 식별 | 생성 내용 | 수정 내용 |
+| --- | --- | --- | --- |
+| 글 | `target.path`: 기존 수집 규칙의 폴더/index.md | `content.source`: frontmatter 포함 Markdown 원문 | changes의 허용 메타데이터·body만 |
+| Fragment | `target.path`와 실제 `target.id` | `content.source`, 신규 ID·원문 ID·id.md 경로 일치 | ID 변경 없이 허용 필드·body·relations |
+| 카테고리 | `src/consts.ts`, `target.key` | `content.color` | `changes.color`, 키 변경 제외 |
+| 프로젝트 | `src/consts.ts`, 수정 시 `target.selector`에 원래 항목 전체 | 현행 ProjectItem 한 항목 | 현행 필드의 부분 값, 새 id 제외 |
+
+카테고리·프로젝트 생성도 기존 consts.ts를 편집하므로 null이 아닌 기준 파일 지문이 필요하다. 프로젝트 선택자는 배열 순번을 받지 않는다. 같은 후보가 여럿인 경우의 탐색·최종 선택은 ACTJ01의 어댑터에서 완성한다.
+
+생성 Markdown은 문서별 형식 검사를 거친다. 수정 계약은 허용 필드와 값의 형식을 확인하며 최종 문서·전체 관계·등록 카테고리는 대상별 변경계획을 만들 때 다시 검사해야 한다. 입력 확인의 `ready`를 콘텐츠 적용 완료나 전체 정책 통과로 해석하지 않는다.
+
+## 1차 인계 요청서와의 대응
+
+[1차 YAML 요청서](./AI-콘텐츠-작업지시문.md)는 사람·AI 사이의 넓은 인계 자료다. 그대로 기계 입력으로 자동 변환하지 않는다. 실행 AI가 아래 대응을 확인해 별도 JSON을 확정한다. 구분 없이 전달하면 버전 누락·미지원 필드 오류로 거절한다.
+
+| 1차 항목 | 도구 입력으로 옮기는 방법 |
+| --- | --- |
+| request_id·resource·operation | ID 유지, 이번 네 대상과 create/update인지 확인 |
+| target.path·id·selector | 글/Fragment 실제 경로·ID, 카테고리 key, 프로젝트 원래 전체 항목으로 구체화 |
+| baseline.file_sha·revision·observed_content | Git SHA를 재사용하지 않고 현재 원본 바이트의 SHA-256을 확인 |
+| content | 글/Fragment는 완성한 Markdown source, 설정 항목은 종류별 값으로 확정 |
+| changes·assets | 생략과 비우기를 보존, 자산의 source·target·바이트 지문까지 확정 |
+| access | repository 작업만 도구 대상으로 삼음, web 요청은 저장소 작업으로 인계 |
+| repository·branch | 외부 인계 기록에 유지하고 실행 폴더 확인에 사용, 이 모듈은 원격 저장소·브랜치 신원을 인증하지 않음 |
+| sources·constraints·publication·approval | 근거·제약·실제 판정은 인계 기록에 보존, 실행 권한으로 JSON에 넣지 않음 |
+| career/profile·delete/publish | 이번 도구 범위 밖으로 명시적 거절 |
+
+JSON 버전과 request_id를 콘텐츠 frontmatter나 프로젝트 객체에 추가하지 않는다. 원문을 잃으면 완료 기록의 해시만으로 본문을 복원할 수 없으므로 확정 요청 원문도 함께 인계해야 한다.
+
+## 계획·기록의 검증 기준
+
+계획은 version·request_id·request_hash·files·plan_hash를 가진다. files는 path·before_sha256·after_sha256 목록이며 요청 대상·새 자산·명시한 관련 파일을 모두 포함한다. 바뀌지 않는 대상도 전후 지문을 같게 기록해 재실행 때 실제 상태를 다시 확인한다. 실제 적용기는 같은 지문의 파일을 다시 쓰지 않아야 한다.
+
+대상 경로 중복·요청 밖 파일·기준 불일치·삭제 결과는 계획으로 받지 않는다. 파일 목록은 경로순으로 정규화하며 검증 후에도 정규화한 목록을 반환한다. 적용 시 전달한 기대 계획 지문과 현재 계획 지문이 같아야 한다. 이 단계는 후보 결과의 지문을 묶는 계약이며 실제 차이 생성·요청 내용과 결과의 대응은 ACTB01 이후 대상별 어댑터가 수행한다.
+
+완료 기록은 계획의 최소 비교 정보와 `result: applied`만 가진다. 확정 본문·채팅·토큰·승인 문자열은 복제하지 않는다. 기록 위치는 `.content-ops/receipts/<request_id>.json`이고 콘텐츠와 함께 검토할 공유 자료다. 변경 없음에는 새 완료 기록을 만들지 않는다. 계획·잠금·저널용 `.content-ops/local/`만 Git에서 제외한다. 이번 작업이 실제 공유 기록을 생성한 것은 아니다.
+
+같은 ID의 기존 계획·기록이 있어야 입력이 달라졌는지 대조할 수 있다. 비교할 자료를 잃은 상태에서 ID만으로 과거 입력을 복원하거나, 다른 ID로 만들어진 의미 중복 콘텐츠까지 알아내는 기능은 아니다.
+
+## 실패 예시
+
+| 상황 | 처리 |
+| --- | --- |
+| 이전 기록과 같은 ID, 본문만 새로 생성 | request.conflict |
+| 제목 수정 준비 후 다른 편집기가 파일 변경 | baseline.conflict |
+| 확인한 계획의 결과 파일 지문 변경 | plan.changed |
+| 완료 기록은 있으나 실제 파일 수정·삭제됨 | receipt.state-mismatch |
+| 자산 파일이 확정 후 다른 바이트로 교체됨 | asset.changed |
+| `../`·절대 경로·예약 이름·대소문자 별칭 | 경로 오류 |
+| 대상·자산·기록 경로가 링크/junction 경유 | path.symlink |
+
+자산 source는 지정 저장소 안의 상대 경로다. 외부에서 제공받은 자산은 검토용 입력 폴더에 먼저 준비한다. target은 해당 글 폴더 안의 새 경로만 허용하며 기존 자산 덮어쓰기·이동·삭제는 지원하지 않는다.
+
+읽기 전용 입력 확인은 실제 파일과 기록을 읽고 ready/already-applied 또는 충돌을 반환한다. 기록 없이 이미 원하는 결과인지 판단하는 대상별 비교, 관계 파일의 의미 검증, 실제 수정은 다음 구현에서 완성한다. 외부 편집기의 검사 중 변경을 원자적으로 막는 기능은 아직 없으며 적용 직전 재확인·잠금·복구는 후속 작업이다.
+
+## 예약된 명령 규격과 승인 경계
+
+다음은 **인자 파서만 구현한 예약 규격이며 지금 실행할 명령이 아니다.** 실제 content-ops.mjs 프로그램과 파일 적용은 ACTB01부터 연결한다.
+
+| 명령 이름 | 필수 인자 | 공통 선택 인자 |
+| --- | --- | --- |
+| plan | --request 요청파일, --out .content-ops/local/계획파일 | --root, --json |
+| apply | --request 요청파일, --plan .content-ops/local/계획파일, --expect-plan 계획지문 | --root, --json |
+
+알 수 없는 인자·중복 인자·필수값 누락·승인 플래그는 거절한다. --expect-plan은 내용 일치 확인값이며 사람의 승인 증거가 아니다. JSON과 해시를 AI가 만들 수 있다는 사실은 바뀌지 않으므로 실제 사용자 통과·Git 승인·커밋·push는 기존 AGENTS 절차를 따른다.
+
+## 이번 판정 대상과 검증
+
+새 화면이나 실행 가능한 적용 흐름은 없다. 이번 판정 대상은 엄격한 JSON 입력, 전체 대상 상태를 포함한 최소 기록, 지문과 실제 파일을 함께 대조하는 기준이다. 예시와 코드의 자동 검사는 에이전트가 수행했다. 통과 후 ACTB01에서 글 생성·계획·적용·재실행 흐름을 연결한다.
+
+새 계약·파일 입력 검사 79개를 포함해 전체 330개를 통과했다. 타입 오류·경고 0건, 기존 힌트 5개, 일반 빌드 11페이지·18이미지 성공을 확인했다. 기존 웹 화면·저장기·운영 콘텐츠·승인 훅·배포 설정은 변경하지 않았다.

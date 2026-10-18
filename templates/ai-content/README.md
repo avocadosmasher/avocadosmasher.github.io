@@ -128,3 +128,7 @@ Fragment의 초안은 frontmatter 플래그가 아니라 작성 경로와 브랜
 ## 8. 확인 범위
 
 ABT01은 글·Fragment의 파일 틀과 사용 안내를 제공했고 YAML·필드·치환 표시·수집 경로와 실제 빌드를 확인했다. ABT02는 JSON 문법과 카테고리 키·색상 형태, 현행 ProjectItem의 필드·타입, 치환 표시 안내를 확인한다. 채운 데이터의 유효·무효 계약 검사와 격리 재실행 증거는 ABV01·ABV02에서 다룬다.
+
+## 9. 자동화 도구용 요청 예시
+
+ACTC02의 [operation-request.example.json](./operation-request.example.json)은 인계용 YAML과 구별한 기계 입력 예시다. 콘텐츠 파일로 복사하거나 현행 frontmatter에 넣지 않는다. [요청 계약](../../docs/guide/AI-콘텐츠-요청-계약.md)에서 대응 필드·미지원 범위·계획/기록의 의미를 확인한다. 현재는 계약 검사와 읽기 전용 입력 확인 모듈이며 실제 plan/apply 명령은 ACTB01부터 연결한다.

@@ -23,6 +23,7 @@ playwright-report/
 test-results/
 coverage/
 .fragment-test/
+.content-ops/local/
 .dev.vars
 .wrangler/
 .fragment-check.log
