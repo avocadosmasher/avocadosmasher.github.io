@@ -12,6 +12,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
+    "content:check": "node scripts/content-check.mjs",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
     "test:ai-content:build": "node scripts/test-ai-content-build.mjs",
