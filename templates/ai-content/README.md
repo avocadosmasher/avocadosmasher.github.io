@@ -131,4 +131,4 @@ ABT01은 글·Fragment의 파일 틀과 사용 안내를 제공했고 YAML·필�
 
 ## 9. 자동화 도구용 요청 예시
 
-ACTC02의 [operation-request.example.json](./operation-request.example.json)은 인계용 YAML과 구별한 기계 입력 예시다. 콘텐츠 파일로 복사하거나 현행 frontmatter에 넣지 않는다. [요청 계약](../../docs/guide/AI-콘텐츠-요청-계약.md)에서 대응 필드·미지원 범위·계획/기록의 의미를 확인한다. 현재 ACTB01·ACTB02의 [글 생성·부분 수정 CLI](../../docs/guide/AI-콘텐츠-글-생성-CLI.md)를 연결했으며 다른 대상은 후속 구현이다. 기존 글 수정은 예시 생성 요청을 그대로 재사용하지 않고 실제 경로·원문 지문·changes를 확정한다.
+ACTC02의 [operation-request.example.json](./operation-request.example.json)은 인계용 YAML과 구별한 글 생성 기계 입력 예시다. 콘텐츠 파일로 복사하거나 현행 frontmatter에 넣지 않는다. [요청 계약](../../docs/guide/AI-콘텐츠-요청-계약.md)에서 대응 필드·미지원 범위·계획/기록의 의미를 확인한다. [글 CLI](../../docs/guide/AI-콘텐츠-글-생성-CLI.md)와 [Fragment CLI](../../docs/guide/AI-콘텐츠-Fragment-CLI.md)가 연결되어 있으며 카테고리·프로젝트는 후속 구현이다. Fragment 요청은 예시 글 요청을 그대로 쓰지 않고 resource·실제 path·원래 id·원문 지문·확정 source 또는 changes를 명시한다. 관계의 related_targets는 들어오는 연결을 제거할 카드만 지정한다.

@@ -63,6 +63,36 @@ try {
   assert.deepEqual(snapshot(), afterUpdate, '수정 재실행에서 파일 목록·바이트·수정 시각 변경');
   assert.equal(readFileSync(join(root, request.target.path), 'utf8'), request.content.source.replace('title: fixture-operation-title', 'title: "fixture-updated-title"'));
   assert.equal(readFileSync(join(root, request.assets[0].target), 'utf8'), image);
+  const fragmentSource = (id, relations = []) => `---\nid: ${id}\ntitle: ${id}\nsummary: Fixture summary\ncategory: AI\nrelations: ${JSON.stringify(relations)}\n---\nFixture fragment body\n`;
+  const cards = [
+    { id: 'fixture-term-a', relations: [] },
+    { id: 'fixture-term-b', relations: [{ target: 'fixture-term-a', type: 'related' }] },
+  ];
+  for (const card of cards) {
+    const input = { version: 1, request_id: `create-${card.id}`, resource: 'fragment', operation: 'create',
+      target: { path: `src/content/fragments/${card.id}.md`, id: card.id }, baseline: { sha256: null },
+      content: { source: fragmentSource(card.id, card.relations) } };
+    put(`${card.id}.json`, JSON.stringify(input));
+    const proposed = command(['plan', '--request', `${card.id}.json`, '--out', `.content-ops/local/${card.id}.json`]);
+    const applyArgs = ['apply', '--request', `${card.id}.json`, '--plan', `.content-ops/local/${card.id}.json`, '--expect-plan', proposed.plan.plan_hash];
+    assert.equal(command(applyArgs).status, 'applied');
+    const beforeReplay = snapshot();
+    assert.equal(command(applyArgs).status, 'unchanged');
+    assert.deepEqual(snapshot(), beforeReplay, 'Fragment 생성 재실행에서 추가 쓰기');
+  }
+  const fragmentUpdate = { version: 1, request_id: 'fixture-fragment-update', resource: 'fragment', operation: 'update',
+    target: { path: 'src/content/fragments/fixture-term-a.md', id: 'fixture-term-a' },
+    baseline: { sha256: sha256(fragmentSource(cards[0].id, cards[0].relations)) },
+    changes: { title: 'fixture-fragment-updated', relations: [{ target: 'fixture-term-b', type: 'prerequisite' }] },
+    related_targets: [{ path: 'src/content/fragments/fixture-term-b.md', id: 'fixture-term-b',
+      sha256: sha256(fragmentSource(cards[1].id, cards[1].relations)) }] };
+  put('fragment-update.json', JSON.stringify(fragmentUpdate));
+  const fragmentPlan = command(['plan', '--request', 'fragment-update.json', '--out', '.content-ops/local/fragment-update.json']);
+  const fragmentArgs = ['apply', '--request', 'fragment-update.json', '--plan', '.content-ops/local/fragment-update.json', '--expect-plan', fragmentPlan.plan.plan_hash];
+  assert.equal(command(fragmentArgs).status, 'applied');
+  const afterFragments = snapshot();
+  assert.equal(command(fragmentArgs).status, 'unchanged');
+  assert.deepEqual(snapshot(), afterFragments, 'Fragment 관계 수정 재실행에서 추가 쓰기');
   const require = createRequire(import.meta.url);
   const astro = join(require.resolve('astro/package.json'), '..', 'astro.js');
   const env = { ...process.env, ASTRO_TELEMETRY_DISABLED: '1', NO_COLOR: '1' };
@@ -77,8 +107,15 @@ try {
   assert.ok(match, '생성한 글의 이미지 참조 누락');
   assert.ok(existsSync(join(root, 'dist', decodeURIComponent(match[1]).replace(/^\//, ''))), '이미지 산출물 누락');
   assert.match(readFileSync(join(root, 'dist/search.json'), 'utf8'), /fixture-updated-title/);
-  console.log('PASS blog-create-update: CLI plan/apply/replay + preserved body/image/date + Astro title/page/image/search');
+  const fragmentHtml = readFileSync(join(root, 'dist/fragments/index.html'), 'utf8');
+  const data = fragmentHtml.match(/<script[^>]*id="fragment-data"[^>]*>([\s\S]*?)<\/script>/);
+  assert.ok(data, 'Fragment 빌드 데이터 누락');
+  const fragments = JSON.parse(data[1]);
+  assert.equal(fragments.find(card => card.id === 'fixture-term-a').title, 'fixture-fragment-updated');
+  assert.deepEqual(fragments.find(card => card.id === 'fixture-term-a').relations, [{ target: 'fixture-term-b', type: 'prerequisite' }]);
+  assert.deepEqual(fragments.find(card => card.id === 'fixture-term-b').relations, []);
+  console.log('PASS blog-fragment-ops: CLI create/update/replay + blog title/body/image/search + Fragment IDs/title/relations in Astro output');
 } catch (error) {
-  console.error(`FAIL blog-create-update: ${error.message}\n격리 작업 폴더: ${root}`);
+  console.error(`FAIL blog-fragment-ops: ${error.message}\n격리 작업 폴더: ${root}`);
   process.exitCode = 1;
 }

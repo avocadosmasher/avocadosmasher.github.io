@@ -1,6 +1,7 @@
 import { canonicalHash, createOperationPlan, createOperationReceipt, OperationContractError, parseOperationRequest,
   sha256, verifyOperationPlan } from './content-operation-contract.mjs';
-import { inspectOperationRequest, parseOperationJson, readOperationBytes, resolveOperationPath } from './content-operation-input.mjs';
+import { inspectOperationRequest, readOperationBytes } from './content-operation-input.mjs';
+import { saveOperationPlan } from './content-operation-plan-file.mjs';
 import { checkContentProposal } from './content-repository-check.mjs';
 import { createOperationFile } from './content-operation-write.mjs';
 import { parseDocument } from 'yaml';
@@ -106,16 +107,5 @@ export function applyBlogCreate(root, input, plan, expectedPlanHash) {
 export function saveBlogPlan(root, input, planFile, value) {
   const request = parseOperationRequest(input);
   if (request.resource !== 'blog') throw new OperationContractError('operation.unsupported', 'resource', '글 계획만 저장합니다.');
-  if (typeof planFile !== 'string' || !planFile.startsWith('.content-ops/local/')) {
-    throw new OperationContractError('path.invalid', 'plan_file', '계획 파일은 로컬 상태 폴더에만 저장합니다.');
-  }
-  resolveOperationPath(root, planFile);
-  const plan = verifyOperationPlan(request, value, value.plan_hash);
-  const existing = readOperationBytes(root, planFile, true);
-  if (existing !== null) {
-    verifyOperationPlan(request, parseOperationJson(existing.toString('utf8')), plan.plan_hash);
-    return false;
-  }
-  createOperationFile(root, planFile, JSON.stringify(plan, null, 2) + '\n');
-  return true;
+  return saveOperationPlan(root, request, planFile, value);
 }

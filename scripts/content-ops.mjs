@@ -3,11 +3,13 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { OperationContractError, parseOperationCommand } from '../src/lib/content-operation-contract.mjs';
 import { parseOperationJson, readOperationBytes } from '../src/lib/content-operation-input.mjs';
-import { applyBlogCreate, planBlogCreate, saveBlogPlan } from '../src/lib/content-blog-create.mjs';
+import { applyBlogCreate, planBlogCreate } from '../src/lib/content-blog-create.mjs';
 import { applyBlogUpdate, planBlogUpdate } from '../src/lib/content-blog-update.mjs';
+import { applyFragmentOperation, planFragmentOperation } from '../src/lib/content-fragment-ops.mjs';
+import { saveOperationPlan } from '../src/lib/content-operation-plan-file.mjs';
 
 const args = process.argv.slice(2);
-const usage = '사용법 (현재 글 신규 생성·부분 수정 지원)\n'
+const usage = '사용법 (현재 글·Fragment 신규 생성·부분 수정 지원)\n'
   + 'node scripts/content-ops.mjs plan --request <요청 JSON> --out .content-ops/local/<계획 JSON> [--root <저장소>] [--json]\n'
   + 'node scripts/content-ops.mjs apply --request <요청 JSON> --plan .content-ops/local/<계획 JSON> --expect-plan <계획 지문> [--root <저장소>] [--json]\n'
   + '종료 코드: 0 성공/변경 없음, 1 입력/충돌/적용 실패, 2 명령 사용 오류';
@@ -19,11 +21,11 @@ else {
     const options = parseOperationCommand(args);
     const root = options.root ? resolve(options.root) : fileURLToPath(new URL('../', import.meta.url));
     const request = parseOperationJson(readFileSync(resolve(options.request_file), 'utf8'));
-    const prepare = request?.operation === 'update' ? planBlogUpdate : planBlogCreate;
-    const apply = request?.operation === 'update' ? applyBlogUpdate : applyBlogCreate;
+    const prepare = request?.resource === 'fragment' ? planFragmentOperation : request?.operation === 'update' ? planBlogUpdate : planBlogCreate;
+    const apply = request?.resource === 'fragment' ? applyFragmentOperation : request?.operation === 'update' ? applyBlogUpdate : applyBlogCreate;
     if (options.command === 'plan') {
       const prepared = prepare(root, request);
-      const saved = prepared.status === 'planned' ? saveBlogPlan(root, request, options.plan_file, prepared.plan) : false;
+      const saved = prepared.status === 'planned' ? saveOperationPlan(root, request, options.plan_file, prepared.plan) : false;
       report = { ok: true, ...prepared, root, plan_file: options.plan_file, plan_saved: saved };
     } else {
       const plan = parseOperationJson(readOperationBytes(root, options.plan_file).toString('utf8'));
