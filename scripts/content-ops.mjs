@@ -9,11 +9,13 @@ import { applyFragmentOperation, planFragmentOperation } from '../src/lib/conten
 import { saveOperationPlan } from '../src/lib/content-operation-plan-file.mjs';
 import { applyCategoryOperation, planCategoryOperation } from '../src/lib/content-category-ops.mjs';
 import { applyProjectOperation, planProjectOperation } from '../src/lib/content-project-ops.mjs';
+import { recoverOperation } from '../src/lib/content-operation-recovery.mjs';
 
 const args = process.argv.slice(2);
 const usage = '사용법 (글·Fragment·카테고리·프로젝트 생성·부분 수정 지원)\n'
   + 'node scripts/content-ops.mjs plan --request <요청 JSON> --out .content-ops/local/<계획 JSON> [--root <저장소>] [--json]\n'
   + 'node scripts/content-ops.mjs apply --request <요청 JSON> --plan .content-ops/local/<계획 JSON> --expect-plan <계획 지문> [--root <저장소>] [--json]\n'
+  + 'node scripts/content-ops.mjs recover --request <원래 요청 JSON> --plan .content-ops/local/<원래 계획 JSON> --expect-plan <계획 지문> [--root <저장소>] [--json]\n'
   + '종료 코드: 0 성공/변경 없음, 1 입력/충돌/적용 실패, 2 명령 사용 오류';
 
 if (args.length === 1 && args[0] === '--help') console.log(usage);
@@ -33,7 +35,7 @@ else {
       report = { ok: true, ...prepared, root, plan_file: options.plan_file, plan_saved: saved };
     } else {
       const plan = parseOperationJson(readOperationBytes(root, options.plan_file).toString('utf8'));
-      report = { ok: true, ...apply(root, request, plan, options.expected_plan_hash), root };
+      report = { ok: true, ...(options.command === 'recover' ? recoverOperation : apply)(root, request, plan, options.expected_plan_hash), root };
     }
   } catch (error) {
     const known = error instanceof OperationContractError;
@@ -41,7 +43,8 @@ else {
     report = { ok: false, status: 'failed', diagnostics: [{ rule: known ? error.code : inputFailure ? 'input.unreadable' : 'operation.failed',
       field: known ? error.field : 'input', message: known ? error.message : inputFailure
         ? `입력이나 경로를 읽을 수 없습니다 (${error.code}).` : '내부 처리 중 실패했습니다. 추가된 파일 목록과 현재 상태를 확인하세요.' }],
-      written: error.written ?? (error.created ? [error.field] : []), ...(error.candidates ? { candidates: error.candidates } : {}) };
+      written: error.written ?? (error.created ? [error.field] : []), ...(error.candidates ? { candidates: error.candidates } : {}),
+      ...(error.recovery ? { recovery: error.recovery } : {}), ...(error.lock_release ? { lock_release: error.lock_release } : {}) };
     process.exitCode = known && error.code === 'command.invalid' ? 2 : 1;
   }
   if (args.includes('--json')) console.log(JSON.stringify(report));
@@ -62,13 +65,17 @@ else {
     } else if (report.status === 'applied') {
       console.log(`로컬 적용 완료: 파일 ${report.written.length}개 반영, Git 저장·push·발행은 별도 단계`);
       for (const path of report.written) console.log(`[반영] ${path}`);
-    } else if (report.status === 'unchanged') console.log('변경 없음: 확정 결과와 실제 파일 일치, 추가 쓰기 0건');
+    } else if (report.status === 'unchanged') console.log('변경 없음: 확정 결과와 실제 파일 일치, 콘텐츠·완료 기록 추가 쓰기 0건');
     else {
       console.log('작업 실패');
       for (const issue of report.diagnostics) console.log(`[${issue.rule}] ${issue.field}: ${issue.message}`);
       if (report.candidates) for (const [index, candidate] of report.candidates.entries()) console.log(`[후보 ${index + 1}] ${JSON.stringify(candidate)}`);
       if (report.written.length) console.log(`실패 전 반영된 파일: ${report.written.join(', ')} (자동 되돌림 없음, 상태 확인 필요)`);
+      if (report.recovery) console.log(`복구 자료: ${report.recovery.journal} (원래 요청·계획·지문으로 recover 실행 필요)`);
+      if (report.lock_release) console.log(`잠금 해제 실패: ${report.lock_release.path} (자동 우회 없음)`);
       if (process.exitCode === 2) console.log(usage);
     }
+    if (report.recovered) console.log('복구 확인 완료: 계획 전후 상태를 대조하고 남은 적용 또는 임시 자료 정리 수행함');
+    if (report.cleanup_pending?.length) console.log(`임시 자료 정리 미완료: ${report.cleanup_pending.join(', ')}`);
   }
 }

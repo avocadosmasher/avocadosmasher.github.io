@@ -4,6 +4,7 @@ import { inspectOperationRequest, parseOperationJson, readOperationBytes } from 
 import { createOperationFile, replaceOperationFile } from './content-operation-write.mjs';
 import { CategorySourceError, patchCategorySource } from './content-categories.mjs';
 import { checkCategoryProposal } from './content-repository-check.mjs';
+import { runOperationTransaction } from './content-operation-transaction.mjs';
 
 function requireCategory(input) {
   const request = parseOperationRequest(input);
@@ -51,6 +52,10 @@ export function planCategoryOperation(root, input) {
 }
 
 export function applyCategoryOperation(root, input, value, expectedPlanHash) {
+  return runOperationTransaction(root, input, value, expectedPlanHash, planCategoryOperation,
+    () => applyCategoryUnlocked(root, input, value, expectedPlanHash));
+}
+function applyCategoryUnlocked(root, input, value, expectedPlanHash) {
   const request = requireCategory(input);
   const plan = verifyOperationPlan(request, value, expectedPlanHash);
   const receiptPath = `.content-ops/receipts/${request.request_id}.json`;

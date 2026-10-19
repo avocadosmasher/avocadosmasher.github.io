@@ -31,7 +31,7 @@ push 전에 `npm run build`로 필수 필드·날짜·이미지 경로 등의 �
 
 `npm run content:check`는 실제 수집 대상과 CATEGORIES·기존 예외를 읽는 별도 검사다. 실행·JSON·종료 코드·지원 범위는 [검사 CLI 사용법](./docs/guide/AI-콘텐츠-검사-CLI-사용법.md)을 따른다. 현재 Hook·CI 저장 차단은 후속 작업이며 기존 승인 훅을 유지한다.
 
-ACTC02의 [도구 요청 계약](./docs/guide/AI-콘텐츠-요청-계약.md)은 확정 JSON·계획·최소 완료 기록·파일 기준 대조를 정한다. [글 CLI](./docs/guide/AI-콘텐츠-글-생성-CLI.md)·[Fragment CLI](./docs/guide/AI-콘텐츠-Fragment-CLI.md)·[카테고리 CLI](./docs/guide/AI-콘텐츠-카테고리-CLI.md)·[프로젝트 CLI](./docs/guide/AI-콘텐츠-프로젝트-CLI.md)는 같은 plan/apply 명령을 사용한다. Fragment는 명시한 상대 카드의 연결 제거를, 카테고리는 정적 CATEGORIES의 키 추가·색 값 수정을 지원한다. 프로젝트는 원래 항목 전체로 대상을 확인해 요청 값만 수정하며 모호한 후보는 중단한다. 잠금/복구·콘텐츠 검사 Hook/CI 연결은 후속 구현이며 Git 승인·저장은 기존 절차를 따른다.
+ACTC02의 [도구 요청 계약](./docs/guide/AI-콘텐츠-요청-계약.md)은 확정 JSON·계획·최소 완료 기록·파일 기준 대조를 정한다. [글 CLI](./docs/guide/AI-콘텐츠-글-생성-CLI.md)·[Fragment CLI](./docs/guide/AI-콘텐츠-Fragment-CLI.md)·[카테고리 CLI](./docs/guide/AI-콘텐츠-카테고리-CLI.md)·[프로젝트 CLI](./docs/guide/AI-콘텐츠-프로젝트-CLI.md)는 같은 plan/apply 명령을 사용한다. Fragment는 명시한 상대 카드의 연결 제거를, 카테고리는 정적 CATEGORIES의 키 추가·색 값 수정을 지원한다. 프로젝트는 원래 항목 전체로 대상을 확인해 요청 값만 수정하며 모호한 후보는 중단한다. 적용은 저장소 단위 잠금으로 보호하며 중단 시 [잠금·복구 가이드](./docs/guide/AI-콘텐츠-잠금-복구-CLI.md)의 recover에 원래 요청·계획·지문을 지정한다. 외부 수정·손상·확인할 수 없는 잠금을 강제로 해제하지 않는다. 콘텐츠 검사 Hook/CI 연결은 후속 구현이며 Git 승인·저장은 기존 절차를 따른다.
 
 Node.js 18.20.8 이상 필요.
 

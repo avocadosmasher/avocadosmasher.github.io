@@ -8,6 +8,7 @@ import { parseDocument } from 'yaml';
 import { splitFrontmatter } from './content-frontmatter.mjs';
 import { blogSchema } from './content-schemas.mjs';
 import { validateContentSource } from './content-validation.mjs';
+import { runOperationTransaction } from './content-operation-transaction.mjs';
 
 function requireBlogCreate(input) {
   const request = parseOperationRequest(input);
@@ -69,6 +70,10 @@ export function planBlogCreate(root, input) {
 }
 
 export function applyBlogCreate(root, input, plan, expectedPlanHash) {
+  return runOperationTransaction(root, input, plan, expectedPlanHash, planBlogCreate,
+    () => applyBlogCreateUnlocked(root, input, plan, expectedPlanHash));
+}
+function applyBlogCreateUnlocked(root, input, plan, expectedPlanHash) {
   const request = requireBlogCreate(input);
   const verified = verifyOperationPlan(request, plan, expectedPlanHash);
   if (createOperationPlan(request, desiredFiles(request)).plan_hash !== verified.plan_hash) {

@@ -4,6 +4,7 @@ import { inspectOperationRequest, parseOperationJson, readOperationBytes } from 
 import { createOperationFile, replaceOperationFile } from './content-operation-write.mjs';
 import { patchBlogSource } from './content-blog-patch.mjs';
 import { checkContentProposal } from './content-repository-check.mjs';
+import { runOperationTransaction } from './content-operation-transaction.mjs';
 
 function requireBlogUpdate(input) {
   const request = parseOperationRequest(input);
@@ -50,6 +51,10 @@ export function planBlogUpdate(root, input) {
 }
 
 export function applyBlogUpdate(root, input, value, expectedPlanHash) {
+  return runOperationTransaction(root, input, value, expectedPlanHash, planBlogUpdate,
+    () => applyBlogUpdateUnlocked(root, input, value, expectedPlanHash));
+}
+function applyBlogUpdateUnlocked(root, input, value, expectedPlanHash) {
   const request = requireBlogUpdate(input);
   const plan = verifyOperationPlan(request, value, expectedPlanHash);
   const receiptPath = `.content-ops/receipts/${request.request_id}.json`;

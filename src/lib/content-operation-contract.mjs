@@ -181,7 +181,7 @@ export function parseOperationCommand(args) {
   const fail = () => { throw new OperationContractError('command.invalid', 'arguments', '지원 명령·필수 인자·중복 옵션을 확인하세요.'); };
   if (!Array.isArray(args) || !args.every(value => typeof value === 'string')) fail();
   const [command, ...rest] = args;
-  if (!['plan', 'apply'].includes(command)) fail();
+  if (!['plan', 'apply', 'recover'].includes(command)) fail();
   const allowed = command === 'plan' ? ['--request', '--out', '--root', '--json']
     : ['--request', '--plan', '--expect-plan', '--root', '--json'];
   const values = new Map();
@@ -193,10 +193,10 @@ export function parseOperationCommand(args) {
     values.set(key, value);
   }
   if (!values.has('--request') || !values.has(command === 'plan' ? '--out' : '--plan')
-    || (command === 'apply' && !hash.safeParse(values.get('--expect-plan')).success)) fail();
+    || (command !== 'plan' && !hash.safeParse(values.get('--expect-plan')).success)) fail();
   const planFile = values.get(command === 'plan' ? '--out' : '--plan');
   if (!repositoryPath.safeParse(planFile).success || !planFile.startsWith('.content-ops/local/')) fail();
   return { command, request_file: values.get('--request'), plan_file: planFile, json: values.has('--json'),
     ...(values.has('--root') ? { root: values.get('--root') } : {}),
-    ...(command === 'apply' ? { expected_plan_hash: values.get('--expect-plan') } : {}) };
+    ...(command !== 'plan' ? { expected_plan_hash: values.get('--expect-plan') } : {}) };
 }

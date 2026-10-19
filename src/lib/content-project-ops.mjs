@@ -4,6 +4,7 @@ import { inspectOperationRequest, parseOperationJson, readOperationBytes } from 
 import { createOperationFile, replaceOperationFile } from './content-operation-write.mjs';
 import { patchProjectSource, ProjectSourceError } from './content-projects.mjs';
 import { checkCategoryProposal } from './content-repository-check.mjs';
+import { runOperationTransaction } from './content-operation-transaction.mjs';
 
 function requireProject(input) {
   const request = parseOperationRequest(input);
@@ -47,6 +48,10 @@ export function planProjectOperation(root, input) {
 }
 
 export function applyProjectOperation(root, input, value, expectedPlanHash) {
+  return runOperationTransaction(root, input, value, expectedPlanHash, planProjectOperation,
+    () => applyProjectUnlocked(root, input, value, expectedPlanHash));
+}
+function applyProjectUnlocked(root, input, value, expectedPlanHash) {
   const request = requireProject(input);
   const plan = verifyOperationPlan(request, value, expectedPlanHash);
   const receiptPath = `.content-ops/receipts/${request.request_id}.json`;

@@ -8,6 +8,7 @@ import { splitFrontmatter } from './content-frontmatter.mjs';
 import { fragmentSchema } from './content-schemas.mjs';
 import { validateContentSource } from './content-validation.mjs';
 import { checkContentProposal } from './content-repository-check.mjs';
+import { runOperationTransaction } from './content-operation-transaction.mjs';
 
 function requireFragment(input) {
   const request = parseOperationRequest(input);
@@ -84,6 +85,10 @@ export function planFragmentOperation(root, input) {
 }
 
 export function applyFragmentOperation(root, input, value, expectedPlanHash) {
+  return runOperationTransaction(root, input, value, expectedPlanHash, planFragmentOperation,
+    () => applyFragmentUnlocked(root, input, value, expectedPlanHash));
+}
+function applyFragmentUnlocked(root, input, value, expectedPlanHash) {
   const request = requireFragment(input);
   const plan = verifyOperationPlan(request, value, expectedPlanHash);
   if (request.operation === 'create' && createOperationPlan(request, [{ path: request.target.path,
