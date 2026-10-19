@@ -1,2 +1,2 @@
 #!/bin/sh
-exec node scripts/manual-review.mjs check-commit
+exec node scripts/git-gates.mjs check-commit

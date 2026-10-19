@@ -15,7 +15,7 @@ on:
 
 jobs:
   checks:
-    name: 타입·단위·통합·빌드·preview E2E
+    name: 콘텐츠·타입·단위·통합·빌드·preview E2E
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,12 +27,16 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
+      - name: 콘텐츠 정책 검사
+        run: npm run content:check
       - name: Type check
         run: npm run check
       - name: Unit & integration tests
         run: npm test
       - name: AI 콘텐츠 격리 빌드
         run: npm run test:ai-content:build
+      - name: AI 콘텐츠 도구 실제 CLI·격리 빌드
+        run: npm run test:content-ops:build
       - name: Build
         run: npm run build
         env:

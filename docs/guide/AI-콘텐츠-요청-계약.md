@@ -8,7 +8,7 @@
 
 다른 AI에게 같은 작업을 넘길 때 재사용할 입력과, 변경할 파일의 기준, 완료 후 비교할 기록을 프로그램이 읽는 JSON으로 고정했다. 요청 ID가 같아도 본문이 달라졌으면 이전 작업의 재실행으로 처리하지 않는다. 기록이 같아도 실제 파일이 달라졌으면 완료라고 보고하지 않는다.
 
-ACTC02는 계약 검사와 읽기 전용 입력 확인을 구현했다. [글 CLI](./AI-콘텐츠-글-생성-CLI.md)·[Fragment CLI](./AI-콘텐츠-Fragment-CLI.md)·[카테고리 CLI](./AI-콘텐츠-카테고리-CLI.md)·[프로젝트 CLI](./AI-콘텐츠-프로젝트-CLI.md)는 사용자 통과 후 저장했다. ACTS01은 공통 적용 잠금·복구 자료·recover를 연결해 판정 대기 중이다. 처리 순서와 거절 조건은 [잠금·복구 가이드](./AI-콘텐츠-잠금-복구-CLI.md)를 따른다. 읽기 전용 확인은 기존 [검사 CLI](./AI-콘텐츠-검사-CLI-사용법.md)를 사용한다.
+ACTC02는 계약 검사와 읽기 전용 입력 확인을 구현했다. [글 CLI](./AI-콘텐츠-글-생성-CLI.md)·[Fragment CLI](./AI-콘텐츠-Fragment-CLI.md)·[카테고리 CLI](./AI-콘텐츠-카테고리-CLI.md)·[프로젝트 CLI](./AI-콘텐츠-프로젝트-CLI.md)와 [잠금·복구 가이드](./AI-콘텐츠-잠금-복구-CLI.md)의 적용 경로는 사용자 통과 후 저장했다. ACTH01은 기존 승인 검사 뒤 실제 Git 대상 정책 검사·공통 CI를 연결해 판정 대기 중이다. [Git 훅 안내](./AI-콘텐츠-Git-검사-CLI.md)의 검사 범위와 원격 실행 확인 경계를 따른다. 읽기 전용 확인은 기존 [검사 CLI](./AI-콘텐츠-검사-CLI-사용법.md)를 사용한다.
 
 개발자가 재사용할 API는 [계약 모듈](../../src/lib/content-operation-contract.mjs)의 parseOperationRequest·createOperationPlan·verifyOperationPlan·createOperationReceipt·checkOperationReceipt와 [읽기 전용 입력 모듈](../../src/lib/content-operation-input.mjs)의 inspectOperationRequest다. createOperationReceipt는 기록 객체를 반환할 뿐 파일에 저장하지 않는다.
 
@@ -104,7 +104,7 @@ JSON 버전과 request_id를 콘텐츠 frontmatter나 프로젝트 객체에 추
 
 ## 명령 규격과 승인 경계
 
-다음은 ACTC02의 plan/apply에 ACTS01의 recover를 추가한 인자 규격이다. 버전 1 요청·계획·공유 완료 기록 구조는 유지한다. 현재 content-ops.mjs 프로그램은 **글·Fragment·카테고리·프로젝트 생성·부분 수정과 중단 복구**를 지원한다. 실행 예시는 각 가이드를 따른다. 콘텐츠 검사 Hook/CI 연결은 후속 작업이다.
+다음은 ACTC02의 plan/apply에 ACTS01의 recover를 추가한 인자 규격이다. 버전 1 요청·계획·공유 완료 기록 구조는 유지한다. 현재 content-ops.mjs 프로그램은 **글·Fragment·카테고리·프로젝트 생성·부분 수정과 중단 복구**를 지원한다. 실행 예시는 각 가이드를 따른다. 콘텐츠 정책 Git 훅과 공통 CI는 위 Git 훅 안내로 연결하며 요청/계획 해시를 사람의 승인으로 해석하지 않는다.
 
 | 명령 이름 | 필수 인자 | 공통 선택 인자 |
 | --- | --- | --- |

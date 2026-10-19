@@ -134,3 +134,5 @@ ABT01은 글·Fragment의 파일 틀과 사용 안내를 제공했고 YAML·필�
 ACTC02의 [operation-request.example.json](./operation-request.example.json)은 인계용 YAML과 구별한 글 생성 기계 입력 예시다. 콘텐츠 파일로 복사하거나 현행 frontmatter에 넣지 않는다. [요청 계약](../../docs/guide/AI-콘텐츠-요청-계약.md)에서 대응 필드·미지원 범위·계획/기록의 의미를 확인한다. [글 CLI](../../docs/guide/AI-콘텐츠-글-생성-CLI.md)·[Fragment CLI](../../docs/guide/AI-콘텐츠-Fragment-CLI.md)·[카테고리 CLI](../../docs/guide/AI-콘텐츠-카테고리-CLI.md)·[프로젝트 CLI](../../docs/guide/AI-콘텐츠-프로젝트-CLI.md)가 연결되어 있다. 종류별 resource·실제 target·원문 지문과 허용 content 또는 changes를 확정한다. 카테고리는 consts.ts 전체 기준 지문과 target.key·content.color 또는 changes.color를 지정한다. 프로젝트도 전체 설정 지문을 사용하며 생성은 content에 한 항목, 수정은 target.selector에 원래 항목 전체와 changes에 바꿀 값만 지정한다. 배열 순번·새 ID는 넣지 않는다. Fragment의 related_targets는 들어오는 연결을 제거할 카드만 지정한다.
 
 ACTS01의 [잠금·복구 가이드](../../docs/guide/AI-콘텐츠-잠금-복구-CLI.md)는 실행 중단 뒤의 처리 기준이다. 원래 요청·계획·지문과 해당 작업 폴더의 준비 자료를 보존한다. 복구를 위해 템플릿으로 본문·날짜·ID를 다시 생성하지 않는다. local 준비 자료는 Git에서 제외되므로 다른 컴퓨터의 완료 기록만으로 복구할 수 없다.
+
+ACTH01의 [Git 훅·공통 CI 안내](../../docs/guide/AI-콘텐츠-Git-검사-CLI.md)는 기존 사용자 승인 확인 뒤 실제 스테이징/전송 tree의 콘텐츠 정책을 검사한다. 이 검사와 CI 성공을 사용자의 통과 판정으로 대신하지 않는다. 템플릿 치환·이력 사실성·요청 대상 확정은 여전히 작성 AI와 사용자 확인 범위다.
