@@ -8,9 +8,10 @@ import { applyBlogUpdate, planBlogUpdate } from '../src/lib/content-blog-update.
 import { applyFragmentOperation, planFragmentOperation } from '../src/lib/content-fragment-ops.mjs';
 import { saveOperationPlan } from '../src/lib/content-operation-plan-file.mjs';
 import { applyCategoryOperation, planCategoryOperation } from '../src/lib/content-category-ops.mjs';
+import { applyProjectOperation, planProjectOperation } from '../src/lib/content-project-ops.mjs';
 
 const args = process.argv.slice(2);
-const usage = '사용법 (현재 글·Fragment·카테고리 생성·부분 수정 지원)\n'
+const usage = '사용법 (글·Fragment·카테고리·프로젝트 생성·부분 수정 지원)\n'
   + 'node scripts/content-ops.mjs plan --request <요청 JSON> --out .content-ops/local/<계획 JSON> [--root <저장소>] [--json]\n'
   + 'node scripts/content-ops.mjs apply --request <요청 JSON> --plan .content-ops/local/<계획 JSON> --expect-plan <계획 지문> [--root <저장소>] [--json]\n'
   + '종료 코드: 0 성공/변경 없음, 1 입력/충돌/적용 실패, 2 명령 사용 오류';
@@ -22,9 +23,9 @@ else {
     const options = parseOperationCommand(args);
     const root = options.root ? resolve(options.root) : fileURLToPath(new URL('../', import.meta.url));
     const request = parseOperationJson(readFileSync(resolve(options.request_file), 'utf8'));
-    const prepare = request?.resource === 'category' ? planCategoryOperation : request?.resource === 'fragment'
+    const prepare = request?.resource === 'project' ? planProjectOperation : request?.resource === 'category' ? planCategoryOperation : request?.resource === 'fragment'
       ? planFragmentOperation : request?.operation === 'update' ? planBlogUpdate : planBlogCreate;
-    const apply = request?.resource === 'category' ? applyCategoryOperation : request?.resource === 'fragment'
+    const apply = request?.resource === 'project' ? applyProjectOperation : request?.resource === 'category' ? applyCategoryOperation : request?.resource === 'fragment'
       ? applyFragmentOperation : request?.operation === 'update' ? applyBlogUpdate : applyBlogCreate;
     if (options.command === 'plan') {
       const prepared = prepare(root, request);
@@ -40,7 +41,7 @@ else {
     report = { ok: false, status: 'failed', diagnostics: [{ rule: known ? error.code : inputFailure ? 'input.unreadable' : 'operation.failed',
       field: known ? error.field : 'input', message: known ? error.message : inputFailure
         ? `입력이나 경로를 읽을 수 없습니다 (${error.code}).` : '내부 처리 중 실패했습니다. 추가된 파일 목록과 현재 상태를 확인하세요.' }],
-      written: error.written ?? (error.created ? [error.field] : []) };
+      written: error.written ?? (error.created ? [error.field] : []), ...(error.candidates ? { candidates: error.candidates } : {}) };
     process.exitCode = known && error.code === 'command.invalid' ? 2 : 1;
   }
   if (args.includes('--json')) console.log(JSON.stringify(report));
@@ -65,6 +66,7 @@ else {
     else {
       console.log('작업 실패');
       for (const issue of report.diagnostics) console.log(`[${issue.rule}] ${issue.field}: ${issue.message}`);
+      if (report.candidates) for (const [index, candidate] of report.candidates.entries()) console.log(`[후보 ${index + 1}] ${JSON.stringify(candidate)}`);
       if (report.written.length) console.log(`실패 전 반영된 파일: ${report.written.join(', ')} (자동 되돌림 없음, 상태 확인 필요)`);
       if (process.exitCode === 2) console.log(usage);
     }

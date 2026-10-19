@@ -4,6 +4,7 @@ import { parseDocument } from 'yaml';
 import { blogSchema, fragmentSchema } from './content-schemas.mjs';
 import { splitFrontmatter } from './content-frontmatter.mjs';
 import { validateContentSource } from './content-validation.mjs';
+import { projectSchema as project } from './content-project-schema.mjs';
 
 export class OperationContractError extends Error {
   constructor(code, field, message) { super(`[${code}] ${field}: ${message}`); this.code = code; this.field = field; }
@@ -26,8 +27,6 @@ const relation = z.object({ target: fragmentId, type: z.enum(['related', 'prereq
 const patch = schema => schema.partial().extend({ body: z.string().optional() }).strict().refine(value => Object.keys(value).length > 0);
 const blogPatch = patch(blogSchema.extend({ pubDate: date }));
 const fragmentPatch = patch(fragmentSchema.omit({ id: true }).extend({ relations: z.array(relation) }));
-const project = z.object({ name: text, description: text, period: z.string().optional(), role: z.string().optional(),
-  highlights: z.array(z.string()).optional(), stack: z.array(z.string()).optional(), link: z.string().optional() }).strict();
 const projectPatch = project.partial().strict().refine(value => Object.keys(value).length > 0);
 const asset = z.object({ source: repositoryPath, target: repositoryPath, sha256: hash }).strict();
 const relatedTarget = z.object({ path: fragmentPath, id: fragmentId, sha256: hash }).strict();

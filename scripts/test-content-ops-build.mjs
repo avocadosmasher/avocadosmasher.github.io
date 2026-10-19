@@ -123,6 +123,28 @@ try {
   assert.deepEqual(snapshot(), afterBlogCategory, '신규 카테고리 글 수정 재실행에서 추가 쓰기');
   assert.equal(readFileSync(join(root, request.target.path), 'utf8'), request.content.source
     .replace('title: fixture-operation-title', 'title: "fixture-updated-title"').replace('category: AI', 'category: "Fixture category"'));
+  const projectItem = { name: 'fixture-project-name', description: 'fixture-project-description', period: 'fixture-project-period',
+    role: 'fixture-original-role', highlights: ['fixture-project-first', 'fixture-project-second'], stack: ['Node', 'TS'], link: 'https://example.com/fixture-project' };
+  const projectCreate = { version: 1, request_id: 'fixture-project-create', resource: 'project', operation: 'create',
+    target: { path: 'src/consts.ts' }, baseline: { sha256: sha256(readFileSync(join(root, 'src/consts.ts'))) }, content: projectItem };
+  put('project-create.json', JSON.stringify(projectCreate));
+  const projectPlan = command(['plan', '--request', 'project-create.json', '--out', '.content-ops/local/project-create.json']);
+  const projectArgs = ['apply', '--request', 'project-create.json', '--plan', '.content-ops/local/project-create.json', '--expect-plan', projectPlan.plan.plan_hash];
+  assert.equal(command(projectArgs).status, 'applied');
+  const afterProjectCreate = snapshot();
+  assert.equal(command(projectArgs).status, 'unchanged');
+  assert.deepEqual(snapshot(), afterProjectCreate, '프로젝트 생성 재실행에서 추가 쓰기');
+  const beforeRoleUpdate = readFileSync(join(root, 'src/consts.ts'), 'utf8');
+  const projectUpdate = { version: 1, request_id: 'fixture-project-update', resource: 'project', operation: 'update',
+    target: { path: 'src/consts.ts', selector: projectItem }, baseline: { sha256: sha256(beforeRoleUpdate) }, changes: { role: 'fixture-updated-role' } };
+  put('project-update.json', JSON.stringify(projectUpdate));
+  const rolePlan = command(['plan', '--request', 'project-update.json', '--out', '.content-ops/local/project-update.json']);
+  const roleArgs = ['apply', '--request', 'project-update.json', '--plan', '.content-ops/local/project-update.json', '--expect-plan', rolePlan.plan.plan_hash];
+  assert.equal(command(roleArgs).status, 'applied');
+  assert.equal(readFileSync(join(root, 'src/consts.ts'), 'utf8'), beforeRoleUpdate.replace('"role":"fixture-original-role"', '"role":"fixture-updated-role"'));
+  const afterProjectUpdate = snapshot();
+  assert.equal(command(roleArgs).status, 'unchanged');
+  assert.deepEqual(snapshot(), afterProjectUpdate, '프로젝트 역할 수정 재실행에서 추가 쓰기');
   const require = createRequire(import.meta.url);
   const astro = join(require.resolve('astro/package.json'), '..', 'astro.js');
   const env = { ...process.env, ASTRO_TELEMETRY_DISABLED: '1', NO_COLOR: '1' };
@@ -147,8 +169,12 @@ try {
   assert.equal(fragments.find(card => card.id === 'fixture-term-a').title, 'fixture-fragment-updated');
   assert.deepEqual(fragments.find(card => card.id === 'fixture-term-a').relations, [{ target: 'fixture-term-b', type: 'prerequisite' }]);
   assert.deepEqual(fragments.find(card => card.id === 'fixture-term-b').relations, []);
-  console.log('PASS blog-fragment-category-ops: CLI create/update/replay + blog/image/search + Fragment IDs/relations + category key/color in Astro output');
+  const about = readFileSync(join(root, 'dist/about/index.html'), 'utf8');
+  for (const value of ['fixture-project-name', 'fixture-project-description', 'fixture-project-period', 'fixture-updated-role',
+    'fixture-project-first', 'fixture-project-second', 'https://example.com/fixture-project']) assert.ok(about.includes(value), `프로젝트 빌드 값 누락: ${value}`);
+  assert.ok(!about.includes('fixture-original-role'), '프로젝트 수정 전 역할이 남음');
+  console.log('PASS four-content-ops: CLI create/update/replay + blog/image/search + Fragment IDs/relations + category key/color + project fields in Astro output');
 } catch (error) {
-  console.error(`FAIL blog-fragment-category-ops: ${error.message}\n격리 작업 폴더: ${root}`);
+  console.error(`FAIL four-content-ops: ${error.message}\n격리 작업 폴더: ${root}`);
   process.exitCode = 1;
 }
