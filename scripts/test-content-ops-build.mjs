@@ -93,6 +93,36 @@ try {
   const afterFragments = snapshot();
   assert.equal(command(fragmentArgs).status, 'unchanged');
   assert.deepEqual(snapshot(), afterFragments, 'Fragment 관계 수정 재실행에서 추가 쓰기');
+  const categoryCreate = { version: 1, request_id: 'fixture-category-create', resource: 'category', operation: 'create',
+    target: { path: 'src/consts.ts', key: 'Fixture category' },
+    baseline: { sha256: sha256(readFileSync(join(root, 'src/consts.ts'))) }, content: { color: '#123456' } };
+  put('category-create.json', JSON.stringify(categoryCreate));
+  const categoryPlan = command(['plan', '--request', 'category-create.json', '--out', '.content-ops/local/category-create.json']);
+  const categoryArgs = ['apply', '--request', 'category-create.json', '--plan', '.content-ops/local/category-create.json', '--expect-plan', categoryPlan.plan.plan_hash];
+  assert.equal(command(categoryArgs).status, 'applied');
+  const afterCategoryCreate = snapshot();
+  assert.equal(command(categoryArgs).status, 'unchanged');
+  assert.deepEqual(snapshot(), afterCategoryCreate, '카테고리 생성 재실행에서 추가 쓰기');
+  const categoryUpdate = { version: 1, request_id: 'fixture-category-update', resource: 'category', operation: 'update',
+    target: categoryCreate.target, baseline: { sha256: sha256(readFileSync(join(root, 'src/consts.ts'))) }, changes: { color: '#654321' } };
+  put('category-update.json', JSON.stringify(categoryUpdate));
+  const colorPlan = command(['plan', '--request', 'category-update.json', '--out', '.content-ops/local/category-update.json']);
+  const colorArgs = ['apply', '--request', 'category-update.json', '--plan', '.content-ops/local/category-update.json', '--expect-plan', colorPlan.plan.plan_hash];
+  assert.equal(command(colorArgs).status, 'applied');
+  const afterCategoryUpdate = snapshot();
+  assert.equal(command(colorArgs).status, 'unchanged');
+  assert.deepEqual(snapshot(), afterCategoryUpdate, '카테고리 색 수정 재실행에서 추가 쓰기');
+  const blogCategory = { version: 1, request_id: 'fixture-blog-category', resource: 'blog', operation: 'update',
+    target: request.target, baseline: { sha256: sha256(readFileSync(join(root, request.target.path))) }, changes: { category: 'Fixture category' } };
+  put('blog-category.json', JSON.stringify(blogCategory));
+  const blogCategoryPlan = command(['plan', '--request', 'blog-category.json', '--out', '.content-ops/local/blog-category.json']);
+  const blogCategoryArgs = ['apply', '--request', 'blog-category.json', '--plan', '.content-ops/local/blog-category.json', '--expect-plan', blogCategoryPlan.plan.plan_hash];
+  assert.equal(command(blogCategoryArgs).status, 'applied');
+  const afterBlogCategory = snapshot();
+  assert.equal(command(blogCategoryArgs).status, 'unchanged');
+  assert.deepEqual(snapshot(), afterBlogCategory, '신규 카테고리 글 수정 재실행에서 추가 쓰기');
+  assert.equal(readFileSync(join(root, request.target.path), 'utf8'), request.content.source
+    .replace('title: fixture-operation-title', 'title: "fixture-updated-title"').replace('category: AI', 'category: "Fixture category"'));
   const require = createRequire(import.meta.url);
   const astro = join(require.resolve('astro/package.json'), '..', 'astro.js');
   const env = { ...process.env, ASTRO_TELEMETRY_DISABLED: '1', NO_COLOR: '1' };
@@ -103,10 +133,13 @@ try {
   const html = readFileSync(join(root, 'dist/blog/fixture-operation/index.html'), 'utf8');
   assert.match(html, /fixture-operation-body/);
   assert.match(html, /fixture-updated-title/);
+  assert.match(html, /Fixture category/);
+  assert.match(html, /#654321/);
   const match = html.match(/<img[^>]+src="([^"]*fixture[^"]*)"/);
   assert.ok(match, '생성한 글의 이미지 참조 누락');
   assert.ok(existsSync(join(root, 'dist', decodeURIComponent(match[1]).replace(/^\//, ''))), '이미지 산출물 누락');
   assert.match(readFileSync(join(root, 'dist/search.json'), 'utf8'), /fixture-updated-title/);
+  assert.match(readFileSync(join(root, 'dist/search.json'), 'utf8'), /Fixture category/);
   const fragmentHtml = readFileSync(join(root, 'dist/fragments/index.html'), 'utf8');
   const data = fragmentHtml.match(/<script[^>]*id="fragment-data"[^>]*>([\s\S]*?)<\/script>/);
   assert.ok(data, 'Fragment 빌드 데이터 누락');
@@ -114,8 +147,8 @@ try {
   assert.equal(fragments.find(card => card.id === 'fixture-term-a').title, 'fixture-fragment-updated');
   assert.deepEqual(fragments.find(card => card.id === 'fixture-term-a').relations, [{ target: 'fixture-term-b', type: 'prerequisite' }]);
   assert.deepEqual(fragments.find(card => card.id === 'fixture-term-b').relations, []);
-  console.log('PASS blog-fragment-ops: CLI create/update/replay + blog title/body/image/search + Fragment IDs/title/relations in Astro output');
+  console.log('PASS blog-fragment-category-ops: CLI create/update/replay + blog/image/search + Fragment IDs/relations + category key/color in Astro output');
 } catch (error) {
-  console.error(`FAIL blog-fragment-ops: ${error.message}\n격리 작업 폴더: ${root}`);
+  console.error(`FAIL blog-fragment-category-ops: ${error.message}\n격리 작업 폴더: ${root}`);
   process.exitCode = 1;
 }

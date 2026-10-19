@@ -1,8 +1,8 @@
 import { lstatSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import ts from 'typescript';
 import { parseDocument } from 'yaml';
 import { validateContentCollection } from './content-collection-validation.mjs';
+import { CategorySourceError, inspectCategorySource } from './content-categories.mjs';
 
 class RepositoryInputError extends Error {
   constructor(diagnostic) {
@@ -12,30 +12,11 @@ class RepositoryInputError extends Error {
 }
 
 function readCategories(text) {
-  const fail = message => { throw new RepositoryInputError({ path: 'src/consts.ts', rule: 'registry.invalid', field: 'CATEGORIES', message }); };
-  const source = ts.createSourceFile('consts.ts', text, ts.ScriptTarget.Latest, true);
-  if (source.parseDiagnostics.length) fail('consts.ts의 TypeScript 구문 오류를 먼저 수정하세요.');
-  const declarations = source.statements.filter(ts.isVariableStatement)
-    .flatMap(statement => [...statement.declarationList.declarations].map(declaration => ({ statement, declaration })))
-    .filter(({ declaration }) => ts.isIdentifier(declaration.name) && declaration.name.text === 'CATEGORIES');
-  if (declarations.length !== 1) fail('CATEGORIES 선언은 정확히 하나여야 합니다.');
-  const { statement, declaration } = declarations[0];
-  if (!(statement.declarationList.flags & ts.NodeFlags.Const)
-    || !statement.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword)
-    || !declaration.initializer || !ts.isObjectLiteralExpression(declaration.initializer)) {
-    fail('export const CATEGORIES에 정적 객체를 직접 지정해야 합니다.');
+  try { return inspectCategorySource(text).categories; }
+  catch (error) {
+    if (!(error instanceof CategorySourceError)) throw error;
+    throw new RepositoryInputError({ path: 'src/consts.ts', rule: 'registry.invalid', field: 'CATEGORIES', message: error.message });
   }
-  const entries = new Map();
-  for (const property of declaration.initializer.properties) {
-    if (!ts.isPropertyAssignment(property) || !ts.isStringLiteral(property.initializer)
-      || !(ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))) {
-      fail('CATEGORIES는 정적 키와 문자열 값만 지원합니다. 계산식·별칭·spread를 추측하지 않습니다.');
-    }
-    const key = property.name.text;
-    if (entries.has(key) || key === '__proto__') fail(`중복되거나 지원하지 않는 카테고리 키입니다: ${key}`);
-    entries.set(key, property.initializer.text);
-  }
-  return Object.fromEntries(entries);
 }
 
 function readBaseline(text) {
@@ -50,7 +31,7 @@ function readBaseline(text) {
 }
 
 /** @param {string} root */
-function checkRepository(root, proposals) {
+function checkRepository(root, proposals, categorySource = undefined) {
   const documents = [];
   const summary = () => ({ blogs: documents.filter(document => document.kind === 'blog').length,
     fragments: documents.filter(document => document.kind === 'fragment').length });
@@ -72,7 +53,8 @@ function checkRepository(root, proposals) {
     }
   };
   try {
-    const categories = readCategories(read('src/consts.ts', path => readFileSync(path, 'utf8')));
+    const originalCategories = read('src/consts.ts', path => readFileSync(path, 'utf8'));
+    const categories = readCategories(categorySource === undefined ? originalCategories : categorySource);
     const baseline = readBaseline(read('config/content-policy-baseline.json', path => readFileSync(path, 'utf8')));
     const collect = (directory, kind) => {
       const entries = read(directory, path => readdirSync(path, { withFileTypes: true }));
@@ -116,3 +98,6 @@ export function checkContentRepository(root) { return checkRepository(root, []);
 
 // 제안 원문을 메모리에서만 대조하며 실제 콘텐츠 파일은 수정하지 않음.
 export function checkContentProposal(root, proposals) { return checkRepository(root, proposals); }
+
+// 실제 문서를 쓰기 전에 제안한 CATEGORIES 원문으로 전체 콘텐츠 정책을 검사함.
+export function checkCategoryProposal(root, source) { return checkRepository(root, [], source); }

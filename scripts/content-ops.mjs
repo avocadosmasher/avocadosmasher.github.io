@@ -7,9 +7,10 @@ import { applyBlogCreate, planBlogCreate } from '../src/lib/content-blog-create.
 import { applyBlogUpdate, planBlogUpdate } from '../src/lib/content-blog-update.mjs';
 import { applyFragmentOperation, planFragmentOperation } from '../src/lib/content-fragment-ops.mjs';
 import { saveOperationPlan } from '../src/lib/content-operation-plan-file.mjs';
+import { applyCategoryOperation, planCategoryOperation } from '../src/lib/content-category-ops.mjs';
 
 const args = process.argv.slice(2);
-const usage = '사용법 (현재 글·Fragment 신규 생성·부분 수정 지원)\n'
+const usage = '사용법 (현재 글·Fragment·카테고리 생성·부분 수정 지원)\n'
   + 'node scripts/content-ops.mjs plan --request <요청 JSON> --out .content-ops/local/<계획 JSON> [--root <저장소>] [--json]\n'
   + 'node scripts/content-ops.mjs apply --request <요청 JSON> --plan .content-ops/local/<계획 JSON> --expect-plan <계획 지문> [--root <저장소>] [--json]\n'
   + '종료 코드: 0 성공/변경 없음, 1 입력/충돌/적용 실패, 2 명령 사용 오류';
@@ -21,8 +22,10 @@ else {
     const options = parseOperationCommand(args);
     const root = options.root ? resolve(options.root) : fileURLToPath(new URL('../', import.meta.url));
     const request = parseOperationJson(readFileSync(resolve(options.request_file), 'utf8'));
-    const prepare = request?.resource === 'fragment' ? planFragmentOperation : request?.operation === 'update' ? planBlogUpdate : planBlogCreate;
-    const apply = request?.resource === 'fragment' ? applyFragmentOperation : request?.operation === 'update' ? applyBlogUpdate : applyBlogCreate;
+    const prepare = request?.resource === 'category' ? planCategoryOperation : request?.resource === 'fragment'
+      ? planFragmentOperation : request?.operation === 'update' ? planBlogUpdate : planBlogCreate;
+    const apply = request?.resource === 'category' ? applyCategoryOperation : request?.resource === 'fragment'
+      ? applyFragmentOperation : request?.operation === 'update' ? applyBlogUpdate : applyBlogCreate;
     if (options.command === 'plan') {
       const prepared = prepare(root, request);
       const saved = prepared.status === 'planned' ? saveOperationPlan(root, request, options.plan_file, prepared.plan) : false;
@@ -48,7 +51,7 @@ else {
       console.log(`계획 파일: ${report.plan_file} (${report.plan_saved ? '새로 저장함' : '기존 파일 보존함'}), 콘텐츠는 아직 적용하지 않음`);
       for (const file of report.preview) {
         console.log(`[${file.operation === 'update' ? '수정' : '추가'} 예정] ${file.path}`);
-        if (file.kind === 'markdown') {
+        if (file.kind === 'markdown' || file.kind === 'typescript') {
           for (const [prefix, source] of file.operation === 'update' ? [['- ', file.before], ['+ ', file.source]] : [['+ ', file.source]]) {
             console.log(source.replace(/[\x00-\x08\x0b-\x1f\x7f]/g,
               character => '\\u' + character.charCodeAt(0).toString(16).padStart(4, '0')).split('\n').map(line => prefix + line).join('\n'));
