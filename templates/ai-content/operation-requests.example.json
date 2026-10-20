@@ -1,0 +1,124 @@
+{
+  "purpose": "Synthetic request catalog. Copy one request, confirm its facts and target, and replace every zero baseline with the actual file SHA-256 before use. This catalog is not a CLI request.",
+  "examples": [
+    {
+      "name": "blog-create",
+      "request": {
+        "version": 1,
+        "request_id": "example-blog-create",
+        "resource": "blog",
+        "operation": "create",
+        "target": { "path": "src/content/blog/automation-example/index.md" },
+        "baseline": { "sha256": null },
+        "content": {
+          "source": "---\ntitle: Automation example\ndescription: Synthetic example only\ncategory: Example\npubDate: 2026-10-20\ndraft: true\n---\nSynthetic example body.\n"
+        }
+      }
+    },
+    {
+      "name": "blog-update",
+      "request": {
+        "version": 1,
+        "request_id": "example-blog-update",
+        "resource": "blog",
+        "operation": "update",
+        "target": { "path": "src/content/blog/automation-example/index.md" },
+        "baseline": { "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+        "changes": { "title": "Updated automation example" }
+      }
+    },
+    {
+      "name": "fragment-create",
+      "request": {
+        "version": 1,
+        "request_id": "example-fragment-create",
+        "resource": "fragment",
+        "operation": "create",
+        "target": { "path": "src/content/fragments/automation-example.md", "id": "automation-example" },
+        "baseline": { "sha256": null },
+        "content": {
+          "source": "---\nid: automation-example\ntitle: Automation example\nsummary: Synthetic example only\ncategory: Example\nrelations: []\n---\nSynthetic example body.\n"
+        }
+      }
+    },
+    {
+      "name": "fragment-update",
+      "request": {
+        "version": 1,
+        "request_id": "example-fragment-update",
+        "resource": "fragment",
+        "operation": "update",
+        "target": { "path": "src/content/fragments/automation-example.md", "id": "automation-example" },
+        "baseline": { "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+        "changes": { "title": "Updated automation example" }
+      }
+    },
+    {
+      "name": "category-create",
+      "request": {
+        "version": 1,
+        "request_id": "example-category-create",
+        "resource": "category",
+        "operation": "create",
+        "target": { "path": "src/consts.ts", "key": "ExampleNew" },
+        "baseline": { "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+        "content": { "color": "#abcdef" }
+      }
+    },
+    {
+      "name": "category-update",
+      "request": {
+        "version": 1,
+        "request_id": "example-category-update",
+        "resource": "category",
+        "operation": "update",
+        "target": { "path": "src/consts.ts", "key": "ExampleNew" },
+        "baseline": { "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+        "changes": { "color": "#fedcba" }
+      }
+    },
+    {
+      "name": "project-create",
+      "request": {
+        "version": 1,
+        "request_id": "example-project-create",
+        "resource": "project",
+        "operation": "create",
+        "target": { "path": "src/consts.ts" },
+        "baseline": { "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+        "content": {
+          "name": "Automation example project",
+          "description": "Synthetic example only",
+          "period": "2026",
+          "role": "Example role",
+          "highlights": ["Example highlight"],
+          "stack": ["Example stack"],
+          "link": "https://example.invalid/project"
+        }
+      }
+    },
+    {
+      "name": "project-update",
+      "request": {
+        "version": 1,
+        "request_id": "example-project-update",
+        "resource": "project",
+        "operation": "update",
+        "target": {
+          "path": "src/consts.ts",
+          "selector": {
+            "name": "Automation example project",
+            "description": "Synthetic example only",
+            "period": "2026",
+            "role": "Example role",
+            "highlights": ["Example highlight"],
+            "stack": ["Example stack"],
+            "link": "https://example.invalid/project"
+          }
+        },
+        "baseline": { "sha256": "0000000000000000000000000000000000000000000000000000000000000000" },
+        "changes": { "role": "Updated example role" }
+      }
+    }
+  ]
+}

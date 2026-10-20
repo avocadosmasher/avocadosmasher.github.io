@@ -1,6 +1,19 @@
 import { expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { assertOperationBaseline, canonicalHash, checkOperationReceipt, createOperationPlan, createOperationReceipt,
   parseOperationCommand, parseOperationRequest, verifyOperationPlan } from '../../src/lib/content-operation-contract.mjs';
+
+it('기계 요청 예시 모음은 네 대상의 생성·수정 계약과 고정된 서로 다른 요청 ID를 유지한다', () => {
+  const catalog: { examples: { request: unknown }[] } = JSON.parse(readFileSync(
+    new URL('../../templates/ai-content/operation-requests.example.json', import.meta.url), 'utf8'));
+  // 기존 동작의 예시 호환성 검사임. 작동하던 계약에 가짜 Red를 만들지 않음.
+  const requests = catalog.examples.map(entry => parseOperationRequest(entry.request));
+  expect(requests.map(request => `${request.resource}:${request.operation}`).sort()).toEqual([
+    'blog:create', 'blog:update', 'category:create', 'category:update',
+    'fragment:create', 'fragment:update', 'project:create', 'project:update',
+  ]);
+  expect(new Set(requests.map(request => request.request_id)).size).toBe(8);
+});
 
 const request = () => ({ version: 1, request_id: 'example-create-01', resource: 'blog', operation: 'create',
   target: { path: 'src/content/blog/example/index.md' }, baseline: { sha256: null },
