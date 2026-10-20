@@ -20,6 +20,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 2차의 실제 plan/apply/recover·인계·충돌 대응은 [자동화 운영 가이드](./docs/guide/AI-콘텐츠-자동화-운영가이드.md), 최종 검증·보장과 한계는 [2차 최종 보고서](./docs/AI-콘텐츠-자동화-2차-최종보고서.md)를 따른다.
 
+후속 작업공간·기록 분리의 실제 CLI 검증과 남은 경계는 [작업공간 분리 최종 보고서](./docs/AI-콘텐츠-작업공간-분리-최종보고서.md)에서 확인한다. 로컬 작업 메모와 실제 적용·승인·Git 저장의 증거는 구분한다.
+
 ## Commands
 
 ```bash
