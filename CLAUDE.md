@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 개발 계획과 브랜치는 현재 개발 건에 맞춰 선택한다. 일반 콘텐츠 요청을 현재 개발 건의 작업 ID로 등록하지 않는다. 카테고리·프로젝트 내용 수정도 소스 확장자만으로 개발 작업으로 바꾸지 않는다. Fragment 전용 계획·커밋 전략은 해당 기능 개발에 적용한다.
 
-현재 후속 AI-CONTENT-WORKSPACE의 [개발계획](./docs/plan/AI-콘텐츠-작업공간-분리-개발계획.md)과 [설계 결정](./docs/decision/AI-콘텐츠-작업공간-분리-설계결정.md)은 개발 기록과 콘텐츠 작업공간의 경계를 정한다. 작업공간은 `.content-ops/local/tasks/<작업명-고유값>/`에 두고 개별 확정 요청은 `requests/<request_id>/`에 보존한다. 기존 Tool 공개 계약·완료 기록·복구·승인 절차는 유지한다. 상세 템플릿·지시문 연결은 ACWT01 후속 단계다.
+현재 후속 AI-CONTENT-WORKSPACE의 [개발계획](./docs/plan/AI-콘텐츠-작업공간-분리-개발계획.md)과 [설계 결정](./docs/decision/AI-콘텐츠-작업공간-분리-설계결정.md)은 개발 기록과 콘텐츠 작업공간의 경계를 정한다. 작업공간은 `.content-ops/local/tasks/<작업명-고유값>/`에 두고 개별 확정 요청은 `requests/<request_id>/`에 보존한다. 기존 Tool 공개 계약·완료 기록·복구·승인 절차는 유지한다. 실제 구성·HANDOFF·초안은 [작업공간 사용 안내](./templates/ai-content/workspace/README.md), 요청·인계 문장은 [복사용 지시문](./docs/guide/AI-콘텐츠-작업지시문.md)을 사용한다.
 
 선행 자동화 2차 AI-CONTENT-TOOLS의 [개발계획](./docs/plan/AI-콘텐츠-자동화-2차-개발계획.md)과 [설계 결정](./docs/decision/AI-콘텐츠-자동화-2차-설계결정.md)은 검사기·저장소 Tool·Hook·CI의 경계를 정한다. 1차의 승인 절차·공통 콘텐츠 규약은 유지한다.
 

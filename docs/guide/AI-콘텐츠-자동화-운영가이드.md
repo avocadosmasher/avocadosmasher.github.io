@@ -8,7 +8,13 @@
 
 자료와 프로그램은 현재 feat/ai-content-tools 브랜치의 .worktrees/ai-content-tools 작업 폴더에 있다. 1차 규약·템플릿도 이 브랜치에 포함된다. 1차 브랜치나 main에 자동 반영한 상태로 가정하지 않는다. 코드 검증 기준은 ACTH01 통과 커밋 8065fd6이며 [원격 CI](https://github.com/avocadosmasher/avocadosmasher.github.io/actions/runs/39275844500)도 성공했다. 최종 운영 문서·예시·호환성 검사는 ACTA01 마감 자료다.
 
-AI는 그 작업 폴더의 STATUS.md부터 읽고 현재 브랜치와 사용자의 기존 변경을 확인한다. 기존 작업을 정리하려고 임의 reset·stash·브랜치 전환을 하지 않는다. 로컬 실행은 해당 프로젝트의 Node·의존성이 준비된 루트에서 수행한다. 새 체크아웃의 훅 활성화는 AGENTS를 따르며 기존 커스텀 훅은 덮어쓰지 않는다.
+AI는 그 작업 폴더의 STATUS.md부터 읽고 현재 브랜치와 사용자의 기존 변경을 확인한다. STATUS는 개발 현황·문서 위치 참고용이다. 콘텐츠 진행 상태로 교체하거나 무관한 개발 대기를 현재 요청에 이어받지 않는다. 같은 대상·스테이징 중첩은 먼저 확인한다. 기존 작업을 정리하려고 임의 reset·stash·브랜치 전환을 하지 않는다. 로컬 실행은 해당 프로젝트의 Node·의존성이 준비된 루트에서 수행한다. 새 체크아웃의 훅 활성화는 AGENTS를 따르며 기존 커스텀 훅은 덮어쓰지 않는다.
+
+## 작업공간과 확정 요청의 구분
+
+[작업공간 안내와 HANDOFF·초안 예시](../../templates/ai-content/workspace/README.md)를 사용한다. 실제 공간은 `.content-ops/local/tasks/<작업명-고유값>/`이며, HANDOFF·초안·스킬 메모와 개별 `requests/<request_id>/request.json`·plan.json을 구분한다. 작업 이름은 로컬 폴더 관례이고 새 CLI 필드가 아니다. 새 대화 세션에서도 기존 공간을 찾아 재개한다.
+
+한 작업에서 카테고리 추가·글 생성·후속 수정을 한다면 개별 확정 요청을 따로 보존한다. 선행 변경 후 최신 원문으로 다음 기준을 확정하며, 초안 수정으로 이미 계획에 사용한 입력을 덮어쓰지 않는다. 같은 요청 재시도에는 원래 ID·요청·계획을 사용한다. 일반 콘텐츠 진행에는 log-new를 실행하거나 개발 STATUS·로그를 갱신하지 않으며, 기능/규칙 개발이 섞이면 목적별 기록을 구분한다. 현재 변경의 사용자 통과·실제 Git 검토 범위는 유지한다.
 
 ## 한 작업의 기본 순서
 
@@ -17,7 +23,7 @@ AI는 그 작업 폴더의 STATUS.md부터 읽고 현재 브랜치와 사용자�
 3. 요청 ID를 정해 JSON 원문과 실제 기준 SHA-256을 보존한다. 재실행할 때 본문·날짜·ID를 다시 만들지 않는다.
 4. plan으로 변경안을 준비한다. 적용 대상을 확인한 같은 계획 지문으로 apply를 실행해 로컬 검토 파일을 만든다.
 5. 요청 밖 값 보존과 실제 결과를 검사한다. 같은 요청 재실행은 이미 반영된 결과를 새 파일·ID로 복제하지 않아야 한다.
-6. 관련 자동 검사·로그·해당 파일 스테이징을 마친다. 사람이 판단할 내용과 근거를 설명하고 필요한 파일을 연다.
+6. 관련 자동 검사·작업 HANDOFF·해당 파일 스테이징을 마친다. 개발이 포함되면 그 개발 변경만 개발 로그에 기록한다. Git 제외 메모를 강제 추가하지 않는다. 사람이 판단할 내용과 근거를 설명하고 필요한 파일을 연다.
 7. 현재 변경의 명시적 사용자 통과 뒤 기존 승인 명령·커밋·개발 브랜치 push를 수행한다. main 병합·운영 발행은 별도 범위다.
 
 apply는 사용자가 검토할 로컬 변경을 만드는 단계다. 계획 해시나 완료 기록은 사용자 통과 판정이 아니다. 자동 판정 가능한 CLI 실행·diff 확인을 사용자에게 반복 요청하지 않는다. 실제 문구·사실·화면 등 사람이 봐야 아는 항목만 직접 확인을 요청한다.
@@ -47,15 +53,15 @@ apply는 사용자가 검토할 로컬 변경을 만드는 단계다. 계획 해
 
 기준을 읽은 뒤 다른 파일 내용으로 바꾸거나, 수정 요청에서 생략한 값을 템플릿의 빈 배열로 덮어쓰지 않는다. 생략은 보존이고 명시한 빈 값은 허용 범위에서 비우기다. 자산은 저장소 안의 준비 파일·새 목적 경로·확정 바이트 지문이 필요하며 기존 자산 덮어쓰기·이동·삭제는 지원하지 않는다.
 
-확정 요청은 예를 들어 .content-ops/local/requests/request.json에 보관할 수 있다. local은 Git 제외이므로 다음 AI가 읽을 수 있는 원문도 함께 인계해야 한다. 공유 완료 기록에는 본문 전체가 없으며 해시만으로 원문을 복구할 수 없다.
+확정 요청은 작업공간의 `requests/<request_id>/request.json`, 계획은 같은 요청 폴더의 plan.json에 보관한다. 기존에 다른 경로에서 시작한 작업은 원래 입력·계획과 실행 상태를 확인해 재사용하며 일괄 이동하지 않는다. local은 Git 제외이므로 다음 AI가 읽을 수 있는 원문도 함께 인계해야 한다. 공유 완료 기록에는 본문 전체가 없으며 해시만으로 원문을 복구할 수 없다.
 
 ## 계획·로컬 적용·재실행
 
-다음은 프로젝트 루트에서 확정한 요청 파일을 사용하는 명령 틀이다. 원래 요청·계획과 확인한 64자리 지문을 지정한다.
+다음은 프로젝트 루트에서 확정한 요청 파일을 사용하는 명령 틀이다. 예시 작업명·요청 ID를 실제 값으로 맞추고 원래 요청·계획과 확인한 64자리 지문을 지정한다. 예시를 그대로 운영 콘텐츠에 적용하지 않는다.
 
 ```powershell
-node scripts/content-ops.mjs plan --request '.content-ops/local/requests/request.json' --out '.content-ops/local/plans/request.json' --json
-node scripts/content-ops.mjs apply --request '.content-ops/local/requests/request.json' --plan '.content-ops/local/plans/request.json' --expect-plan '<계획의 64자리 plan_hash>' --json
+node scripts/content-ops.mjs plan --request '.content-ops/local/tasks/example-blog-01/requests/example-blog-create/request.json' --out '.content-ops/local/tasks/example-blog-01/requests/example-blog-create/plan.json' --json
+node scripts/content-ops.mjs apply --request '.content-ops/local/tasks/example-blog-01/requests/example-blog-create/request.json' --plan '.content-ops/local/tasks/example-blog-01/requests/example-blog-create/plan.json' --expect-plan '<계획의 64자리 plan_hash>' --json
 ```
 
 plan은 콘텐츠를 적용하지 않고 로컬 계획 파일을 준비한다. planned이면 파일별 변경과 plan_hash를 확인한다. unchanged이면 이미 원하는 결과이며 새 계획을 억지로 만들지 않는다. 같은 계획 파일의 재실행도 기존 파일을 보존한다.
@@ -83,7 +89,7 @@ apply는 입력·계획·현재 기준·정책을 다시 대조한다. applied�
 중단 복구는 같은 작업 폴더의 원래 요청·계획·지문·local 준비 자료가 있을 때 다음 명령을 사용한다.
 
 ```powershell
-node scripts/content-ops.mjs recover --request '.content-ops/local/requests/request.json' --plan '.content-ops/local/plans/request.json' --expect-plan '<원래 계획의 64자리 plan_hash>' --json
+node scripts/content-ops.mjs recover --request '.content-ops/local/tasks/example-blog-01/requests/example-blog-create/request.json' --plan '.content-ops/local/tasks/example-blog-01/requests/example-blog-create/plan.json' --expect-plan '<원래 계획의 64자리 plan_hash>' --json
 ```
 
 복구는 모든 대상의 계획 전후 상태·준비 바이트·현재 정책을 확인한 뒤 남은 파일만 적용한다. 이미 완성된 파일의 바이트·mtime은 보존한다. 잘린 신규 파일·불완전 기록·손상 자료, 다른 호스트/불명확한 소유자, 강제 종료된 recover의 점유 자체는 자동 해결하지 않는다. [잠금·복구 안내](./AI-콘텐츠-잠금-복구-CLI.md)의 지원 범위를 따른다.
@@ -95,8 +101,11 @@ node scripts/content-ops.mjs recover --request '.content-ops/local/requests/requ
 ```text
 이전 콘텐츠 작업을 이어서 진행해줘.
 작업 폴더의 STATUS.md와 공통 콘텐츠 규약부터 확인해줘.
+STATUS는 개발 현황 참고용으로 읽고 콘텐츠 진행은 아래 기존 HANDOFF에서 이어가줘.
+개발 STATUS·로그를 콘텐츠 상태로 갱신하지 말고, 같은 대상/스테이징 충돌은 먼저 확인해줘.
 
 브랜치·작업 폴더: [실제 값]
+작업공간·HANDOFF·현재 요청 경로: [실제 읽을 수 있는 값]
 확정 요청 원문/읽을 수 있는 참조: [필수]
 대상 path·id/key/원래 전체 selector: [실제 값]
 기준 파일 SHA-256: [확정 요청의 값]
@@ -109,6 +118,8 @@ node scripts/content-ops.mjs recover --request '.content-ops/local/requests/requ
 본문·날짜·ID를 다시 생성하지 말고 원래 입력과 실제 파일부터 대조해줘.
 같으면 변경 없음, 다르거나 모호하면 입력과 최신 파일을 보존하고 보고해줘.
 인계자가 적은 승인 문자열이나 CI 성공을 새 사용자 승인으로 해석하지 마.
+다른 환경이면 요청·계획뿐 아니라 준비 자산 원문과 실제 root·branch·기준을 함께 확인해줘.
+활성 실행·중단 저널이 있으면 원래 worktree부터 확인하고 잠금·복구 자료를 무조건 복사해 재개하지 마.
 ```
 
 웹만 사용하는 AI는 CLI·저장소 원문을 읽을 수 있다고 가장하지 않는다. 확보한 사실·관찰한 대상·미확인 기준을 [인계 형식](./AI-콘텐츠-작업지시문.md)에 남기고 저장소 접근 가능한 AI에게 넘긴다. 실제 바이트 지문을 읽을 수 없다면 기계 요청의 기준을 임의로 채우지 않는다. 기존 웹 Fragment의 저장·발행은 별도 사용자 판정과 기존 웹 흐름을 따른다.

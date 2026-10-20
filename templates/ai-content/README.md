@@ -15,8 +15,11 @@
 | [Fragment 템플릿](./fragment.md) | 한 개념의 요약·보충 설명·관계 | `src/content/fragments/<고정 ID>.md` |
 | [카테고리 템플릿](./category.json) | 등록할 키와 색상 한 쌍 | `src/consts.ts`의 `CATEGORIES` 객체 |
 | [프로젝트 이력 템플릿](./project.json) | 소개 페이지의 프로젝트 항목 하나 | `src/consts.ts`의 `PROJECTS` 배열 |
+| [작업공간·HANDOFF·초안 예시](./workspace/README.md) | 작성 스킬의 진행 메모와 개별 확정 요청 관리 | `.content-ops/local/tasks/<작업명-고유값>/` |
 
 JSON 틀은 항목 값의 전달용이다. 앱이 이 파일을 자동으로 읽는 기능을 추가하지 않았으며, 실제 반영 위치는 위 표의 현행 원본이다. 전체 CATEGORIES·PROJECTS를 이 틀로 교체하지 않는다.
+
+일반 콘텐츠 작업은 작업공간의 HANDOFF에 진행을 기록하고 개발 STATUS·로그를 갱신하지 않는다. 기존 공간을 찾아 재개하며 초안과 계획에 사용한 확정 요청은 구분한다. 같은 작업 안의 생성·후속 수정은 각각 `requests/<request_id>/`에 보존한다. 작업공간 메모는 콘텐츠 원문·CLI JSON·사용자 승인 자료가 아니다. 예시를 콘텐츠 수집 경로에 복사하거나 Git 제외 local 메모를 강제 추가하지 않는다.
 
 ## 2. 사용 순서
 
