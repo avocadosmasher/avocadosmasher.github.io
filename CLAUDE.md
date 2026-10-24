@@ -19,7 +19,7 @@ npm run preview  # 빌드 결과 미리보기
 
 빌드 에러는 대부분 프론트매터 문제(필수 필드 누락, `category` 불일치, `pubDate` 형식 오류)이므로 push 전에 `npm run build`로 확인한다.
 
-Node.js 18.20.8 이상 필요.
+Node.js는 `.node-version`의 **24.22.1**을 기준으로 사용한다. `package.json`은 `>=24.22.1 <25`를 허용하고 `.npmrc`는 구형 Node로 설치하는 것을 거절한다. CI의 두 검사 작업도 같은 버전 파일을 읽는다. PC의 Node.js를 업데이트한 뒤에는 터미널과 개발 서버·Node 기반 도구를 다시 시작해야 한다. 자세한 영향·복구 기준은 `docs/plan/Node.js-보안-업데이트-개발계획.md`를 참고한다.
 
 ## Architecture
 
