@@ -37,11 +37,39 @@ test('그래프 열기가 1,500개 관계 규모에서도 2초 목표 안에 조
   await page.goto('/fragments/');
   await expect(page.getByText('500개의 개념 · 1 / 42 페이지')).toBeVisible();
 
-  const start = Date.now();
+  // 테스트 러너의 클릭 자동 대기·expect 재시도 간격은 사용자 화면의 렌더 시간이 아니다.
+  // 브라우저의 실제 클릭부터 캔버스와 상태가 준비된 프레임까지 같은 시계로 잰다.
+  await page.evaluate(() => {
+    const timing = window as Window & { __graphRenderMs?: Promise<number> };
+    document.getElementById('graph-view')!.addEventListener('click', () => {
+      const start = performance.now();
+      timing.__graphRenderMs = new Promise((resolve, reject) => {
+        const check = () => {
+          const canvas = document.querySelector('#fragment-graph canvas');
+          const rect = canvas?.getBoundingClientRect();
+          const style = canvas && getComputedStyle(canvas);
+          const elapsed = performance.now() - start;
+          if (document.getElementById('graph-status')?.textContent === '500개 개념 · 1500개 관계' &&
+              rect && rect.width > 0 && rect.height > 0 && style?.visibility !== 'hidden' && style?.display !== 'none') {
+            resolve(elapsed);
+          } else if (elapsed > 10_000) {
+            reject(new Error('그래프 준비가 10초 안에 완료되지 않았습니다.'));
+          } else {
+            requestAnimationFrame(check);
+          }
+        };
+        requestAnimationFrame(check);
+      });
+    }, { capture: true, once: true });
+  });
   await page.getByRole('button', { name: '관계 그래프', exact: true }).click();
+  const elapsed = await page.evaluate(async () => {
+    const measurement = (window as Window & { __graphRenderMs?: Promise<number> }).__graphRenderMs;
+    if (!measurement) throw new Error('그래프 클릭 시간 측정이 시작되지 않았습니다.');
+    return measurement;
+  });
   await expect(page.locator('#fragment-graph canvas').first()).toBeVisible();
   await expect(page.locator('#graph-status')).toHaveText('500개 개념 · 1500개 관계');
-  const elapsed = Date.now() - start;
   await testInfo.attach('graph-render-ms', { body: String(elapsed), contentType: 'text/plain' });
   expect(elapsed, `그래프 렌더+관계 표시 소요 (${elapsed}ms)`).toBeLessThanOrEqual(graphBudgetMs);
 
