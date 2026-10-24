@@ -40,7 +40,7 @@ push 전에 `npm run build`로 필수 필드·날짜·이미지 경로 등의 �
 
 ACTC02의 [도구 요청 계약](./docs/guide/AI-콘텐츠-요청-계약.md)은 확정 JSON·계획·최소 완료 기록·파일 기준 대조를 정한다. [글 CLI](./docs/guide/AI-콘텐츠-글-생성-CLI.md)·[Fragment CLI](./docs/guide/AI-콘텐츠-Fragment-CLI.md)·[카테고리 CLI](./docs/guide/AI-콘텐츠-카테고리-CLI.md)·[프로젝트 CLI](./docs/guide/AI-콘텐츠-프로젝트-CLI.md)는 같은 plan/apply 명령을 사용한다. Fragment는 명시한 상대 카드의 연결 제거를, 카테고리는 정적 CATEGORIES의 키 추가·색 값 수정을 지원한다. 프로젝트는 원래 항목 전체로 대상을 확인해 요청 값만 수정하며 모호한 후보는 중단한다. 적용은 저장소 단위 잠금으로 보호하며 중단 시 [잠금·복구 가이드](./docs/guide/AI-콘텐츠-잠금-복구-CLI.md)의 recover에 원래 요청·계획·지문을 지정한다. 외부 수정·손상·확인할 수 없는 잠금을 강제로 해제하지 않는다. Git 승인·저장은 기존 절차와 위 콘텐츠 Git 검사를 따른다.
 
-Node.js 18.20.8 이상 필요.
+Node.js는 `.node-version`의 **24.22.1**을 기준으로 사용한다. `package.json`은 `>=24.22.1 <25`를 허용하고 `.npmrc`는 구형 Node로 설치하는 것을 거절한다. CI의 두 검사 작업도 같은 버전 파일을 읽는다. PC의 Node.js를 업데이트한 뒤에는 터미널과 개발 서버·Node 기반 도구를 다시 시작해야 한다. 자세한 영향·복구 기준은 `docs/plan/Node.js-보안-업데이트-개발계획.md`를 참고한다.
 
 ## Architecture
 
