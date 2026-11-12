@@ -67,7 +67,9 @@ export function searchFragments<T extends Fragment>(cards: T[], query: string, c
     (!q || [card.title, ...card.aliases, card.summary, card.category, ...card.tags].some(value => normalize(value).includes(q))))
     .sort((a, b) => (q ? exact(b) - exact(a) : 0) || a.title.localeCompare(b.title, 'ko') || a.id.localeCompare(b.id));
 }
-export function paginate<T>(items: T[], requested: number, size = 12) {
+/** Cards per page in the list view; the list never shows more than this at once. */
+export const FRAGMENT_PAGE_SIZE = 12;
+export function paginate<T>(items: T[], requested: number, size = FRAGMENT_PAGE_SIZE) {
   const pages = Math.max(1, Math.ceil(items.length / size));
   const page = Number.isFinite(requested) ? Math.max(1, Math.min(pages, Math.floor(requested))) : 1;
   return { page, pages, total: items.length, items: items.slice((page - 1) * size, page * size) };

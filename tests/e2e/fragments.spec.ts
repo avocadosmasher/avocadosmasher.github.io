@@ -1,3 +1,4 @@
+import { FRAGMENT_PAGE_SIZE } from '../../src/lib/fragments';
 import { cardsOf, expect, test, type Card } from './fixtures';
 
 const missing = '없는 개념 zzqx';
@@ -22,7 +23,9 @@ test('C01–D05: navigate, search aliases, filter and restore URL', async ({ pag
   await expect(page.getByRole('searchbox', { name: '개념 검색' })).toHaveValue('');
   await expect(page.getByText('조건에 맞는 개념이 없습니다.')).toBeHidden();
   await expect(page.getByRole('button', { name: '검색어 지우기' })).toBeHidden();
-  await expect(page.locator('[data-fragment-card]')).toHaveCount(cards.length);
+  // Clearing the search restores every card; the list shows them one page at a time.
+  await expect(page.locator('#fragment-count')).toContainText(`${cards.length}개의 개념`);
+  await expect(page.locator('[data-fragment-card]')).toHaveCount(Math.min(cards.length, FRAGMENT_PAGE_SIZE));
   await expect(page).not.toHaveURL(/[?&]q=/);
 });
 

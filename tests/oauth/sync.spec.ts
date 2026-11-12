@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { oauthPopup } from '../../workers/fragment-oauth/worker';
+import { FRAGMENT_PAGE_SIZE } from '../../src/lib/fragments';
 
 const repo = 'tester/fragment-cms-auth-test';
 const sha = 'a'.repeat(40);
@@ -76,11 +77,13 @@ test('failed or partial reads retain previous cards; retry accepts an empty coll
   // The build's own cards are the fallback here; authors add and remove them from the web, so read the count.
   const built = await page.evaluate(() => JSON.parse(document.getElementById('fragment-data')!.textContent!).length);
   await expect(page.locator('#fragment-sync-status')).toContainText('이전 내용일 수 있습니다');
-  await expect(page.locator('[data-fragment-card]')).toHaveCount(built);
+  await expect(page.locator('#fragment-count')).toContainText(`${built}개의 개념`);
+  await expect(page.locator('[data-fragment-card]')).toHaveCount(Math.min(built, FRAGMENT_PAGE_SIZE));
   mode = 'partial';
   await page.locator('#fragment-sync-retry').click();
   await expect(page.locator('#fragment-sync-retry')).toBeVisible();
-  await expect(page.locator('[data-fragment-card]')).toHaveCount(built);
+  await expect(page.locator('#fragment-count')).toContainText(`${built}개의 개념`);
+  await expect(page.locator('[data-fragment-card]')).toHaveCount(Math.min(built, FRAGMENT_PAGE_SIZE));
   mode = 'empty';
   await page.locator('#fragment-sync-retry').click();
   await expect(page.locator('#fragment-sync-status')).toHaveText('최신 카드를 불러왔습니다.');
