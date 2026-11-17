@@ -143,7 +143,7 @@ export const PROJECTS: ProjectItem[] = [
   },
   {
     name: '삼성전자 DS: 운영 지원 프로젝트',
-    period: '2025.11 – 2026.07(현재 진행)',
+    period: '2025.11 – 현재',
     role: '현장 관리 및 작업 담당',
     description: '삼성전자 DS 일부 부서의 Jira 시스템 운영 및 업그레이드 지원. 트러블 슈팅, 개발 서버 인프라 변경, 업그레이드 작업 등 고객사의 다양한 요구사항을 처리함.',
     stack: ['Groovy', 'Jira','Linux','Infra Architecture'],
